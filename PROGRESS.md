@@ -30,14 +30,14 @@
 
 ## Fases de features (ver FEATURES.md para detalhes)
 
-| Fase | Módulos |
-|------|---------|
-| 1 | Autenticação e cadastro de usuário |
-| 2 | Contas, Categorias, Transações, Perfil |
-| 3 | Dashboard |
-| 4 | Dívidas (Snowball, gamificação, desconto por antecipação) |
-| 5 | Orçamento + Metas financeiras |
-| 6 | Relatórios + Notificações |
+| Fase | Módulos                                                   |
+| ---- | --------------------------------------------------------- |
+| 1    | Autenticação e cadastro de usuário                        |
+| 2    | Contas, Categorias, Transações, Perfil                    |
+| 3    | Dashboard                                                 |
+| 4    | Dívidas (Snowball, gamificação, desconto por antecipação) |
+| 5    | Orçamento + Metas financeiras                             |
+| 6    | Relatórios + Notificações                                 |
 
 ---
 
@@ -46,17 +46,20 @@
 ### ✅ Concluído
 
 #### Infraestrutura base
+
 - `.gitignore`, `.env.example`, `docker-compose.yml` (PostgreSQL + RabbitMQ + API)
 - `Dockerfile` multi-stage para o backend
 - `scripts/setup-server.sh` — setup do Docker no Fedora Server
 - `Makefile` com comandos `up`, `down`, `build`, `logs`, `ps`
 
 #### Solução .NET
+
 - Solução `QuiteUp.sln` com 4 projetos: `Domain`, `Application`, `Infrastructure`, `Api`
 - Referências entre projetos seguindo Clean Architecture
 - Todos os pacotes NuGet instalados
 
 #### Fase 1 — Autenticação (backend)
+
 - **Domain:** `User`, `RefreshToken`, `EmailVerificationToken`, `PasswordResetToken`, `UserStatus`
 - **Application:**
   - Interfaces: `IApplicationDbContext`, `ITokenService`, `IEmailService`, `IPasswordHasher`, `ICurrentUserService`
@@ -79,6 +82,7 @@
 ---
 
 #### Fase 2 — Contas, Categorias, Transações, Perfil (backend) ✅
+
 - **Domain:** `Account`, `Category`, `Transaction` + enums `AccountType`, `CategoryType`, `TransactionType`
 - **Application:**
   - Interfaces: `IIdEncoder`
@@ -100,10 +104,12 @@
 ### 🔲 Pendente
 
 #### Fase 3 — Dashboard (backend)
+
 - Query `GetDashboardSummary` (saldo total, resumo do mês, total de dívidas, últimas transações)
 - Endpoint `/api/dashboard`
 
 #### Fase 4 — Dívidas (backend)
+
 - Entidades: `Debt`, `DebtPayment`
 - Enums: `DebtType` (Loan, Financing, CreditCard)
 - Commands: `CreateDebt`, `UpdateDebt`, `DeleteDebt`, `RegisterDebtPayment`
@@ -112,15 +118,18 @@
 - RabbitMQ: publicar `DebtPaidOffEvent` quando saldo zera
 
 #### Fase 5 — Orçamento e Metas (backend)
+
 - Entidades: `Budget`, `FinancialGoal`, `GoalContribution`
 - Commands e Queries correspondentes
 
 #### Fase 6 — Relatórios e Notificações (backend)
+
 - Queries de relatórios (por período, por categoria, evolução)
 - Entidade `Notification`
 - Consumer RabbitMQ para triggers de notificação
 
 #### Frontend (todas as fases) — reconstruir do zero com Fluent UI v9
+
 - Scaffold: `npm create vite@latest` (React + TypeScript)
 - Instalar: `@fluentui/react-components @fluentui/react-icons @tanstack/react-query zustand axios react-router-dom react-hook-form @hookform/resolvers zod framer-motion tailwindcss @tailwindcss/vite`
 - Configuração: `FluentProvider` (webLightTheme), TanStack Query, Zustand auth store, Axios com interceptors JWT
@@ -135,24 +144,23 @@
 
 ## Commits realizados
 
-| Hash | Descrição |
-|------|-----------|
-| `35c2f3b` | Initial commit |
-| `89f595c` | feat: scaffold backend com autenticação completa (Fase 1) |
-| `644ec93` | docs: adiciona PROGRESS.md |
-| `f90386a` | feat: frontend com React + Vite + Tailwind |
+| Hash      | Descrição                                                            |
+| --------- | -------------------------------------------------------------------- |
+| `35c2f3b` | Initial commit                                                       |
+| `89f595c` | feat: scaffold backend com autenticação completa (Fase 1)            |
+| `644ec93` | docs: adiciona PROGRESS.md                                           |
+| `f90386a` | feat: frontend com React + Vite + Tailwind                           |
 | `5c1bc5a` | feat: adiciona container frontend com nginx e proxy reverso para api |
-| `bc2b36a` | feat: frontend com HeroUI v3 + animações framer-motion |
-| `9605275` | feat: Fase 2 — Contas, Categorias, Transações e Perfil (backend) |
-| `1e48af3` | fix: [FromBody] no MapDelete de perfil |
-| `b73165d` | DELETE FRONT — frontend removido para reconstrução com Fluent UI v9 |
-| (próximo) | feat: frontend com Fluent UI v9 (Fase 1 — Auth) |
+| `bc2b36a` | feat: frontend com HeroUI v3 + animações framer-motion               |
+| `9605275` | feat: Fase 2 — Contas, Categorias, Transações e Perfil (backend)     |
+| `1e48af3` | fix: [FromBody] no MapDelete de perfil                               |
+| `b73165d` | DELETE FRONT — frontend removido para reconstrução com Fluent UI v9  |
+| (próximo) | feat: frontend com Fluent UI v9 (Fase 1 — Auth)                      |
 
 ---
 
 ## Como retomar
 
 1. Abrir este arquivo para ver o que está pendente
-2. **Próximo passo: reconstruir o frontend** com Fluent UI v9 — usar o prompt de migração
-3. Após o frontend base, implementar Fase 3 (Dashboard) no backend + frontend
-4. Seguir a sequência: backend → frontend por fase
+2. Continuar a partir de **Fase 2 — backend**: entidades `Account`, `Category`, `Transaction`
+3. Após o backend de cada fase, implementar o frontend correspondente
