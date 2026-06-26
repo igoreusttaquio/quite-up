@@ -63,11 +63,29 @@ app.UseAuthorization();
 
 app.MapEndpoints();
 
-using (var scope = app.Services.CreateScope())
+Task.Run(async () =>
 {
-    var db = scope.ServiceProvider.GetRequiredService<QuiteUp.Infrastructure.Persistence.ApplicationDbContext>();
-    db.Database.Migrate();
-    await QuiteUp.Infrastructure.Persistence.DatabaseSeeder.SeedAsync(db);
-}
+    await Task.Delay(TimeSpan.FromSeconds(5));
+
+    for (var attempt = 1; attempt <= 10; attempt++)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<QuiteUp.Infrastructure.Persistence.ApplicationDbContext>();
+            await db.Database.MigrateAsync();
+            await QuiteUp.Infrastructure.Persistence.DatabaseSeeder.SeedAsync(db);
+            Log.Information("Database migrations and seeding completed successfully");
+            return;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Database migration failed (attempt {Attempt}/10). Retrying in {Delay}s...", attempt, attempt * 5);
+            await Task.Delay(TimeSpan.FromSeconds(attempt * 5));
+        }
+    }
+
+    Log.Error("Database migrations failed after 10 attempts. The application will start but the database may not be ready.");
+});
 
 app.Run();
