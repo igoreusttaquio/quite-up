@@ -8,7 +8,7 @@ import { accountsApi } from '../api/accounts'
 import { categoriesApi } from '../api/categories'
 
 const schema = z.object({
-  type: z.string().min(1), value: z.coerce.number().positive('Valor deve ser positivo'),
+  type: z.string().min(1), value: z.number().positive('Valor deve ser positivo'),
   date: z.string().min(1), accountId: z.string().min(1), categoryId: z.string().optional(),
   destinationAccountId: z.string().optional(), description: z.string().optional(),
 })
@@ -45,7 +45,7 @@ function TransactionModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Valor</label>
-            <input type="number" step="0.01" placeholder="0,00" className={`w-full px-4 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${errors.value ? 'border-red-400' : 'border-gray-300'}`} {...register('value')} />
+            <input type="number" step="0.01" placeholder="0,00" className={`w-full px-4 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${errors.value ? 'border-red-400' : 'border-gray-300'}`} {...register('value', { valueAsNumber: true })} />
             {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value.message}</p>}
           </div>
           <div>

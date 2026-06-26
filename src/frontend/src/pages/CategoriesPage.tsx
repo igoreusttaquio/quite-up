@@ -16,7 +16,7 @@ const colors = [
 
 function CategoryModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, reset } = useForm<FormData>({ resolver: zodResolver(schema) })
   const mutation = useMutation({
     mutationFn: (d: FormData) => categoriesApi.create(d),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); onClose(); reset() },

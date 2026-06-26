@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { accountsApi } from '../api/accounts'
 
-const schema = z.object({ name: z.string().min(1, 'Nome obrigatório'), type: z.string().min(1), initialBalance: z.coerce.number() })
+const schema = z.object({ name: z.string().min(1, 'Nome obrigatório'), type: z.string().min(1), initialBalance: z.number() })
 type FormData = z.infer<typeof schema>
 const accountTypes = [
   { value: 'Checking', label: 'Conta corrente' }, { value: 'Savings', label: 'Poupança' },
@@ -39,7 +39,7 @@ function AccountModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Saldo inicial</label>
-            <input type="number" step="0.01" className={`w-full px-4 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${errors.initialBalance ? 'border-red-400' : 'border-gray-300'}`} {...register('initialBalance')} />
+            <input type="number" step="0.01" className={`w-full px-4 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${errors.initialBalance ? 'border-red-400' : 'border-gray-300'}`} {...register('initialBalance', { valueAsNumber: true })} />
           </div>
           <div className="flex gap-3 justify-end pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button>
