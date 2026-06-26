@@ -43,6 +43,12 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
+builder.Services.AddSingleton<IAuthorizationPolicyProvider>(sp =>
+{
+    var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<AuthorizationOptions>>();
+    return new DefaultAuthorizationPolicyProvider(opt);
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -69,7 +75,7 @@ app.UseAuthorization();
 
 app.MapEndpoints();
 
-Task.Run(async () =>
+_ = Task.Run(async () =>
 {
     await Task.Delay(TimeSpan.FromSeconds(5));
 
