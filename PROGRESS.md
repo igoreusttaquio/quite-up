@@ -78,17 +78,26 @@
 
 ---
 
-### 🔲 Pendente
+#### Fase 2 — Contas, Categorias, Transações, Perfil (backend) ✅
+- **Domain:** `Account`, `Category`, `Transaction` + enums `AccountType`, `CategoryType`, `TransactionType`
+- **Application:**
+  - Interfaces: `IIdEncoder`
+  - Models: `PagedResult<T>`
+  - Erros adicionais: `NotFound`, `Forbidden`, `CannotDelete`, `WrongPassword`, `EmailInUse`, `SameAccount`, etc.
+  - Accounts: `CreateAccount`, `UpdateAccount`, `DeactivateAccount`, `GetAccounts`, `GetAccountById`
+  - Categories: `CreateCategory`, `UpdateCategory`, `DeleteCategory`, `GetCategories`
+  - Transactions: `CreateTransaction`, `UpdateTransaction`, `DeleteTransaction`, `GetTransactions` (paginado)
+  - Profile: `GetProfile`, `UpdateProfile`, `ChangePassword`, `ChangeEmail`, `DeleteUserAccount`
+  - `VerifyEmailCommandHandler` atualizado para suportar `IsEmailChange`
+- **Infrastructure:**
+  - `IdEncoderService` (Hashids)
+  - `AccountConfiguration`, `CategoryConfiguration`, `TransactionConfiguration`
+  - `DatabaseSeeder` — categorias padrão (15 categorias de receita/despesa)
+  - `UserConfiguration` atualizado com `PendingEmail` + relações Account/Category
+- **Migration:** `Phase2AccountsCategoriesTransactions` gerada
+- **Api:** `AccountEndpoints`, `CategoryEndpoints`, `TransactionEndpoints`, `ProfileEndpoints`
 
-#### Fase 2 — Contas, Categorias, Transações, Perfil (backend)
-- Entidades: `Account`, `Category`, `Transaction`
-- Enums: `AccountType`, `TransactionType`, `CategoryType`
-- Commands: `CreateAccount`, `UpdateAccount`, `DeactivateAccount`
-- Commands: `CreateCategory`, `UpdateCategory`, `DeleteCategory`
-- Commands: `CreateTransaction`, `UpdateTransaction`, `DeleteTransaction`
-- Queries: `GetAccounts`, `GetAccountById`, `GetCategories`, `GetTransactions` (paginado)
-- Commands de perfil: `UpdateProfile`, `ChangeEmail`, `ChangePassword`, `DeleteAccount`
-- Endpoints e migration correspondente
+### 🔲 Pendente
 
 #### Fase 3 — Dashboard (backend)
 - Query `GetDashboardSummary` (saldo total, resumo do mês, total de dívidas, últimas transações)
@@ -124,6 +133,8 @@
 |------|-----------|
 | `35c2f3b` | Initial commit |
 | `89f595c` | feat: scaffold backend com autenticação completa (Fase 1) |
+| `644ec93` | docs: adiciona PROGRESS.md |
+| (próximo) | feat: Fase 2 — Contas, Categorias, Transações e Perfil (backend) |
 
 ---
 

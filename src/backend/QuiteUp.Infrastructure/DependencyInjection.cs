@@ -26,6 +26,8 @@ public static class DependencyInjection
             configuration["Hashids:Salt"]!,
             int.Parse(configuration["Hashids:MinLength"]!)));
 
+        services.AddScoped<IIdEncoder, IdEncoderService>();
+
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 

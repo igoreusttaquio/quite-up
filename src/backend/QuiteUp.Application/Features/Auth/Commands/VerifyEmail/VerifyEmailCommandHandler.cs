@@ -22,7 +22,19 @@ public class VerifyEmailCommandHandler(IApplicationDbContext context) : IRequest
             return Result.Failure(Error.InvalidToken);
 
         verificationToken.IsUsed = true;
-        verificationToken.User.Status = UserStatus.Active;
+
+        if (verificationToken.IsEmailChange)
+        {
+            if (verificationToken.User.PendingEmail is null)
+                return Result.Failure(Error.InvalidToken);
+
+            verificationToken.User.Email = verificationToken.User.PendingEmail;
+            verificationToken.User.PendingEmail = null;
+        }
+        else
+        {
+            verificationToken.User.Status = UserStatus.Active;
+        }
 
         await context.SaveChangesAsync(cancellationToken);
         return Result.Success();

@@ -22,6 +22,114 @@ namespace QuiteUp.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("QuiteUp.Domain.Entities.Account", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("InitialBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("initial_balance");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_accounts");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_accounts_user_id");
+
+                    b.ToTable("accounts", (string)null);
+                });
+
+            modelBuilder.Entity("QuiteUp.Domain.Entities.Category", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("color");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("icon");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_categories");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_categories_user_id");
+
+                    b.HasIndex("UserId", "IsDefault")
+                        .HasDatabaseName("ix_categories_user_id_is_default");
+
+                    b.ToTable("categories", (string)null);
+                });
+
             modelBuilder.Entity("QuiteUp.Domain.Entities.EmailVerificationToken", b =>
                 {
                     b.Property<long>("Id")
@@ -38,6 +146,10 @@ namespace QuiteUp.Infrastructure.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_at");
+
+                    b.Property<bool>("IsEmailChange")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_email_change");
 
                     b.Property<bool>("IsUsed")
                         .HasColumnType("boolean")
@@ -167,6 +279,75 @@ namespace QuiteUp.Infrastructure.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("QuiteUp.Domain.Entities.Transaction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("account_id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<long?>("CategoryId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("description");
+
+                    b.Property<long?>("DestinationAccountId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("destination_account_id");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_transactions");
+
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("ix_transactions_category_id");
+
+                    b.HasIndex("DestinationAccountId")
+                        .HasDatabaseName("ix_transactions_destination_account_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_transactions_user_id");
+
+                    b.HasIndex("AccountId", "Date")
+                        .HasDatabaseName("ix_transactions_account_id_date");
+
+                    b.ToTable("transactions", (string)null);
+                });
+
             modelBuilder.Entity("QuiteUp.Domain.Entities.User", b =>
                 {
                     b.Property<long>("Id")
@@ -206,6 +387,11 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("password_hash");
 
+                    b.Property<string>("PendingEmail")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("pending_email");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer")
                         .HasColumnName("status");
@@ -222,6 +408,29 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasDatabaseName("ix_users_email");
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("QuiteUp.Domain.Entities.Account", b =>
+                {
+                    b.HasOne("QuiteUp.Domain.Entities.User", "User")
+                        .WithMany("Accounts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_accounts_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuiteUp.Domain.Entities.Category", b =>
+                {
+                    b.HasOne("QuiteUp.Domain.Entities.User", "User")
+                        .WithMany("Categories")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_categories_users_user_id");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("QuiteUp.Domain.Entities.EmailVerificationToken", b =>
@@ -260,8 +469,52 @@ namespace QuiteUp.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("QuiteUp.Domain.Entities.Transaction", b =>
+                {
+                    b.HasOne("QuiteUp.Domain.Entities.Account", "Account")
+                        .WithMany("Transactions")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_transactions_accounts_account_id");
+
+                    b.HasOne("QuiteUp.Domain.Entities.Category", "Category")
+                        .WithMany("Transactions")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_transactions_categories_category_id");
+
+                    b.HasOne("QuiteUp.Domain.Entities.Account", "DestinationAccount")
+                        .WithMany("IncomingTransfers")
+                        .HasForeignKey("DestinationAccountId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_transactions_accounts_destination_account_id");
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("DestinationAccount");
+                });
+
+            modelBuilder.Entity("QuiteUp.Domain.Entities.Account", b =>
+                {
+                    b.Navigation("IncomingTransfers");
+
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("QuiteUp.Domain.Entities.Category", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
             modelBuilder.Entity("QuiteUp.Domain.Entities.User", b =>
                 {
+                    b.Navigation("Accounts");
+
+                    b.Navigation("Categories");
+
                     b.Navigation("EmailVerificationTokens");
 
                     b.Navigation("PasswordResetTokens");

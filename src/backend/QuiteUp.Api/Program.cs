@@ -70,6 +70,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<QuiteUp.Infrastructure.Persistence.ApplicationDbContext>();
     db.Database.Migrate();
+    await QuiteUp.Infrastructure.Persistence.DatabaseSeeder.SeedAsync(db);
 }
 
 app.Run();

@@ -12,7 +12,11 @@ public class User : BaseEntity
     public int FailedLoginAttempts { get; set; }
     public DateTime? LockedUntil { get; set; }
 
+    public string? PendingEmail { get; set; }
+
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<EmailVerificationToken> EmailVerificationTokens { get; set; } = new List<EmailVerificationToken>();
     public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
+    public ICollection<Account> Accounts { get; set; } = new List<Account>();
+    public ICollection<Category> Categories { get; set; } = new List<Category>();
 }
