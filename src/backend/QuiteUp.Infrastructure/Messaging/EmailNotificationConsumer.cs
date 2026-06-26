@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Events;
 
@@ -13,55 +14,82 @@ namespace QuiteUp.Infrastructure.Messaging;
 
 public class EmailNotificationConsumer : BackgroundService
 {
-    private readonly IConnection _connection;
-    private readonly IChannel _channel;
-    private readonly string _exchange;
-    private readonly string _queue;
+    private readonly IConfiguration _configuration;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<EmailNotificationConsumer> _logger;
+    private IConnection? _connection;
+    private IChannel? _channel;
 
     public EmailNotificationConsumer(
         IConfiguration configuration,
         IServiceScopeFactory scopeFactory,
         ILogger<EmailNotificationConsumer> logger)
     {
+        _configuration = configuration;
         _scopeFactory = scopeFactory;
         _logger = logger;
-
-        var host = configuration["RabbitMQ:Host"] ?? "localhost";
-        var port = int.Parse(configuration["RabbitMQ:Port"] ?? "5672");
-        var user = configuration["RabbitMQ:User"] ?? "guest";
-        var password = configuration["RabbitMQ:Password"] ?? "guest";
-        _exchange = configuration["RabbitMQ:Exchange"] ?? "quite-up";
-        _queue = "email-notifications";
-
-        var factory = new ConnectionFactory
-        {
-            HostName = host,
-            Port = port,
-            UserName = user,
-            Password = password,
-
-        };
-
-        _connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
-        _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await _channel.ExchangeDeclareAsync(_exchange, ExchangeType.Direct, durable: true, cancellationToken: stoppingToken);
-        await _channel.QueueDeclareAsync(_queue, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
+        var exchange = _configuration["RabbitMQ:Exchange"] ?? "quite-up";
+        var queue = "email-notifications";
 
-        await _channel.QueueBindAsync(_queue, _exchange, nameof(UserRegisteredEvent), cancellationToken: stoppingToken);
-        await _channel.QueueBindAsync(_queue, _exchange, nameof(ForgotPasswordRequestedEvent), cancellationToken: stoppingToken);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                var host = _configuration["RabbitMQ:Host"] ?? "localhost";
+                var port = int.Parse(_configuration["RabbitMQ:Port"] ?? "5672");
+                var user = _configuration["RabbitMQ:User"] ?? "guest";
+                var password = _configuration["RabbitMQ:Password"] ?? "guest";
 
-        var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.ReceivedAsync += HandleMessageAsync;
+                var factory = new ConnectionFactory
+                {
+                    HostName = host,
+                    Port = port,
+                    UserName = user,
+                    Password = password,
+                    RequestedHeartbeat = TimeSpan.FromSeconds(30),
+                };
 
-        await _channel.BasicConsumeAsync(_queue, autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
+                _connection = await factory.CreateConnectionAsync();
+                _channel = await _connection.CreateChannelAsync();
 
-        await Task.Delay(Timeout.Infinite, stoppingToken);
+                await _channel.ExchangeDeclareAsync(exchange, ExchangeType.Direct, durable: true);
+                await _channel.QueueDeclareAsync(queue, durable: true, exclusive: false, autoDelete: false);
+                await _channel.QueueBindAsync(queue, exchange, nameof(UserRegisteredEvent));
+                await _channel.QueueBindAsync(queue, exchange, nameof(ForgotPasswordRequestedEvent));
+
+                var consumer = new AsyncEventingBasicConsumer(_channel);
+                consumer.ReceivedAsync += HandleMessageAsync;
+
+                await _channel.BasicConsumeAsync(queue, autoAck: false, consumer: consumer);
+
+                _logger.LogInformation("EmailNotificationConsumer connected to RabbitMQ and listening");
+
+                await Task.Delay(Timeout.Infinite, stoppingToken);
+            }
+            catch (BrokerUnreachableException ex)
+            {
+                _logger.LogWarning(ex, "RabbitMQ unavailable, retrying in 10 seconds...");
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            }
+            catch (OperationInterruptedException ex)
+            {
+                _logger.LogWarning(ex, "RabbitMQ operation interrupted, retrying in 10 seconds...");
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Unexpected error in EmailNotificationConsumer, retrying in 30 seconds...");
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+            }
+            finally
+            {
+                Cleanup();
+            }
+        }
     }
 
     private async Task HandleMessageAsync(object sender, BasicDeliverEventArgs args)
@@ -89,26 +117,26 @@ public class EmailNotificationConsumer : BackgroundService
                     break;
             }
 
-            await _channel.BasicAckAsync(args.DeliveryTag, multiple: false);
+            await _channel!.BasicAckAsync(args.DeliveryTag, multiple: false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to process email notification {Type}", type);
-            await _channel.BasicNackAsync(args.DeliveryTag, multiple: false, requeue: true);
+            await _channel!.BasicNackAsync(args.DeliveryTag, multiple: false, requeue: true);
         }
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken)
+    private void Cleanup()
     {
-        await _channel.CloseAsync(cancellationToken);
-        await _connection.CloseAsync(cancellationToken);
-        await base.StopAsync(cancellationToken);
+        _channel?.Dispose();
+        _channel = null;
+        _connection?.Dispose();
+        _connection = null;
     }
 
     public override void Dispose()
     {
-        _channel?.Dispose();
-        _connection?.Dispose();
+        Cleanup();
         base.Dispose();
     }
 }
