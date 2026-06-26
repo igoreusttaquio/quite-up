@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY QuiteUp.sln .
+COPY QuiteUp.slnx .
 COPY QuiteUp.Domain/QuiteUp.Domain.csproj QuiteUp.Domain/
 COPY QuiteUp.Application/QuiteUp.Application.csproj QuiteUp.Application/
 COPY QuiteUp.Infrastructure/QuiteUp.Infrastructure.csproj QuiteUp.Infrastructure/
