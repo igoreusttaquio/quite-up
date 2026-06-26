@@ -86,6 +86,13 @@ _ = Task.Run(async () =>
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<QuiteUp.Infrastructure.Persistence.ApplicationDbContext>();
 
+            var infraAssembly = typeof(QuiteUp.Infrastructure.Persistence.ApplicationDbContext).Assembly;
+            var migrationClasses = infraAssembly.GetTypes()
+                .Where(t => t.IsAssignableTo(typeof(Microsoft.EntityFrameworkCore.Migrations.Migration)) && !t.IsAbstract)
+                .Select(t => t.Name)
+                .ToList();
+            Log.Information("Migration classes in assembly ({Count}): {Types}", migrationClasses.Count, string.Join(", ", migrationClasses));
+
             var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
             Log.Information("Pending migrations ({Count}): {Migrations}", pending.Count, string.Join(", ", pending));
 
