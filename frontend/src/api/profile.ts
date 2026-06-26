@@ -4,7 +4,7 @@ import type { User, UpdateProfileRequest, ChangePasswordRequest, ChangeEmailRequ
 export const profileApi = {
   get: () => api.get<User>('/profile'),
   update: (data: UpdateProfileRequest) => api.put<User>('/profile', data),
-  changePassword: (data: ChangePasswordRequest) => api.put<void>('/profile/change-password', data),
-  changeEmail: (data: ChangeEmailRequest) => api.put<void>('/profile/change-email', data),
+  changePassword: (data: ChangePasswordRequest) => api.post<void>('/profile/change-password', data),
+  changeEmail: (data: ChangeEmailRequest) => api.post<void>('/profile/change-email', data),
   deleteAccount: (data: DeleteAccountRequest) => api.delete<void>('/profile', { data }),
 }

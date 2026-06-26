@@ -38,11 +38,11 @@ export function useUpdateAccount() {
   })
 }
 
-export function useDeleteAccount() {
+export function useDeactivateAccount() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => accountsApi.delete(id),
+    mutationFn: (id: string) => accountsApi.deactivate(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
   })
 }

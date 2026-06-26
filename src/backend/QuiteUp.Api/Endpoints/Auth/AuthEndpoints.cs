@@ -23,7 +23,7 @@ public class AuthEndpoints : IEndpoint
             return result.IsSuccess
                 ? Results.Created(string.Empty, result.Value)
                 : Results.BadRequest(result.Error);
-        });
+        }).AllowAnonymous();
 
         group.MapPost("/login", async (LoginCommand command, ISender sender, HttpContext ctx) =>
         {
@@ -33,7 +33,7 @@ public class AuthEndpoints : IEndpoint
 
             SetRefreshTokenCookie(ctx, result.Value!.RefreshToken);
             return Results.Ok(new { result.Value.AccessToken, result.Value.ExpiresAt });
-        });
+        }).AllowAnonymous();
 
         group.MapPost("/refresh", async (ISender sender, HttpContext ctx) =>
         {
@@ -47,7 +47,7 @@ public class AuthEndpoints : IEndpoint
 
             SetRefreshTokenCookie(ctx, result.Value!.RefreshToken);
             return Results.Ok(new { result.Value.AccessToken, result.Value.ExpiresAt });
-        });
+        }).AllowAnonymous();
 
         group.MapPost("/logout", async (ISender sender, HttpContext ctx) =>
         {
@@ -63,25 +63,25 @@ public class AuthEndpoints : IEndpoint
         {
             var result = await sender.Send(command);
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);
-        });
+        }).AllowAnonymous();
 
         group.MapPost("/resend-verification", async (ResendVerificationEmailCommand command, ISender sender) =>
         {
             await sender.Send(command);
             return Results.NoContent();
-        });
+        }).AllowAnonymous();
 
         group.MapPost("/forgot-password", async (ForgotPasswordCommand command, ISender sender) =>
         {
             await sender.Send(command);
             return Results.NoContent();
-        });
+        }).AllowAnonymous();
 
         group.MapPost("/reset-password", async (ResetPasswordCommand command, ISender sender) =>
         {
             var result = await sender.Send(command);
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);
-        });
+        }).AllowAnonymous();
     }
 
     private static void SetRefreshTokenCookie(HttpContext ctx, string refreshToken)

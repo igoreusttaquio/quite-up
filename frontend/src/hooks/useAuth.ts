@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { authApi } from '../api/auth'
+import { profileApi } from '../api/profile'
 import { useAuthStore } from '../store/authStore'
 import type { LoginRequest, RegisterRequest, ForgotPasswordRequest, ResetPasswordRequest, VerifyEmailRequest, ResendVerificationRequest } from '../types'
 
@@ -9,9 +10,18 @@ export function useLogin() {
   const navigate = useNavigate()
 
   return useMutation({
-    mutationFn: (data: LoginRequest) => authApi.login(data),
-    onSuccess: (response) => {
-      setAuth(response.data.accessToken, response.data.user)
+    mutationFn: async (data: LoginRequest) => {
+      const loginRes = await authApi.login(data)
+      setAuth(loginRes.data.accessToken, { id: '', name: '', email: '' })
+      try {
+        const profileRes = await profileApi.get()
+        setAuth(loginRes.data.accessToken, profileRes.data)
+      } catch {
+        // profile fetch failed, but we still have the token
+      }
+      return loginRes.data
+    },
+    onSuccess: () => {
       navigate('/dashboard')
     },
   })

@@ -32,7 +32,19 @@ const processQueue = (error: unknown, token: string | null = null) => {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const data = response.data
+    if (data && typeof data === 'object') {
+      if (Array.isArray(data)) {
+        data.forEach(mapResponseEnums)
+      } else if ('items' in data) {
+        data.items?.forEach(mapResponseEnums)
+      } else {
+        mapResponseEnums(data)
+      }
+    }
+    return response
+  },
   async (error) => {
     const originalRequest = error.config
 
@@ -50,14 +62,11 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const { data } = await axios.post('/api/auth/refresh-token', {}, { withCredentials: true })
-        const newToken = data.accessToken
-        const user = data.user
-
-        useAuthStore.getState().setAuth(newToken, user)
-        processQueue(null, newToken)
-
-        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        const { data } = await axios.post('/api/auth/refresh', {}, { withCredentials: true })
+        const currentUser = useAuthStore.getState().user
+        useAuthStore.getState().setAuth(data.accessToken, currentUser ?? { id: '', name: '', email: '' })
+        processQueue(null, data.accessToken)
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
         return api(originalRequest)
       } catch (refreshError) {
         processQueue(refreshError, null)
@@ -72,5 +81,42 @@ api.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
+const accountTypeMap: Record<number, string> = {
+  0: 'CheckingAccount',
+  1: 'Savings',
+  2: 'Wallet',
+  3: 'Other',
+}
+
+const categoryTypeMap: Record<number, string> = {
+  0: 'Income',
+  1: 'Expense',
+}
+
+const transactionTypeMap: Record<number, string> = {
+  0: 'Income',
+  1: 'Expense',
+  2: 'Transfer',
+}
+
+function mapResponseEnums(obj: Record<string, unknown>) {
+  if (!obj || typeof obj !== 'object') return
+
+  if ('type' in obj && typeof obj.type === 'number') {
+    const numType = obj.type as number
+    if (numType in accountTypeMap) obj.type = accountTypeMap[numType]
+    else if (numType in categoryTypeMap) obj.type = categoryTypeMap[numType]
+    else if (numType in transactionTypeMap) obj.type = transactionTypeMap[numType]
+  }
+
+  if ('currentBalance' in obj && typeof obj.currentBalance === 'number') {
+    obj.balance = obj.currentBalance
+    delete obj.currentBalance
+  }
+  if ('initialBalance' in obj) {
+    delete obj.initialBalance
+  }
+}
 
 export { api }

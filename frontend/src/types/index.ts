@@ -1,4 +1,4 @@
-export type AccountType = 'Checking' | 'Savings' | 'CreditCard' | 'Investment' | 'Cash' | 'Other'
+export type AccountType = 'CheckingAccount' | 'Savings' | 'Wallet' | 'Other'
 
 export type CategoryType = 'Income' | 'Expense'
 
@@ -9,77 +9,73 @@ export interface Account {
   name: string
   type: AccountType
   balance: number
-  description?: string
   isActive: boolean
   createdAt: string
-  updatedAt: string
 }
 
 export interface CreateAccountRequest {
   name: string
   type: AccountType
-  balance: number
-  description?: string
+  initialBalance: number
 }
 
 export interface UpdateAccountRequest {
   name: string
-  description?: string
+  type: AccountType
 }
 
 export interface Category {
   id: string
   name: string
   type: CategoryType
-  icon?: string
+  icon: string
+  color: string
   isDefault: boolean
 }
 
 export interface CreateCategoryRequest {
   name: string
   type: CategoryType
-  icon?: string
+  icon: string
+  color: string
 }
 
 export interface UpdateCategoryRequest {
   name: string
-  icon?: string
+  icon: string
+  color: string
 }
 
 export interface Transaction {
   id: string
-  accountId: string
-  categoryId: string
   type: TransactionType
   amount: number
-  description?: string
   date: string
-  toAccountId?: string
+  description?: string
+  accountId: string
+  accountName: string
+  categoryId?: string
+  categoryName?: string
+  destinationAccountId?: string
+  destinationAccountName?: string
   createdAt: string
-  updatedAt: string
-  account?: Account
-  category?: Category
-  toAccount?: Account
 }
 
 export interface CreateTransactionRequest {
-  accountId: string
-  categoryId: string
   type: TransactionType
   amount: number
-  description?: string
   date: string
-  toAccountId?: string
+  accountId: string
+  categoryId?: string
+  destinationAccountId?: string
+  description?: string
 }
 
 export interface UpdateTransactionRequest {
-  accountId?: string
+  amount: number
+  date: string
   categoryId?: string
-  type?: TransactionType
-  amount?: number
   description?: string
-  date?: string
-  toAccountId?: string
 }
 
 export interface PaginatedResult<T> {
@@ -147,16 +143,16 @@ export interface ChangePasswordRequest {
 
 export interface ChangeEmailRequest {
   newEmail: string
-  password: string
+  currentPassword: string
 }
 
 export interface DeleteAccountRequest {
   password: string
 }
 
-export interface AuthResponse {
+export interface LoginResponse {
   accessToken: string
-  user: User
+  expiresAt: string
 }
 
 export interface ApiError {

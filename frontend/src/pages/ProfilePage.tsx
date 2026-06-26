@@ -27,7 +27,7 @@ const profileSchema = z.object({
 
 const emailSchema = z.object({
   newEmail: z.string().email('E-mail inválido'),
-  password: z.string().min(1, 'Senha é obrigatória'),
+  currentPassword: z.string().min(1, 'Senha é obrigatória'),
 })
 
 const passwordSchema = z
@@ -61,7 +61,7 @@ export function ProfilePage() {
 
   const emailForm = useForm<EmailFormData>({
     resolver: zodResolver(emailSchema),
-    defaultValues: { newEmail: '', password: '' },
+    defaultValues: { newEmail: '', currentPassword: '' },
   })
 
   const passwordForm = useForm<PasswordFormData>({
@@ -156,13 +156,13 @@ export function ProfilePage() {
               )}
             />
             <Controller
-              name="password"
+              name="currentPassword"
               control={emailForm.control}
               render={({ field }) => (
                 <Field
                   label="Senha Atual"
-                  validationState={emailForm.formState.errors.password ? 'error' : undefined}
-                  validationMessage={emailForm.formState.errors.password?.message}
+                  validationState={emailForm.formState.errors.currentPassword ? 'error' : undefined}
+                  validationMessage={emailForm.formState.errors.currentPassword?.message}
                 >
                   <Input {...field} type="password" />
                 </Field>

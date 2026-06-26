@@ -51,17 +51,25 @@ const transactionTypeLabels: Record<TransactionType, string> = {
   Transfer: 'Transferência',
 }
 
-const schema = z.object({
+const createSchema = z.object({
   accountId: z.string().min(1, 'Conta é obrigatória'),
-  categoryId: z.string().min(1, 'Categoria é obrigatória'),
+  categoryId: z.string().optional(),
   type: z.enum(['Income', 'Expense', 'Transfer']),
   amount: z.number(),
   description: z.string().optional(),
   date: z.string().min(1, 'Data é obrigatória'),
-  toAccountId: z.string().optional(),
+  destinationAccountId: z.string().optional(),
 })
 
-type FormData = z.infer<typeof schema>
+const updateSchema = z.object({
+  amount: z.number(),
+  date: z.string().min(1, 'Data é obrigatória'),
+  categoryId: z.string().optional(),
+  description: z.string().optional(),
+})
+
+type CreateFormData = z.infer<typeof createSchema>
+type UpdateFormData = z.infer<typeof updateSchema>
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
@@ -92,8 +100,8 @@ export function TransactionsPage() {
   const [editTarget, setEditTarget] = useState<Transaction | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema),
+  const createForm = useForm<CreateFormData>({
+    resolver: zodResolver(createSchema),
     defaultValues: {
       accountId: '',
       categoryId: '',
@@ -101,39 +109,50 @@ export function TransactionsPage() {
       amount: 0,
       description: '',
       date: new Date().toISOString().split('T')[0],
-      toAccountId: '',
+      destinationAccountId: '',
     },
   })
 
-  const watchType = form.watch('type')
+  const editForm = useForm<UpdateFormData>({
+    resolver: zodResolver(updateSchema),
+    defaultValues: {
+      amount: 0,
+      date: new Date().toISOString().split('T')[0],
+      categoryId: '',
+      description: '',
+    },
+  })
+
+  const watchType = createForm.watch('type')
 
   const filteredCategories = categories?.filter((c) => {
     if (watchType === 'Transfer') return true
     return c.type === watchType
   }) || []
 
-  const handleCreate = async (data: FormData) => {
+  const handleCreate = async (data: CreateFormData) => {
     try {
       await createTransaction.mutateAsync({
         ...data,
-        toAccountId: data.toAccountId || undefined,
+        categoryId: data.categoryId || undefined,
+        destinationAccountId: data.destinationAccountId || undefined,
         description: data.description || undefined,
       })
       setCreateOpen(false)
-      form.reset()
+      createForm.reset()
     } catch {
       // handled by query client
     }
   }
 
-  const handleEdit = async (data: FormData) => {
+  const handleEdit = async (data: UpdateFormData) => {
     if (!editTarget) return
     try {
       await updateTransaction.mutateAsync({
         id: editTarget.id,
         data: {
           ...data,
-          toAccountId: data.toAccountId || undefined,
+          categoryId: data.categoryId || undefined,
           description: data.description || undefined,
         },
       })
@@ -155,14 +174,11 @@ export function TransactionsPage() {
 
   const openEdit = (transaction: Transaction) => {
     setEditTarget(transaction)
-    form.reset({
-      accountId: transaction.accountId,
-      categoryId: transaction.categoryId,
-      type: transaction.type,
+    editForm.reset({
       amount: transaction.amount,
+      date: transaction.date,
+      categoryId: transaction.categoryId || '',
       description: transaction.description || '',
-      date: transaction.date.split('T')[0],
-      toAccountId: transaction.toAccountId || '',
     })
   }
 
@@ -174,14 +190,14 @@ export function TransactionsPage() {
     <div>
       <PageHeader title="Transações" action={
         <Button appearance="primary" icon={<AddFilled />} onClick={() => {
-          form.reset({
+          createForm.reset({
             accountId: '',
             categoryId: '',
             type: 'Expense',
             amount: 0,
             description: '',
             date: new Date().toISOString().split('T')[0],
-            toAccountId: '',
+            destinationAccountId: '',
           })
           setCreateOpen(true)
         }}>
@@ -264,10 +280,10 @@ export function TransactionsPage() {
                     <Text size={200}>{transaction.description || '-'}</Text>
                   </TableCell>
                   <TableCell>
-                    <Text size={200}>{transaction.category?.name || '-'}</Text>
+                    <Text size={200}>{transaction.categoryName || '-'}</Text>
                   </TableCell>
                   <TableCell>
-                    <Text size={200}>{transaction.account?.name || '-'}</Text>
+                    <Text size={200}>{transaction.accountName || '-'}</Text>
                   </TableCell>
                   <TableCell>
                     <CurrencyBadge
@@ -318,19 +334,17 @@ export function TransactionsPage() {
       )}
 
       <Dialog
-        open={createOpen || !!editTarget}
-        onOpenChange={(_, data) => {
-          if (!data.open) { setCreateOpen(false); setEditTarget(null) }
-        }}
+        open={createOpen}
+        onOpenChange={(_, data) => { if (!data.open) setCreateOpen(false) }}
       >
         <DialogSurface>
           <DialogBody>
-            <DialogTitle>{editTarget ? 'Editar Transação' : 'Nova Transação'}</DialogTitle>
+            <DialogTitle>Nova Transação</DialogTitle>
             <DialogContent>
               <div className="space-y-4 mt-2">
                 <Controller
                   name="type"
-                  control={form.control}
+                  control={createForm.control}
                   render={({ field }) => (
                     <Field label="Tipo" required>
                       <Select {...field}>
@@ -346,13 +360,11 @@ export function TransactionsPage() {
 
                 <Controller
                   name="accountId"
-                  control={form.control}
+                  control={createForm.control}
                   render={({ field }) => (
-                    <Field
-                      label="Conta"
-                      required
-                      validationState={form.formState.errors.accountId ? 'error' : undefined}
-                      validationMessage={form.formState.errors.accountId?.message}
+                    <Field label="Conta" required
+                      validationState={createForm.formState.errors.accountId ? 'error' : undefined}
+                      validationMessage={createForm.formState.errors.accountId?.message}
                     >
                       <Select {...field} value={field.value || ''}>
                         <option value="">Selecione uma conta</option>
@@ -366,13 +378,13 @@ export function TransactionsPage() {
 
                 {watchType === 'Transfer' && (
                   <Controller
-                    name="toAccountId"
-                    control={form.control}
+                    name="destinationAccountId"
+                    control={createForm.control}
                     render={({ field }) => (
                       <Field label="Conta de Destino">
                         <Select {...field} value={field.value || ''}>
                           <option value="">Selecione uma conta</option>
-                          {activeAccounts.filter((a) => a.id !== form.watch('accountId')).map((a) => (
+                          {activeAccounts.filter((a) => a.id !== createForm.watch('accountId')).map((a) => (
                             <option key={a.id} value={a.id}>{a.name}</option>
                           ))}
                         </Select>
@@ -383,14 +395,9 @@ export function TransactionsPage() {
 
                 <Controller
                   name="categoryId"
-                  control={form.control}
+                  control={createForm.control}
                   render={({ field }) => (
-                    <Field
-                      label="Categoria"
-                      required
-                      validationState={form.formState.errors.categoryId ? 'error' : undefined}
-                      validationMessage={form.formState.errors.categoryId?.message}
-                    >
+                    <Field label="Categoria">
                       <Select {...field} value={field.value || ''}>
                         <option value="">Selecione uma categoria</option>
                         {filteredCategories.map((c) => (
@@ -403,13 +410,11 @@ export function TransactionsPage() {
 
                 <Controller
                   name="amount"
-                  control={form.control}
+                  control={createForm.control}
                   render={({ field: { onChange, value, ...rest } }) => (
-                    <Field
-                      label="Valor"
-                      required
-                      validationState={form.formState.errors.amount ? 'error' : undefined}
-                      validationMessage={form.formState.errors.amount?.message}
+                    <Field label="Valor" required
+                      validationState={createForm.formState.errors.amount ? 'error' : undefined}
+                      validationMessage={createForm.formState.errors.amount?.message}
                     >
                       <Input
                         type="number"
@@ -425,13 +430,11 @@ export function TransactionsPage() {
 
                 <Controller
                   name="date"
-                  control={form.control}
+                  control={createForm.control}
                   render={({ field }) => (
-                    <Field
-                      label="Data"
-                      required
-                      validationState={form.formState.errors.date ? 'error' : undefined}
-                      validationMessage={form.formState.errors.date?.message}
+                    <Field label="Data" required
+                      validationState={createForm.formState.errors.date ? 'error' : undefined}
+                      validationMessage={createForm.formState.errors.date?.message}
                     >
                       <Input {...field} type="date" />
                     </Field>
@@ -440,7 +443,7 @@ export function TransactionsPage() {
 
                 <Controller
                   name="description"
-                  control={form.control}
+                  control={createForm.control}
                   render={({ field }) => (
                     <Field label="Descrição">
                       <Input {...field} placeholder="Descrição opcional" />
@@ -452,14 +455,94 @@ export function TransactionsPage() {
             <DialogActions>
               <Button
                 appearance="primary"
-                onClick={editTarget ? form.handleSubmit(handleEdit as () => Promise<void>) : form.handleSubmit(handleCreate as () => Promise<void>)}
-                disabled={createTransaction.isPending || updateTransaction.isPending}
+                onClick={createForm.handleSubmit(handleCreate as () => Promise<void>)}
+                disabled={createTransaction.isPending}
               >
-                {createTransaction.isPending || updateTransaction.isPending ? 'Salvando...' : 'Salvar'}
+                {createTransaction.isPending ? 'Salvando...' : 'Salvar'}
               </Button>
-              <Button onClick={() => { setCreateOpen(false); setEditTarget(null) }}>
-                Cancelar
+              <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+
+      <Dialog
+        open={!!editTarget}
+        onOpenChange={(_, data) => { if (!data.open) setEditTarget(null) }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>Editar Transação</DialogTitle>
+            <DialogContent>
+              <div className="space-y-4 mt-2">
+                <Controller
+                  name="amount"
+                  control={editForm.control}
+                  render={({ field: { onChange, value, ...rest } }) => (
+                    <Field label="Valor" required
+                      validationState={editForm.formState.errors.amount ? 'error' : undefined}
+                      validationMessage={editForm.formState.errors.amount?.message}
+                    >
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0,00"
+                        value={String(value ?? '')}
+                        onChange={(_e, data) => onChange(data.value ? Number(data.value) : 0)}
+                        {...rest}
+                      />
+                    </Field>
+                  )}
+                />
+
+                <Controller
+                  name="date"
+                  control={editForm.control}
+                  render={({ field }) => (
+                    <Field label="Data" required
+                      validationState={editForm.formState.errors.date ? 'error' : undefined}
+                      validationMessage={editForm.formState.errors.date?.message}
+                    >
+                      <Input {...field} type="date" />
+                    </Field>
+                  )}
+                />
+
+                <Controller
+                  name="categoryId"
+                  control={editForm.control}
+                  render={({ field }) => (
+                    <Field label="Categoria">
+                      <Select {...field} value={field.value || ''}>
+                        <option value="">Selecione uma categoria</option>
+                        {(categories || []).map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </Select>
+                    </Field>
+                  )}
+                />
+
+                <Controller
+                  name="description"
+                  control={editForm.control}
+                  render={({ field }) => (
+                    <Field label="Descrição">
+                      <Input {...field} placeholder="Descrição opcional" />
+                    </Field>
+                  )}
+                />
+              </div>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                appearance="primary"
+                onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
+                disabled={updateTransaction.isPending}
+              >
+                {updateTransaction.isPending ? 'Salvando...' : 'Salvar'}
               </Button>
+              <Button onClick={() => setEditTarget(null)}>Cancelar</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>

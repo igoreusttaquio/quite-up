@@ -34,7 +34,8 @@ const categoryTypeLabels: Record<CategoryType, string> = {
 const schema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   type: z.enum(['Income', 'Expense']),
-  icon: z.string().optional(),
+  icon: z.string(),
+  color: z.string(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -51,7 +52,7 @@ export function CategoriesPage() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', type: 'Expense', icon: '' },
+    defaultValues: { name: '', type: 'Expense', icon: '', color: '#6b7280' },
   })
 
   const handleCreate = async (data: FormData) => {
@@ -86,7 +87,7 @@ export function CategoriesPage() {
 
   const openEdit = (category: Category) => {
     setEditTarget(category)
-    form.reset({ name: category.name, type: category.type, icon: category.icon || '' })
+    form.reset({ name: category.name, type: category.type, icon: category.icon, color: category.color })
   }
 
   if (isLoading) return <LoadingScreen />
@@ -98,7 +99,7 @@ export function CategoriesPage() {
     <div>
       <PageHeader title="Categorias" action={
         <Button appearance="primary" icon={<AddFilled />} onClick={() => {
-          form.reset({ name: '', type: 'Expense', icon: '' })
+          form.reset({ name: '', type: 'Expense', icon: '', color: '#6b7280' })
           setCreateOpen(true)
         }}>
           Nova Categoria
@@ -111,7 +112,7 @@ export function CategoriesPage() {
           message="Nenhuma categoria cadastrada"
           action={
             <Button appearance="primary" icon={<AddFilled />} onClick={() => {
-              form.reset({ name: '', type: 'Expense', icon: '' })
+              form.reset({ name: '', type: 'Expense', icon: '', color: '#6b7280' })
               setCreateOpen(true)
             }}>
               Criar Categoria
@@ -169,10 +170,7 @@ export function CategoriesPage() {
       <Dialog
         open={createOpen || !!editTarget}
         onOpenChange={(_, data) => {
-          if (!data.open) {
-            setCreateOpen(false)
-            setEditTarget(null)
-          }
+          if (!data.open) { setCreateOpen(false); setEditTarget(null) }
         }}
       >
         <DialogSurface>
@@ -184,9 +182,7 @@ export function CategoriesPage() {
                   name="name"
                   control={form.control}
                   render={({ field }) => (
-                    <Field
-                      label="Nome"
-                      required
+                    <Field label="Nome" required
                       validationState={form.formState.errors.name ? 'error' : undefined}
                       validationMessage={form.formState.errors.name?.message}
                     >
@@ -198,18 +194,11 @@ export function CategoriesPage() {
                   name="type"
                   control={form.control}
                   render={({ field }) => (
-                    <Field
-                      label="Tipo"
-                      required
-                      validationState={form.formState.errors.type ? 'error' : undefined}
-                      validationMessage={form.formState.errors.type?.message}
-                    >
+                    <Field label="Tipo" required>
                       <Select {...field} disabled={!!editTarget}>
                         {(Object.entries(categoryTypeLabels) as [CategoryType, string][]).map(
                           ([value, label]) => (
-                            <option key={value} value={value}>
-                              {label}
-                            </option>
+                            <option key={value} value={value}>{label}</option>
                           )
                         )}
                       </Select>
@@ -220,12 +209,23 @@ export function CategoriesPage() {
                   name="icon"
                   control={form.control}
                   render={({ field }) => (
-                    <Field
-                      label="Ícone"
-                      validationState={form.formState.errors.icon ? 'error' : undefined}
-                      validationMessage={form.formState.errors.icon?.message}
-                    >
-                      <Input {...field} placeholder="Nome do ícone (opcional)" />
+                    <Field label="Ícone">
+                      <Input {...field} placeholder="Nome do ícone" />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="color"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field label="Cor">
+                      <input
+                        type="color"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="w-full h-10 rounded border cursor-pointer"
+                        style={{ borderColor: 'var(--colorNeutralStroke1)', backgroundColor: 'var(--colorNeutralBackground1)' }}
+                      />
                     </Field>
                   )}
                 />
@@ -234,7 +234,7 @@ export function CategoriesPage() {
             <DialogActions>
               <Button
                 appearance="primary"
-                onClick={editTarget ? form.handleSubmit(handleEdit) : form.handleSubmit(handleCreate)}
+                onClick={editTarget ? form.handleSubmit(handleEdit as () => Promise<void>) : form.handleSubmit(handleCreate as () => Promise<void>)}
                 disabled={createCategory.isPending || updateCategory.isPending}
               >
                 {createCategory.isPending || updateCategory.isPending ? 'Salvando...' : 'Salvar'}
@@ -273,7 +273,12 @@ function CategoryCard({
   return (
     <Card className="w-full">
       <CardHeader
-        header={<Text weight="semibold">{category.name}</Text>}
+        header={
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
+            <Text weight="semibold">{category.name}</Text>
+          </div>
+        }
         action={
           <div className="flex gap-1">
             {!category.isDefault && (

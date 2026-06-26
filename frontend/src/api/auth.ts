@@ -6,14 +6,14 @@ import type {
   ResetPasswordRequest,
   VerifyEmailRequest,
   ResendVerificationRequest,
-  AuthResponse,
+  LoginResponse,
 } from '../types'
 
 export const authApi = {
-  login: (data: LoginRequest) => api.post<AuthResponse>('/auth/login', data),
+  login: (data: LoginRequest) => api.post<LoginResponse>('/auth/login', data),
   register: (data: RegisterRequest) => api.post<void>('/auth/register', data),
   logout: () => api.post<void>('/auth/logout'),
-  refreshToken: () => api.post<AuthResponse>('/auth/refresh-token'),
+  refreshToken: () => api.post<LoginResponse>('/auth/refresh'),
   verifyEmail: (data: VerifyEmailRequest) => api.post<void>('/auth/verify-email', data),
   resendVerification: (data: ResendVerificationRequest) => api.post<void>('/auth/resend-verification', data),
   forgotPassword: (data: ForgotPasswordRequest) => api.post<void>('/auth/forgot-password', data),

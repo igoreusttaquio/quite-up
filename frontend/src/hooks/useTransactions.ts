@@ -11,14 +11,6 @@ export function useTransactions(filters?: TransactionFilters) {
   })
 }
 
-export function useTransaction(id: string) {
-  return useQuery({
-    queryKey: [...TRANSACTIONS_KEY, id] as const,
-    queryFn: () => transactionsApi.getById(id).then((r) => r.data),
-    enabled: !!id,
-  })
-}
-
 export function useCreateTransaction() {
   const queryClient = useQueryClient()
 

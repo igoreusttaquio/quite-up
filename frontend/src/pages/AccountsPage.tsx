@@ -19,7 +19,7 @@ import {
   Tag,
 } from '@fluentui/react-components'
 import { AddFilled, EditFilled, DeleteFilled, MoneyFilled } from '@fluentui/react-icons'
-import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount } from '../hooks/useAccounts'
+import { useAccounts, useCreateAccount, useUpdateAccount, useDeactivateAccount } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { LoadingScreen } from '../components/LoadingScreen'
@@ -28,24 +28,21 @@ import { CurrencyBadge } from '../components/CurrencyBadge'
 import type { AccountType, Account } from '../types'
 
 const accountTypeLabels: Record<AccountType, string> = {
-  Checking: 'Conta Corrente',
+  CheckingAccount: 'Conta Corrente',
   Savings: 'Poupança',
-  CreditCard: 'Cartão de Crédito',
-  Investment: 'Investimento',
-  Cash: 'Dinheiro',
+  Wallet: 'Carteira',
   Other: 'Outro',
 }
 
 const createSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  type: z.enum(['Checking', 'Savings', 'CreditCard', 'Investment', 'Cash', 'Other']),
-  balance: z.number(),
-  description: z.string().optional(),
+  type: z.enum(['CheckingAccount', 'Savings', 'Wallet', 'Other']),
+  initialBalance: z.number(),
 })
 
 const updateSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  description: z.string().optional(),
+  type: z.enum(['CheckingAccount', 'Savings', 'Wallet', 'Other']),
 })
 
 type CreateFormData = z.infer<typeof createSchema>
@@ -55,7 +52,7 @@ export function AccountsPage() {
   const { data: accounts, isLoading } = useAccounts()
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
-  const deleteAccount = useDeleteAccount()
+  const deactivateAccount = useDeactivateAccount()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Account | null>(null)
@@ -63,12 +60,12 @@ export function AccountsPage() {
 
   const createForm = useForm<CreateFormData>({
     resolver: zodResolver(createSchema),
-    defaultValues: { name: '', type: 'Checking', balance: 0, description: '' },
+    defaultValues: { name: '', type: 'CheckingAccount', initialBalance: 0 },
   })
 
   const editForm = useForm<UpdateFormData>({
     resolver: zodResolver(updateSchema),
-    defaultValues: { name: '', description: '' },
+    defaultValues: { name: '', type: 'CheckingAccount' },
   })
 
   const handleCreate = async (data: CreateFormData) => {
@@ -91,10 +88,10 @@ export function AccountsPage() {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDeactivate = async () => {
     if (!deleteTarget) return
     try {
-      await deleteAccount.mutateAsync(deleteTarget.id)
+      await deactivateAccount.mutateAsync(deleteTarget.id)
       setDeleteTarget(null)
     } catch {
       // handled by query client
@@ -103,7 +100,7 @@ export function AccountsPage() {
 
   const openEdit = (account: Account) => {
     setEditTarget(account)
-    editForm.reset({ name: account.name, description: account.description || '' })
+    editForm.reset({ name: account.name, type: account.type })
   }
 
   if (isLoading) return <LoadingScreen />
@@ -157,11 +154,6 @@ export function AccountsPage() {
                   }
                 />
                 <CurrencyBadge value={account.balance} />
-                {account.description && (
-                  <Text size={200} style={{ color: 'var(--colorNeutralForeground3)' }}>
-                    {account.description}
-                  </Text>
-                )}
               </Card>
             ))}
         </div>
@@ -177,9 +169,7 @@ export function AccountsPage() {
                   name="name"
                   control={createForm.control}
                   render={({ field }) => (
-                    <Field
-                      label="Nome"
-                      required
+                    <Field label="Nome" required
                       validationState={createForm.formState.errors.name ? 'error' : undefined}
                       validationMessage={createForm.formState.errors.name?.message}
                     >
@@ -195,9 +185,7 @@ export function AccountsPage() {
                       <Select {...field}>
                         {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(
                           ([value, label]) => (
-                            <option key={value} value={value}>
-                              {label}
-                            </option>
+                            <option key={value} value={value}>{label}</option>
                           )
                         )}
                       </Select>
@@ -205,7 +193,7 @@ export function AccountsPage() {
                   )}
                 />
                 <Controller
-                  name="balance"
+                  name="initialBalance"
                   control={createForm.control}
                   render={({ field: { onChange, value, ...rest } }) => (
                     <Field label="Saldo Inicial" required>
@@ -217,15 +205,6 @@ export function AccountsPage() {
                         onChange={(_e, data) => onChange(data.value ? Number(data.value) : 0)}
                         {...rest}
                       />
-                    </Field>
-                  )}
-                />
-                <Controller
-                  name="description"
-                  control={createForm.control}
-                  render={({ field }) => (
-                    <Field label="Descrição">
-                      <Input {...field} placeholder="Descrição opcional" />
                     </Field>
                   )}
                 />
@@ -260,9 +239,7 @@ export function AccountsPage() {
                   name="name"
                   control={editForm.control}
                   render={({ field }) => (
-                    <Field
-                      label="Nome"
-                      required
+                    <Field label="Nome" required
                       validationState={editForm.formState.errors.name ? 'error' : undefined}
                       validationMessage={editForm.formState.errors.name?.message}
                     >
@@ -271,11 +248,17 @@ export function AccountsPage() {
                   )}
                 />
                 <Controller
-                  name="description"
+                  name="type"
                   control={editForm.control}
                   render={({ field }) => (
-                    <Field label="Descrição">
-                      <Input {...field} />
+                    <Field label="Tipo" required>
+                      <Select {...field}>
+                        {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(
+                          ([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          )
+                        )}
+                      </Select>
                     </Field>
                   )}
                 />
@@ -302,8 +285,8 @@ export function AccountsPage() {
         message={`Tem certeza que deseja desativar a conta "${deleteTarget?.name}"?`}
         confirmText="Desativar"
         destructive
-        onConfirm={handleDelete}
-        loading={deleteAccount.isPending}
+        onConfirm={handleDeactivate}
+        loading={deactivateAccount.isPending}
       />
     </div>
   )
