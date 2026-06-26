@@ -73,6 +73,14 @@ services:
     depends_on:
       - api
 
+  dozzle:
+    image: amir20/dozzle:latest
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "9999:8080"
+
 volumes:
   postgres_data:
   rabbitmq_data:
