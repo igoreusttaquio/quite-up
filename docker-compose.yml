@@ -50,6 +50,10 @@ services:
       Jwt__RefreshTokenExpiryDays: ${JWT_REFRESH_TOKEN_EXPIRY_DAYS:-7}
       Hashids__Salt: ${HASHIDS_SALT}
       Hashids__MinLength: ${HASHIDS_MIN_LENGTH:-8}
+      RabbitMQ__Host: ${RABBITMQ_HOST:-rabbitmq}
+      RabbitMQ__Port: ${RABBITMQ_PORT:-5672}
+      RabbitMQ__User: ${RABBITMQ_USER:-guest}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
       Smtp__Host: ${SMTP_HOST}
       Smtp__Port: ${SMTP_PORT:-587}
       Smtp__User: ${SMTP_USER}
