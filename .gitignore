@@ -1,0 +1,37 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.DotSettings.user
+*.nupkg
+**/appsettings.Development.json
+**/appsettings.Local.json
+
+# EF Core
+**/Migrations/*Designer.cs
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+
+# Node / Frontend
+node_modules/
+dist/
+.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JetBrains
+.idea/
+*.iml
+
+# Docker override
+docker-compose.override.yml

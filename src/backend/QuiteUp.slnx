@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="QuiteUp.Api/QuiteUp.Api.csproj" />
+  <Project Path="QuiteUp.Application/QuiteUp.Application.csproj" />
+  <Project Path="QuiteUp.Domain/QuiteUp.Domain.csproj" />
+  <Project Path="QuiteUp.Infrastructure/QuiteUp.Infrastructure.csproj" />
+</Solution>
