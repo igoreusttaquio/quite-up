@@ -86,30 +86,8 @@ _ = Task.Run(async () =>
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<QuiteUp.Infrastructure.Persistence.ApplicationDbContext>();
 
-            var infraAssembly = typeof(QuiteUp.Infrastructure.Persistence.ApplicationDbContext).Assembly;
-            var dbCtxRuntimeType = db.GetType();
-            var migrationDetails = infraAssembly.GetTypes()
-                .Where(t => t.IsSubclassOf(typeof(Microsoft.EntityFrameworkCore.Migrations.Migration)) && !t.IsAbstract)
-                .Select(t => {
-                    var attr = t.GetCustomAttribute<Microsoft.EntityFrameworkCore.Infrastructure.DbContextAttribute>();
-                    var attrCtxType = attr?.ContextType;
-                    var match = attrCtxType == dbCtxRuntimeType;
-                    return $"{t.Name}[attrCtx={attrCtxType?.FullName},dbCtx={dbCtxRuntimeType.FullName},match={match}]";
-                })
-                .ToList();
-            Log.Information("Migration class details ({Count}): {Details}", migrationDetails.Count, string.Join(" | ", migrationDetails));
-
-            var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
-            Log.Information("Pending migrations ({Count}): {Migrations}", pending.Count, string.Join(", ", pending));
-
-            if (pending.Count > 0)
-            {
-                var strategy = db.Database.CreateExecutionStrategy();
-                await strategy.ExecuteAsync(async () => await db.Database.MigrateAsync());
-            }
-
-            var applied = (await db.Database.GetAppliedMigrationsAsync()).ToList();
-            Log.Information("Applied migrations ({Count}): {Migrations}", applied.Count, string.Join(", ", applied));
+            var strategy = db.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () => await db.Database.MigrateAsync());
 
             await QuiteUp.Infrastructure.Persistence.DatabaseSeeder.SeedAsync(db);
             Log.Information("Database migrations and seeding completed successfully");
