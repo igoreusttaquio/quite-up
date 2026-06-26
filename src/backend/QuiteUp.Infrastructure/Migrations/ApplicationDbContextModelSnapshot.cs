@@ -63,12 +63,12 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_accounts");
+                        .HasName("p_k_accounts");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ix_accounts_user_id");
+                        .HasDatabaseName("i_x_accounts_user_id");
 
-                    b.ToTable("accounts", (string)null);
+                    b.ToTable("accounts");
                 });
 
             modelBuilder.Entity("QuiteUp.Domain.Entities.Category", b =>
@@ -119,15 +119,15 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_categories");
+                        .HasName("p_k_categories");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ix_categories_user_id");
+                        .HasDatabaseName("i_x_categories_user_id");
 
                     b.HasIndex("UserId", "IsDefault")
-                        .HasDatabaseName("ix_categories_user_id_is_default");
+                        .HasDatabaseName("i_x_categories_user_id_is_default");
 
-                    b.ToTable("categories", (string)null);
+                    b.ToTable("categories");
                 });
 
             modelBuilder.Entity("QuiteUp.Domain.Entities.EmailVerificationToken", b =>
@@ -170,15 +170,15 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_email_verification_tokens");
+                        .HasName("p_k_email_verification_tokens");
 
                     b.HasIndex("TokenHash")
-                        .HasDatabaseName("ix_email_verification_tokens_token_hash");
+                        .HasDatabaseName("i_x_email_verification_tokens_token_hash");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ix_email_verification_tokens_user_id");
+                        .HasDatabaseName("i_x_email_verification_tokens_user_id");
 
-                    b.ToTable("email_verification_tokens", (string)null);
+                    b.ToTable("email_verification_tokens");
                 });
 
             modelBuilder.Entity("QuiteUp.Domain.Entities.PasswordResetToken", b =>
@@ -217,15 +217,15 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_password_reset_tokens");
+                        .HasName("p_k_password_reset_tokens");
 
                     b.HasIndex("TokenHash")
-                        .HasDatabaseName("ix_password_reset_tokens_token_hash");
+                        .HasDatabaseName("i_x_password_reset_tokens_token_hash");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ix_password_reset_tokens_user_id");
+                        .HasDatabaseName("i_x_password_reset_tokens_user_id");
 
-                    b.ToTable("password_reset_tokens", (string)null);
+                    b.ToTable("password_reset_tokens");
                 });
 
             modelBuilder.Entity("QuiteUp.Domain.Entities.RefreshToken", b =>
@@ -268,15 +268,15 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_refresh_tokens");
+                        .HasName("p_k_refresh_tokens");
 
                     b.HasIndex("TokenHash")
-                        .HasDatabaseName("ix_refresh_tokens_token_hash");
+                        .HasDatabaseName("i_x_refresh_tokens_token_hash");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ix_refresh_tokens_user_id");
+                        .HasDatabaseName("i_x_refresh_tokens_user_id");
 
-                    b.ToTable("refresh_tokens", (string)null);
+                    b.ToTable("refresh_tokens");
                 });
 
             modelBuilder.Entity("QuiteUp.Domain.Entities.Transaction", b =>
@@ -331,21 +331,21 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_transactions");
+                        .HasName("p_k_transactions");
 
                     b.HasIndex("CategoryId")
-                        .HasDatabaseName("ix_transactions_category_id");
+                        .HasDatabaseName("i_x_transactions_category_id");
 
                     b.HasIndex("DestinationAccountId")
-                        .HasDatabaseName("ix_transactions_destination_account_id");
+                        .HasDatabaseName("i_x_transactions_destination_account_id");
 
                     b.HasIndex("UserId")
-                        .HasDatabaseName("ix_transactions_user_id");
+                        .HasDatabaseName("i_x_transactions_user_id");
 
                     b.HasIndex("AccountId", "Date")
-                        .HasDatabaseName("ix_transactions_account_id_date");
+                        .HasDatabaseName("i_x_transactions_account_id_date");
 
-                    b.ToTable("transactions", (string)null);
+                    b.ToTable("transactions");
                 });
 
             modelBuilder.Entity("QuiteUp.Domain.Entities.User", b =>
@@ -401,13 +401,13 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
-                        .HasName("pk_users");
+                        .HasName("p_k_users");
 
                     b.HasIndex("Email")
                         .IsUnique()
-                        .HasDatabaseName("ix_users_email");
+                        .HasDatabaseName("i_x_users_email");
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("users");
                 });
 
             modelBuilder.Entity("QuiteUp.Domain.Entities.Account", b =>
@@ -417,7 +417,7 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_accounts_users_user_id");
+                        .HasConstraintName("f_k_accounts__users_user_id");
 
                     b.Navigation("User");
                 });
@@ -428,7 +428,7 @@ namespace QuiteUp.Infrastructure.Migrations
                         .WithMany("Categories")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("fk_categories_users_user_id");
+                        .HasConstraintName("f_k_categories__users_user_id");
 
                     b.Navigation("User");
                 });
@@ -440,7 +440,7 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_email_verification_tokens_users_user_id");
+                        .HasConstraintName("f_k_email_verification_tokens__users_user_id");
 
                     b.Navigation("User");
                 });
@@ -452,7 +452,7 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_password_reset_tokens_users_user_id");
+                        .HasConstraintName("f_k_password_reset_tokens__users_user_id");
 
                     b.Navigation("User");
                 });
@@ -464,7 +464,7 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_refresh_tokens_users_user_id");
+                        .HasConstraintName("f_k_refresh_tokens__users_user_id");
 
                     b.Navigation("User");
                 });
@@ -476,19 +476,19 @@ namespace QuiteUp.Infrastructure.Migrations
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_transactions_accounts_account_id");
+                        .HasConstraintName("f_k_transactions_accounts_account_id");
 
                     b.HasOne("QuiteUp.Domain.Entities.Category", "Category")
                         .WithMany("Transactions")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_transactions_categories_category_id");
+                        .HasConstraintName("f_k_transactions_categories_category_id");
 
                     b.HasOne("QuiteUp.Domain.Entities.Account", "DestinationAccount")
                         .WithMany("IncomingTransfers")
                         .HasForeignKey("DestinationAccountId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_transactions_accounts_destination_account_id");
+                        .HasConstraintName("f_k_transactions_accounts_destination_account_id");
 
                     b.Navigation("Account");
 
