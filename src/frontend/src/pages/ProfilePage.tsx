@@ -1,8 +1,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { motion } from 'framer-motion'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { Button, Input, Card, CardContent, CardHeader, CardTitle } from '@heroui/react'
 import { profileApi } from '../api/profile'
 import { useAuthStore } from '../stores/auth'
 
@@ -11,12 +13,20 @@ const emailSchema = z.object({ email: z.string().email(), currentPassword: z.str
 const passwordSchema = z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(8).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/), confirmNewPassword: z.string() })
   .refine((d) => d.newPassword === d.confirmNewPassword, { message: 'Senhas não conferem', path: ['confirmNewPassword'] })
 
-function SectionCard({ title, children, danger }: { title: string; children: React.ReactNode; danger?: boolean }) {
+function SectionCard({ title, children, danger, icon }: { title: string; children: React.ReactNode; danger?: boolean; icon?: string }) {
   return (
-    <div className={`bg-white rounded-xl shadow-sm border ${danger ? 'border-red-200' : 'border-gray-200'} p-6`}>
-      <h2 className={`text-lg font-semibold mb-4 ${danger ? 'text-red-600' : 'text-gray-900'}`}>{title}</h2>
-      {children}
-    </div>
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+      <Card className={`border-0 shadow-lg shadow-gray-200/50 overflow-hidden ${danger ? 'border-l-4 border-l-red-500' : ''}`}>
+        <div className={`h-1 ${danger ? 'bg-gradient-to-r from-red-500 to-rose-400' : 'bg-gradient-to-r from-violet-500 to-indigo-600'}`} />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {icon && <span>{icon}</span>}
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>{children}</CardContent>
+      </Card>
+    </motion.div>
   )
 }
 
@@ -36,44 +46,51 @@ export function ProfilePage() {
   const deleteAccount = useMutation({ mutationFn: (password: string) => profileApi.deleteAccount(password), onSuccess: () => { logout(); navigate('/login') } })
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Perfil</h1>
-      <SectionCard title="Nome">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Perfil</h1>
+        <p className="text-gray-500 text-sm mt-1">Gerencie suas informações pessoais</p>
+      </div>
+
+      <SectionCard title="Nome" icon="✏️">
         <form onSubmit={nameForm.handleSubmit((d) => updateName.mutate(d))} className="flex gap-3">
-          <input className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" {...nameForm.register('name')} />
-          <button type="submit" disabled={updateName.isPending} className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-            {updateName.isPending ? 'Salvando...' : 'Salvar'}
-          </button>
+          <div className="flex-1">
+            <Input {...nameForm.register('name')} />
+          </div>
+          <Button type="submit" variant="primary" isDisabled={updateName.isPending}
+            className="bg-gradient-to-r from-violet-600 to-indigo-600">Salvar</Button>
         </form>
       </SectionCard>
-      <SectionCard title="Email">
-        <p className="text-sm text-gray-500 mb-3">Email atual: {user?.email}</p>
+
+      <SectionCard title="Email" icon="📧">
+        <p className="text-sm text-gray-500 mb-3">Email atual: <span className="font-medium text-gray-700">{user?.email}</span></p>
         <form onSubmit={emailForm.handleSubmit((d) => changeEmail.mutate(d))} className="space-y-3">
-          <input placeholder="Novo email" type="email" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" {...emailForm.register('email')} />
-          <input placeholder="Senha atual" type="password" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" {...emailForm.register('currentPassword')} />
-          <button type="submit" disabled={changeEmail.isPending} className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-            {changeEmail.isPending ? 'Alterando...' : 'Alterar email'}
-          </button>
+          <Input placeholder="Novo email" type="email" {...emailForm.register('email')} />
+          <Input placeholder="Senha atual" type="password" {...emailForm.register('currentPassword')} />
+          <Button type="submit" variant="primary" isDisabled={changeEmail.isPending}
+            className="bg-gradient-to-r from-violet-600 to-indigo-600">Alterar email</Button>
         </form>
       </SectionCard>
-      <SectionCard title="Senha">
+
+      <SectionCard title="Senha" icon="🔒">
         <form onSubmit={passwordForm.handleSubmit((d) => changePassword.mutate(d))} className="space-y-3">
-          <input placeholder="Senha atual" type="password" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" {...passwordForm.register('currentPassword')} />
-          <input placeholder="Nova senha" type="password" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" {...passwordForm.register('newPassword')} />
-          <input placeholder="Confirmar nova senha" type="password" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" {...passwordForm.register('confirmNewPassword')} />
-          <button type="submit" disabled={changePassword.isPending} className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-            {changePassword.isPending ? 'Alterando...' : 'Alterar senha'}
-          </button>
+          <Input placeholder="Senha atual" type="password" {...passwordForm.register('currentPassword')} />
+          <Input placeholder="Nova senha" type="password" {...passwordForm.register('newPassword')} />
+          <Input placeholder="Confirmar nova senha" type="password" {...passwordForm.register('confirmNewPassword')} />
+          <Button type="submit" variant="primary" isDisabled={changePassword.isPending}
+            className="bg-gradient-to-r from-violet-600 to-indigo-600">Alterar senha</Button>
         </form>
       </SectionCard>
-      <SectionCard title="Zona de perigo" danger>
-        <p className="text-sm text-gray-500 mb-3">Todos os seus dados serão excluídos permanentemente.</p>
-        <button onClick={() => { const pwd = prompt('Digite sua senha:'); if (pwd) deleteAccount.mutate(pwd) }}
-          disabled={deleteAccount.isPending}
-          className="px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50">
-          {deleteAccount.isPending ? 'Excluindo...' : 'Excluir minha conta'}
-        </button>
+
+      <SectionCard title="Excluir conta" icon="⚠️" danger>
+        <p className="text-sm text-gray-500 mb-3">Todos os seus dados serão excluídos permanentemente. Essa ação não pode ser desfeita.</p>
+        <Button variant="outline"
+          onPress={() => { const pwd = prompt('Digite sua senha para confirmar:'); if (pwd) deleteAccount.mutate(pwd) }}
+          isDisabled={deleteAccount.isPending}
+          className="text-red-600 border-red-300 hover:bg-red-50">
+          Excluir minha conta
+        </Button>
       </SectionCard>
-    </div>
+    </motion.div>
   )
 }
