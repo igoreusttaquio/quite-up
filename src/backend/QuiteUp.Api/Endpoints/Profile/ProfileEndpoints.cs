@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Features.Profile.Commands.ChangeEmail;
 using QuiteUp.Application.Features.Profile.Commands.ChangePassword;
