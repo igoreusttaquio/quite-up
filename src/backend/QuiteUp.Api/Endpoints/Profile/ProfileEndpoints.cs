@@ -41,7 +41,7 @@ public class ProfileEndpoints : IEndpoint
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);
         });
 
-        group.MapDelete("/", async (DeleteAccountRequest req, ISender sender) =>
+        group.MapDelete("/", async ([FromBody] DeleteAccountRequest req, ISender sender) =>
         {
             var result = await sender.Send(new DeleteUserAccountCommand(req.Password));
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);
