@@ -30,7 +30,7 @@ namespace QuiteUp.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("p_k_users", x => x.id);
+                    table.PrimaryKey("PK_users", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -49,9 +49,9 @@ namespace QuiteUp.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("p_k_accounts", x => x.id);
+                    table.PrimaryKey("PK_accounts", x => x.id);
                     table.ForeignKey(
-                        name: "f_k_accounts__users_user_id",
+                        name: "FK_accounts_users_user_id",
                         column: x => x.user_id,
                         principalTable: "users",
                         principalColumn: "id",
@@ -75,9 +75,9 @@ namespace QuiteUp.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("p_k_categories", x => x.id);
+                    table.PrimaryKey("PK_categories", x => x.id);
                     table.ForeignKey(
-                        name: "f_k_categories__users_user_id",
+                        name: "FK_categories_users_user_id",
                         column: x => x.user_id,
                         principalTable: "users",
                         principalColumn: "id",
@@ -100,9 +100,9 @@ namespace QuiteUp.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("p_k_email_verification_tokens", x => x.id);
+                    table.PrimaryKey("PK_email_verification_tokens", x => x.id);
                     table.ForeignKey(
-                        name: "f_k_email_verification_tokens__users_user_id",
+                        name: "FK_email_verification_tokens_users_user_id",
                         column: x => x.user_id,
                         principalTable: "users",
                         principalColumn: "id",
@@ -124,9 +124,9 @@ namespace QuiteUp.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("p_k_password_reset_tokens", x => x.id);
+                    table.PrimaryKey("PK_password_reset_tokens", x => x.id);
                     table.ForeignKey(
-                        name: "f_k_password_reset_tokens__users_user_id",
+                        name: "FK_password_reset_tokens_users_user_id",
                         column: x => x.user_id,
                         principalTable: "users",
                         principalColumn: "id",
@@ -149,9 +149,9 @@ namespace QuiteUp.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("p_k_refresh_tokens", x => x.id);
+                    table.PrimaryKey("PK_refresh_tokens", x => x.id);
                     table.ForeignKey(
-                        name: "f_k_refresh_tokens__users_user_id",
+                        name: "FK_refresh_tokens_users_user_id",
                         column: x => x.user_id,
                         principalTable: "users",
                         principalColumn: "id",
@@ -177,21 +177,21 @@ namespace QuiteUp.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("p_k_transactions", x => x.id);
+                    table.PrimaryKey("PK_transactions", x => x.id);
                     table.ForeignKey(
-                        name: "f_k_transactions_accounts_account_id",
+                        name: "FK_transactions_accounts_account_id",
                         column: x => x.account_id,
                         principalTable: "accounts",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "f_k_transactions_accounts_destination_account_id",
+                        name: "FK_transactions_accounts_destination_account_id",
                         column: x => x.destination_account_id,
                         principalTable: "accounts",
                         principalColumn: "id",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "f_k_transactions_categories_category_id",
+                        name: "FK_transactions_categories_category_id",
                         column: x => x.category_id,
                         principalTable: "categories",
                         principalColumn: "id",
@@ -199,72 +199,72 @@ namespace QuiteUp.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "i_x_accounts_user_id",
+                name: "ix_accounts_user_id",
                 table: "accounts",
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_categories_user_id",
+                name: "ix_categories_user_id",
                 table: "categories",
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_categories_user_id_is_default",
+                name: "ix_categories_user_id_is_default",
                 table: "categories",
                 columns: new[] { "user_id", "is_default" });
 
             migrationBuilder.CreateIndex(
-                name: "i_x_email_verification_tokens_token_hash",
+                name: "ix_email_verification_tokens_token_hash",
                 table: "email_verification_tokens",
                 column: "token_hash");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_email_verification_tokens_user_id",
+                name: "IX_email_verification_tokens_user_id",
                 table: "email_verification_tokens",
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_password_reset_tokens_token_hash",
+                name: "ix_password_reset_tokens_token_hash",
                 table: "password_reset_tokens",
                 column: "token_hash");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_password_reset_tokens_user_id",
+                name: "IX_password_reset_tokens_user_id",
                 table: "password_reset_tokens",
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_refresh_tokens_token_hash",
+                name: "ix_refresh_tokens_token_hash",
                 table: "refresh_tokens",
                 column: "token_hash");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_refresh_tokens_user_id",
+                name: "IX_refresh_tokens_user_id",
                 table: "refresh_tokens",
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_transactions_account_id_date",
+                name: "ix_transactions_account_id_date",
                 table: "transactions",
                 columns: new[] { "account_id", "date" });
 
             migrationBuilder.CreateIndex(
-                name: "i_x_transactions_category_id",
+                name: "IX_transactions_category_id",
                 table: "transactions",
                 column: "category_id");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_transactions_destination_account_id",
+                name: "ix_transactions_destination_account_id",
                 table: "transactions",
                 column: "destination_account_id");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_transactions_user_id",
+                name: "ix_transactions_user_id",
                 table: "transactions",
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
-                name: "i_x_users_email",
+                name: "ix_users_email",
                 table: "users",
                 column: "email",
                 unique: true);
