@@ -38,20 +38,23 @@ export function ForgotPasswordPage() {
         <p className="text-gray-500 text-sm mt-1">Digite seu email e enviaremos um link de redefinição.</p>
       </div>
 
-      <Input
-        label="Email"
-        type="email"
-        placeholder="seu@email.com"
-        {...register('email')}
-        isInvalid={!!errors.email}
-        errorMessage={errors.email?.message}
-      />
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Email</label>
+        <Input
+          fullWidth
+          type="email"
+          placeholder="seu@email.com"
+          {...register('email')}
+          className={errors.email ? 'border-red-500' : ''}
+        />
+        {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+      </div>
 
       <Button
         type="submit"
         fullWidth
-        color="primary"
-        isLoading={mutation.isPending}
+        variant="primary"
+        isDisabled={mutation.isPending}
         className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
       >
         Enviar link

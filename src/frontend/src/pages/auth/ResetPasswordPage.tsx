@@ -51,7 +51,7 @@ export function ResetPasswordPage() {
       <Link to="/login">
         <Button
           fullWidth
-          color="primary"
+          variant="primary"
           className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
         >
           Ir para o login
@@ -73,28 +73,35 @@ export function ResetPasswordPage() {
         </div>
       )}
 
-      <Input
-        label="Nova senha"
-        type="password"
-        placeholder="Mínimo 8 caracteres"
-        {...register('password')}
-        isInvalid={!!errors.password}
-        errorMessage={errors.password?.message}
-      />
-      <Input
-        label="Confirmar senha"
-        type="password"
-        placeholder="Repita a nova senha"
-        {...register('confirmPassword')}
-        isInvalid={!!errors.confirmPassword}
-        errorMessage={errors.confirmPassword?.message}
-      />
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Nova senha</label>
+        <Input
+          fullWidth
+          type="password"
+          placeholder="Mínimo 8 caracteres"
+          {...register('password')}
+          className={errors.password ? 'border-red-500' : ''}
+        />
+        {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Confirmar senha</label>
+        <Input
+          fullWidth
+          type="password"
+          placeholder="Repita a nova senha"
+          {...register('confirmPassword')}
+          className={errors.confirmPassword ? 'border-red-500' : ''}
+        />
+        {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}
+      </div>
 
       <Button
         type="submit"
         fullWidth
-        color="primary"
-        isLoading={mutation.isPending}
+        variant="primary"
+        isDisabled={mutation.isPending}
         className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
       >
         Redefinir senha

@@ -37,24 +37,28 @@ export function LoginPage() {
         </div>
       )}
 
-      <Input
-        label="Email"
-        type="email"
-        placeholder="seu@email.com"
-        {...register('email')}
-        isInvalid={!!errors.email}
-        errorMessage={errors.email?.message}
-      />
-
-      <div>
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Email</label>
         <Input
-          label="Senha"
+          fullWidth
+          type="email"
+          placeholder="seu@email.com"
+          {...register('email')}
+          className={errors.email ? 'border-red-500' : ''}
+        />
+        {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Senha</label>
+        <Input
+          fullWidth
           type="password"
           placeholder="Sua senha"
           {...register('password')}
-          isInvalid={!!errors.password}
-          errorMessage={errors.password?.message}
+          className={errors.password ? 'border-red-500' : ''}
         />
+        {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
         <div className="text-right mt-1">
           <Link to="/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
             Esqueceu a senha?
@@ -65,8 +69,8 @@ export function LoginPage() {
       <Button
         type="submit"
         fullWidth
-        color="primary"
-        isLoading={mutation.isPending}
+        variant="primary"
+        isDisabled={mutation.isPending}
         className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
       >
         Entrar

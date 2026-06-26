@@ -44,44 +44,59 @@ export function RegisterPage() {
         </div>
       )}
 
-      <Input
-        label="Nome completo"
-        type="text"
-        placeholder="Seu nome"
-        {...register('name')}
-        isInvalid={!!errors.name}
-        errorMessage={errors.name?.message}
-      />
-      <Input
-        label="Email"
-        type="email"
-        placeholder="seu@email.com"
-        {...register('email')}
-        isInvalid={!!errors.email}
-        errorMessage={errors.email?.message}
-      />
-      <Input
-        label="Senha"
-        type="password"
-        placeholder="Mínimo 8 caracteres"
-        {...register('password')}
-        isInvalid={!!errors.password}
-        errorMessage={errors.password?.message}
-      />
-      <Input
-        label="Confirmar senha"
-        type="password"
-        placeholder="Repita a senha"
-        {...register('confirmPassword')}
-        isInvalid={!!errors.confirmPassword}
-        errorMessage={errors.confirmPassword?.message}
-      />
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Nome completo</label>
+        <Input
+          fullWidth
+          type="text"
+          placeholder="Seu nome"
+          {...register('name')}
+          className={errors.name ? 'border-red-500' : ''}
+        />
+        {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Email</label>
+        <Input
+          fullWidth
+          type="email"
+          placeholder="seu@email.com"
+          {...register('email')}
+          className={errors.email ? 'border-red-500' : ''}
+        />
+        {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Senha</label>
+        <Input
+          fullWidth
+          type="password"
+          placeholder="Mínimo 8 caracteres"
+          {...register('password')}
+          className={errors.password ? 'border-red-500' : ''}
+        />
+        {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">Confirmar senha</label>
+        <Input
+          fullWidth
+          type="password"
+          placeholder="Repita a senha"
+          {...register('confirmPassword')}
+          className={errors.confirmPassword ? 'border-red-500' : ''}
+        />
+        {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}
+      </div>
 
       <Button
         type="submit"
         fullWidth
-        color="primary"
-        isLoading={mutation.isPending}
+        variant="primary"
+        isDisabled={mutation.isPending}
         className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
       >
         Criar conta

@@ -6,8 +6,9 @@ import { motion } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Button, Input, Chip,
-  Modal, ModalContent, ModalHeader, ModalBody, ModalFooter,
-  useDisclosure,
+  Modal, ModalBackdrop, ModalContainer, ModalDialog,
+  ModalHeader, ModalHeading, ModalBody, ModalFooter, ModalCloseTrigger,
+  useOverlayState,
 } from '@heroui/react'
 import { categoriesApi } from '../api/categories'
 
@@ -30,7 +31,7 @@ const colors = [
 const selectCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none focus:border-indigo-500 bg-white transition-colors'
 
 export function CategoriesPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const modalState = useOverlayState()
   const [filter, setFilter] = useState('all')
   const queryClient = useQueryClient()
   const { register, handleSubmit, reset } = useForm<FormData>({
@@ -48,7 +49,7 @@ export function CategoriesPage() {
     mutationFn: (d: FormData) => categoriesApi.create(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
-      onClose()
+      modalState.close()
       reset()
     },
   })
@@ -72,8 +73,8 @@ export function CategoriesPage() {
           <p className="text-gray-500 text-sm mt-1">Organize suas receitas e despesas</p>
         </div>
         <Button
-          color="primary"
-          onPress={onOpen}
+          variant="primary"
+          onPress={modalState.open}
           className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
         >
           + Nova categoria
@@ -112,7 +113,7 @@ export function CategoriesPage() {
             <p className="font-medium text-sm text-gray-900">{cat.name}</p>
             <Chip
               size="sm"
-              variant="flat"
+              variant="soft"
               style={{ backgroundColor: cat.color + '20', color: cat.color }}
             >
               {cat.type === 'Income' ? 'Receita' : 'Despesa'}
@@ -120,10 +121,9 @@ export function CategoriesPage() {
             {!cat.isDefault && (
               <Button
                 size="sm"
-                color="danger"
-                variant="flat"
+                variant="danger-soft"
                 onPress={() => deleteMutation.mutate(cat.id)}
-                isLoading={deleteMutation.isPending}
+                isDisabled={deleteMutation.isPending}
                 className="mt-1"
               >
                 Excluir
@@ -133,53 +133,62 @@ export function CategoriesPage() {
         ))}
       </div>
 
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalContent>
-          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))}>
-            <ModalHeader>Nova categoria</ModalHeader>
-            <ModalBody className="space-y-4">
-              <Input label="Nome" placeholder="Ex: Alimentação, Transporte" {...register('name')} />
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Tipo</label>
-                <select className={selectCls} {...register('type')}>
-                  <option value="Income">Receita</option>
-                  <option value="Expense">Despesa</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Ícone</label>
-                <select className={selectCls} {...register('icon')}>
-                  {icons.map((i) => <option key={i} value={i}>{i}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Cor</label>
-                <div className="flex gap-2 flex-wrap">
-                  {colors.map((c) => (
-                    <label key={c.value} className="cursor-pointer">
-                      <input type="radio" value={c.value} className="sr-only peer" {...register('color')} />
-                      <div
-                        className="w-8 h-8 rounded-full border-2 border-transparent peer-checked:border-gray-500 peer-checked:scale-110 hover:scale-110 transition-all shadow-sm"
-                        style={{ backgroundColor: c.value }}
-                      />
-                    </label>
-                  ))}
+      <Modal state={modalState}>
+        <ModalBackdrop isDismissable />
+        <ModalContainer>
+          <ModalDialog>
+            <form onSubmit={handleSubmit((d) => createMutation.mutate(d))}>
+              <ModalHeader>
+                <ModalHeading>Nova categoria</ModalHeading>
+                <ModalCloseTrigger />
+              </ModalHeader>
+              <ModalBody className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Nome</label>
+                  <Input fullWidth placeholder="Ex: Alimentação, Transporte" {...register('name')} />
                 </div>
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onPress={onClose}>Cancelar</Button>
-              <Button
-                type="submit"
-                color="primary"
-                isLoading={createMutation.isPending}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600"
-              >
-                Criar
-              </Button>
-            </ModalFooter>
-          </form>
-        </ModalContent>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Tipo</label>
+                  <select className={selectCls} {...register('type')}>
+                    <option value="Income">Receita</option>
+                    <option value="Expense">Despesa</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Ícone</label>
+                  <select className={selectCls} {...register('icon')}>
+                    {icons.map((i) => <option key={i} value={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Cor</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {colors.map((c) => (
+                      <label key={c.value} className="cursor-pointer">
+                        <input type="radio" value={c.value} className="sr-only peer" {...register('color')} />
+                        <div
+                          className="w-8 h-8 rounded-full border-2 border-transparent peer-checked:border-gray-500 peer-checked:scale-110 hover:scale-110 transition-all shadow-sm"
+                          style={{ backgroundColor: c.value }}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="ghost" onPress={modalState.close}>Cancelar</Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isDisabled={createMutation.isPending}
+                  className="bg-gradient-to-r from-violet-600 to-indigo-600"
+                >
+                  Criar
+                </Button>
+              </ModalFooter>
+            </form>
+          </ModalDialog>
+        </ModalContainer>
       </Modal>
     </motion.div>
   )

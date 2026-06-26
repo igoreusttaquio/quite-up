@@ -34,7 +34,7 @@ export function VerifyEmailPage() {
       <Link to="/login">
         <Button
           fullWidth
-          color="primary"
+          variant="primary"
           className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
         >
           Ir para o login
@@ -57,9 +57,9 @@ export function VerifyEmailPage() {
         <p className="text-green-600 text-sm font-medium">✅ Email reenviado com sucesso!</p>
       ) : (
         <Button
-          variant="bordered"
+          variant="outline"
           fullWidth
-          isLoading={resendMutation.isPending}
+          isDisabled={resendMutation.isPending}
           onPress={() => {
             const email = prompt('Digite seu email para reenviar:')
             if (email) resendMutation.mutate(email)

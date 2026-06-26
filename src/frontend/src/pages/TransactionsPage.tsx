@@ -4,9 +4,10 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Button, Input, Chip, Card, CardBody,
-  Modal, ModalContent, ModalHeader, ModalBody, ModalFooter,
-  useDisclosure,
+  Button, Input, Chip, Card, CardContent,
+  Modal, ModalBackdrop, ModalContainer, ModalDialog,
+  ModalHeader, ModalHeading, ModalBody, ModalFooter, ModalCloseTrigger,
+  useOverlayState,
 } from '@heroui/react'
 import { transactionsApi } from '../api/transactions'
 import { accountsApi } from '../api/accounts'
@@ -32,7 +33,7 @@ const typeConfig: Record<string, { label: string; chipColor: 'success' | 'danger
 const selectCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none focus:border-indigo-500 bg-white transition-colors'
 
 export function TransactionsPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const modalState = useOverlayState()
   const queryClient = useQueryClient()
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -63,7 +64,7 @@ export function TransactionsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      onClose()
+      modalState.close()
       reset()
     },
   })
@@ -86,16 +87,16 @@ export function TransactionsPage() {
           <p className="text-gray-500 text-sm mt-1">Registro de todas as movimentações</p>
         </div>
         <Button
-          color="primary"
-          onPress={onOpen}
+          variant="primary"
+          onPress={modalState.open}
           className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
         >
           + Nova transação
         </Button>
       </div>
 
-      <Card shadow="md" className="overflow-hidden">
-        <CardBody className="p-0">
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -137,7 +138,7 @@ export function TransactionsPage() {
                         {new Date(t.date).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-4 py-3">
-                        <Chip size="sm" color={cfg.chipColor} variant="flat">
+                        <Chip size="sm" color={cfg.chipColor} variant="soft">
                           {cfg.icon} {cfg.label}
                         </Chip>
                       </td>
@@ -152,8 +153,7 @@ export function TransactionsPage() {
                       <td className="px-4 py-3">
                         <Button
                           size="sm"
-                          color="danger"
-                          variant="flat"
+                          variant="danger-soft"
                           onPress={() => deleteMutation.mutate(t.id)}
                         >
                           Excluir
@@ -165,79 +165,94 @@ export function TransactionsPage() {
               </tbody>
             </table>
           </div>
-        </CardBody>
+        </CardContent>
       </Card>
 
-      <Modal isOpen={isOpen} onClose={onClose} scrollBehavior="inside">
-        <ModalContent>
-          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))}>
-            <ModalHeader>Nova transação</ModalHeader>
-            <ModalBody className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Tipo</label>
-                <select className={selectCls} {...register('type')}>
-                  <option value="Income">📈 Receita</option>
-                  <option value="Expense">📉 Despesa</option>
-                  <option value="Transfer">🔄 Transferência</option>
-                </select>
-              </div>
-              <Input
-                label="Valor"
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                {...register('value', { valueAsNumber: true })}
-                isInvalid={!!errors.value}
-                errorMessage={errors.value?.message}
-              />
-              <Input label="Data" type="date" {...register('date')} />
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Conta</label>
-                <select className={selectCls} {...register('accountId')}>
-                  <option value="">Selecione a conta...</option>
-                  {accounts?.filter((a) => a.isActive).map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
-                {errors.accountId && <p className="text-red-500 text-xs">{errors.accountId.message}</p>}
-              </div>
-              {watchType !== 'Transfer' && (
+      <Modal state={modalState}>
+        <ModalBackdrop isDismissable />
+        <ModalContainer scroll="inside">
+          <ModalDialog>
+            <form onSubmit={handleSubmit((d) => createMutation.mutate(d))}>
+              <ModalHeader>
+                <ModalHeading>Nova transação</ModalHeading>
+                <ModalCloseTrigger />
+              </ModalHeader>
+              <ModalBody className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Categoria</label>
-                  <select className={selectCls} {...register('categoryId')}>
-                    <option value="">Sem categoria</option>
-                    {categories?.filter((c) => c.type === (watchType === 'Income' ? 'Income' : 'Expense')).map((c) => (
-                      <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                    ))}
+                  <label className="text-sm font-medium text-gray-700">Tipo</label>
+                  <select className={selectCls} {...register('type')}>
+                    <option value="Income">📈 Receita</option>
+                    <option value="Expense">📉 Despesa</option>
+                    <option value="Transfer">🔄 Transferência</option>
                   </select>
                 </div>
-              )}
-              {watchType === 'Transfer' && (
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Conta de destino</label>
-                  <select className={selectCls} {...register('destinationAccountId')}>
+                  <label className="text-sm font-medium text-gray-700">Valor</label>
+                  <Input
+                    fullWidth
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    {...register('value', { valueAsNumber: true })}
+                    className={errors.value ? 'border-red-500' : ''}
+                  />
+                  {errors.value && <p className="text-red-500 text-xs">{errors.value.message}</p>}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Data</label>
+                  <Input fullWidth type="date" {...register('date')} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Conta</label>
+                  <select className={selectCls} {...register('accountId')}>
                     <option value="">Selecione a conta...</option>
                     {accounts?.filter((a) => a.isActive).map((a) => (
                       <option key={a.id} value={a.id}>{a.name}</option>
                     ))}
                   </select>
+                  {errors.accountId && <p className="text-red-500 text-xs">{errors.accountId.message}</p>}
                 </div>
-              )}
-              <Input label="Descrição (opcional)" placeholder="Descrição da transação" {...register('description')} />
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onPress={onClose}>Cancelar</Button>
-              <Button
-                type="submit"
-                color="primary"
-                isLoading={createMutation.isPending}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600"
-              >
-                Criar
-              </Button>
-            </ModalFooter>
-          </form>
-        </ModalContent>
+                {watchType !== 'Transfer' && (
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Categoria</label>
+                    <select className={selectCls} {...register('categoryId')}>
+                      <option value="">Sem categoria</option>
+                      {categories?.filter((c) => c.type === (watchType === 'Income' ? 'Income' : 'Expense')).map((c) => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {watchType === 'Transfer' && (
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Conta de destino</label>
+                    <select className={selectCls} {...register('destinationAccountId')}>
+                      <option value="">Selecione a conta...</option>
+                      {accounts?.filter((a) => a.isActive).map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Descrição (opcional)</label>
+                  <Input fullWidth placeholder="Descrição da transação" {...register('description')} />
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="ghost" onPress={modalState.close}>Cancelar</Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isDisabled={createMutation.isPending}
+                  className="bg-gradient-to-r from-violet-600 to-indigo-600"
+                >
+                  Criar
+                </Button>
+              </ModalFooter>
+            </form>
+          </ModalDialog>
+        </ModalContainer>
       </Modal>
     </motion.div>
   )

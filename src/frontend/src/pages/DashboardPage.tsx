@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Card, CardBody } from '@heroui/react'
+import { Card, CardContent } from '@heroui/react'
 
 const stats = [
   { label: 'Saldo total', value: 'R$ 0,00', color: 'from-violet-500 to-indigo-600', icon: '💰' },
@@ -28,30 +28,30 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {stats.map((s) => (
           <motion.div key={s.label} variants={item}>
-            <Card className="overflow-hidden hover:-translate-y-1 transition-transform duration-200" shadow="md">
+            <Card className="overflow-hidden hover:-translate-y-1 transition-transform duration-200">
               <div className={`h-1.5 bg-gradient-to-r ${s.color}`} />
-              <CardBody>
+              <CardContent>
                 <span className="text-2xl">{s.icon}</span>
                 <p className="text-sm text-gray-500 mt-2">{s.label}</p>
                 <p className={`text-3xl font-bold mt-1 bg-gradient-to-r ${s.color} bg-clip-text text-transparent`}>
                   {s.value}
                 </p>
-              </CardBody>
+              </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
 
       <motion.div variants={item}>
-        <Card shadow="md">
-          <CardBody>
+        <Card>
+          <CardContent>
             <h3 className="font-semibold text-lg mb-4 text-gray-900">Últimas movimentações</h3>
             <div className="text-center py-12">
               <span className="text-5xl">🏦</span>
               <p className="text-gray-400 mt-4">Nenhuma movimentação ainda</p>
               <p className="text-gray-400 text-sm">Crie uma conta e registre suas primeiras transações</p>
             </div>
-          </CardBody>
+          </CardContent>
         </Card>
       </motion.div>
     </motion.div>

@@ -4,9 +4,10 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Button, Input, Card, CardBody, Chip,
-  Modal, ModalContent, ModalHeader, ModalBody, ModalFooter,
-  useDisclosure,
+  Button, Input, Card, CardContent, Chip,
+  Modal, ModalBackdrop, ModalContainer, ModalDialog,
+  ModalHeader, ModalHeading, ModalBody, ModalFooter, ModalCloseTrigger,
+  useOverlayState,
 } from '@heroui/react'
 import { accountsApi } from '../api/accounts'
 
@@ -27,7 +28,7 @@ const accountTypes = [
 const selectCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm outline-none focus:border-indigo-500 bg-white transition-colors'
 
 export function AccountsPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const modalState = useOverlayState()
   const queryClient = useQueryClient()
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -44,7 +45,7 @@ export function AccountsPage() {
     mutationFn: (d: FormData) => accountsApi.create(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      onClose()
+      modalState.close()
       reset()
     },
   })
@@ -64,8 +65,8 @@ export function AccountsPage() {
           <p className="text-gray-500 text-sm mt-1">Gerencie suas contas bancárias</p>
         </div>
         <Button
-          color="primary"
-          onPress={onOpen}
+          variant="primary"
+          onPress={modalState.open}
           className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-200"
         >
           + Nova conta
@@ -81,7 +82,7 @@ export function AccountsPage() {
           <div className="col-span-full text-center py-16 bg-white rounded-2xl border border-gray-100">
             <span className="text-5xl">🏦</span>
             <p className="text-gray-400 mt-4">Nenhuma conta cadastrada</p>
-            <Button variant="light" color="primary" onPress={onOpen} className="mt-2">
+            <Button variant="ghost" onPress={modalState.open} className="mt-2">
               Criar primeira conta
             </Button>
           </div>
@@ -89,15 +90,14 @@ export function AccountsPage() {
           <motion.div key={a.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Card
               className={`overflow-hidden hover:-translate-y-1 transition-transform duration-200 ${!a.isActive ? 'opacity-50' : ''}`}
-              shadow="md"
             >
               <div className="h-1.5 bg-gradient-to-r from-violet-500 to-indigo-600" />
-              <CardBody>
+              <CardContent>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-2xl">{accountTypes.find((t) => t.value === a.type)?.icon ?? '🏦'}</span>
                   <div>
                     <p className="font-semibold text-gray-900">{a.name}</p>
-                    <Chip size="sm" color="secondary" variant="flat">
+                    <Chip size="sm" color="default" variant="soft">
                       {accountTypes.find((t) => t.value === a.type)?.label}
                     </Chip>
                   </div>
@@ -109,62 +109,73 @@ export function AccountsPage() {
                 {a.isActive && (
                   <Button
                     size="sm"
-                    color="danger"
-                    variant="flat"
+                    variant="danger-soft"
                     onPress={() => deactivateMutation.mutate(a.id)}
-                    isLoading={deactivateMutation.isPending}
+                    isDisabled={deactivateMutation.isPending}
                     className="mt-3"
                   >
                     Desativar
                   </Button>
                 )}
-              </CardBody>
+              </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
 
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalContent>
-          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))}>
-            <ModalHeader>Nova conta</ModalHeader>
-            <ModalBody className="space-y-4">
-              <Input
-                label="Nome"
-                placeholder="Ex: Nubank, Carteira"
-                {...register('name')}
-                isInvalid={!!errors.name}
-                errorMessage={errors.name?.message}
-              />
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Tipo</label>
-                <select className={selectCls} {...register('type')}>
-                  {accountTypes.map((t) => (
-                    <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
-                  ))}
-                </select>
-              </div>
-              <Input
-                label="Saldo inicial"
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                {...register('initialBalance', { valueAsNumber: true })}
-              />
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onPress={onClose}>Cancelar</Button>
-              <Button
-                type="submit"
-                color="primary"
-                isLoading={createMutation.isPending}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600"
-              >
-                Criar
-              </Button>
-            </ModalFooter>
-          </form>
-        </ModalContent>
+      <Modal state={modalState}>
+        <ModalBackdrop isDismissable />
+        <ModalContainer>
+          <ModalDialog>
+            <form onSubmit={handleSubmit((d) => createMutation.mutate(d))}>
+              <ModalHeader>
+                <ModalHeading>Nova conta</ModalHeading>
+                <ModalCloseTrigger />
+              </ModalHeader>
+              <ModalBody className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Nome</label>
+                  <Input
+                    fullWidth
+                    placeholder="Ex: Nubank, Carteira"
+                    {...register('name')}
+                    className={errors.name ? 'border-red-500' : ''}
+                  />
+                  {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Tipo</label>
+                  <select className={selectCls} {...register('type')}>
+                    {accountTypes.map((t) => (
+                      <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Saldo inicial</label>
+                  <Input
+                    fullWidth
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    {...register('initialBalance', { valueAsNumber: true })}
+                  />
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="ghost" onPress={modalState.close}>Cancelar</Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isDisabled={createMutation.isPending}
+                  className="bg-gradient-to-r from-violet-600 to-indigo-600"
+                >
+                  Criar
+                </Button>
+              </ModalFooter>
+            </form>
+          </ModalDialog>
+        </ModalContainer>
       </Modal>
     </motion.div>
   )

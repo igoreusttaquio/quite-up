@@ -1,10 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import {
-  Navbar, NavbarBrand, NavbarContent, NavbarItem,
-  NavbarMenuToggle, NavbarMenu, NavbarMenuItem,
-  Dropdown, DropdownTrigger, DropdownMenu, DropdownItem,
-} from '@heroui/react'
+import { Dropdown, DropdownTrigger, DropdownPopover, DropdownMenu, DropdownItem } from '@heroui/react'
 import { useAuthStore } from '../stores/auth'
 import { authApi } from '../api/auth'
 import { useMutation } from '@tanstack/react-query'
@@ -28,31 +24,21 @@ export function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar
-        isBordered
-        classNames={{
-          wrapper: 'max-w-7xl px-4',
-          base: 'bg-white/80 backdrop-blur-md',
-        }}
-      >
-        <NavbarContent>
-          <NavbarMenuToggle className="sm:hidden" />
-          <NavbarBrand>
-            <Link
-              to="/"
-              className="text-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent"
-            >
-              Quite-Up
-            </Link>
-          </NavbarBrand>
-        </NavbarContent>
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          <Link
+            to="/"
+            className="text-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent shrink-0"
+          >
+            Quite-Up
+          </Link>
 
-        <NavbarContent className="hidden sm:flex gap-1" justify="center">
-          {navItems.map((item) => {
-            const active = location.pathname === item.path
-            return (
-              <NavbarItem key={item.path} isActive={active}>
+          <nav className="hidden sm:flex items-center gap-1">
+            {navItems.map((item) => {
+              const active = location.pathname === item.path
+              return (
                 <Link
+                  key={item.path}
                   to={item.path}
                   className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 ${
                     active
@@ -63,52 +49,33 @@ export function DashboardLayout() {
                   <span>{item.icon}</span>
                   {item.label}
                 </Link>
-              </NavbarItem>
-            )
-          })}
-        </NavbarContent>
+              )
+            })}
+          </nav>
 
-        <NavbarContent justify="end">
-          <Dropdown placement="bottom-end">
-            <DropdownTrigger>
-              <button className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-white font-semibold text-sm flex items-center justify-center shadow-md shadow-indigo-200 outline-none">
-                {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
-              </button>
+          <Dropdown>
+            <DropdownTrigger className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-white font-semibold text-sm flex items-center justify-center shadow-md shadow-indigo-200 outline-none cursor-pointer">
+              {user?.name?.charAt(0)?.toUpperCase() ?? '?'}
             </DropdownTrigger>
-            <DropdownMenu aria-label="User menu" disabledKeys={['info']}>
-              <DropdownItem key="info" textValue="user info" className="cursor-default opacity-100">
-                <p className="font-semibold text-sm">{user?.name}</p>
-                <p className="text-xs text-gray-400">{user?.email}</p>
-              </DropdownItem>
-              <DropdownItem key="profile" onPress={() => navigate('/profile')}>
-                👤 Perfil
-              </DropdownItem>
-              <DropdownItem key="logout" color="danger" onPress={() => logoutMutation.mutate()}>
-                🚪 Sair
-              </DropdownItem>
-            </DropdownMenu>
+            <DropdownPopover placement="bottom end">
+              <DropdownMenu
+                disabledKeys={['info']}
+                onAction={(key) => {
+                  if (key === 'profile') navigate('/profile')
+                  if (key === 'logout') logoutMutation.mutate()
+                }}
+              >
+                <DropdownItem id="info" textValue="user info">
+                  <p className="font-semibold text-sm">{user?.name}</p>
+                  <p className="text-xs text-gray-400">{user?.email}</p>
+                </DropdownItem>
+                <DropdownItem id="profile">👤 Perfil</DropdownItem>
+                <DropdownItem id="logout">🚪 Sair</DropdownItem>
+              </DropdownMenu>
+            </DropdownPopover>
           </Dropdown>
-        </NavbarContent>
-
-        <NavbarMenu>
-          {navItems.map((item) => {
-            const active = location.pathname === item.path
-            return (
-              <NavbarMenuItem key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`w-full flex items-center gap-2 py-2 text-sm font-medium ${
-                    active ? 'text-indigo-600' : 'text-gray-600'
-                  }`}
-                >
-                  <span>{item.icon}</span>
-                  {item.label}
-                </Link>
-              </NavbarMenuItem>
-            )
-          })}
-        </NavbarMenu>
-      </Navbar>
+        </div>
+      </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         <motion.div

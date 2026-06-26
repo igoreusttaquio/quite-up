@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Button, Input, Card, CardBody } from '@heroui/react'
+import { Button, Input, Card, CardContent } from '@heroui/react'
 import { profileApi } from '../api/profile'
 import { useAuthStore } from '../stores/auth'
 
@@ -22,14 +22,14 @@ const passwordSchema = z.object({
 function SectionCard({ title, icon, danger, children }: { title: string; icon: string; danger?: boolean; children: React.ReactNode }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <Card shadow="md" className="overflow-hidden">
+      <Card className="overflow-hidden">
         <div className={`h-1 ${danger ? 'bg-gradient-to-r from-red-500 to-rose-400' : 'bg-gradient-to-r from-violet-500 to-indigo-600'}`} />
-        <CardBody>
+        <CardContent>
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span>{icon}</span> {title}
           </h3>
           {children}
-        </CardBody>
+        </CardContent>
       </Card>
     </motion.div>
   )
@@ -76,12 +76,16 @@ export function ProfilePage() {
       <SectionCard title="Nome" icon="✏️">
         <form onSubmit={nameForm.handleSubmit((d) => updateName.mutate(d))} className="flex gap-3">
           <div className="flex-1">
-            <Input {...nameForm.register('name')} isInvalid={!!nameForm.formState.errors.name} />
+            <Input
+              fullWidth
+              {...nameForm.register('name')}
+              className={nameForm.formState.errors.name ? 'border-red-500' : ''}
+            />
           </div>
           <Button
             type="submit"
-            color="primary"
-            isLoading={updateName.isPending}
+            variant="primary"
+            isDisabled={updateName.isPending}
             className="bg-gradient-to-r from-violet-600 to-indigo-600"
           >
             Salvar
@@ -94,24 +98,34 @@ export function ProfilePage() {
           Email atual: <span className="font-medium text-gray-700">{user?.email}</span>
         </p>
         <form onSubmit={emailForm.handleSubmit((d) => changeEmail.mutate(d))} className="space-y-3">
-          <Input
-            label="Novo email"
-            type="email"
-            {...emailForm.register('email')}
-            isInvalid={!!emailForm.formState.errors.email}
-            errorMessage={emailForm.formState.errors.email?.message}
-          />
-          <Input
-            label="Senha atual"
-            type="password"
-            {...emailForm.register('currentPassword')}
-            isInvalid={!!emailForm.formState.errors.currentPassword}
-            errorMessage={emailForm.formState.errors.currentPassword?.message}
-          />
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Novo email</label>
+            <Input
+              fullWidth
+              type="email"
+              {...emailForm.register('email')}
+              className={emailForm.formState.errors.email ? 'border-red-500' : ''}
+            />
+            {emailForm.formState.errors.email && (
+              <p className="text-red-500 text-xs">{emailForm.formState.errors.email.message}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Senha atual</label>
+            <Input
+              fullWidth
+              type="password"
+              {...emailForm.register('currentPassword')}
+              className={emailForm.formState.errors.currentPassword ? 'border-red-500' : ''}
+            />
+            {emailForm.formState.errors.currentPassword && (
+              <p className="text-red-500 text-xs">{emailForm.formState.errors.currentPassword.message}</p>
+            )}
+          </div>
           <Button
             type="submit"
-            color="primary"
-            isLoading={changeEmail.isPending}
+            variant="primary"
+            isDisabled={changeEmail.isPending}
             className="bg-gradient-to-r from-violet-600 to-indigo-600"
           >
             Alterar email
@@ -121,19 +135,30 @@ export function ProfilePage() {
 
       <SectionCard title="Senha" icon="🔒">
         <form onSubmit={passwordForm.handleSubmit((d) => changePassword.mutate(d))} className="space-y-3">
-          <Input label="Senha atual" type="password" {...passwordForm.register('currentPassword')} />
-          <Input label="Nova senha" type="password" {...passwordForm.register('newPassword')} />
-          <Input
-            label="Confirmar nova senha"
-            type="password"
-            {...passwordForm.register('confirmNewPassword')}
-            isInvalid={!!passwordForm.formState.errors.confirmNewPassword}
-            errorMessage={passwordForm.formState.errors.confirmNewPassword?.message}
-          />
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Senha atual</label>
+            <Input fullWidth type="password" {...passwordForm.register('currentPassword')} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Nova senha</label>
+            <Input fullWidth type="password" {...passwordForm.register('newPassword')} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">Confirmar nova senha</label>
+            <Input
+              fullWidth
+              type="password"
+              {...passwordForm.register('confirmNewPassword')}
+              className={passwordForm.formState.errors.confirmNewPassword ? 'border-red-500' : ''}
+            />
+            {passwordForm.formState.errors.confirmNewPassword && (
+              <p className="text-red-500 text-xs">{passwordForm.formState.errors.confirmNewPassword.message}</p>
+            )}
+          </div>
           <Button
             type="submit"
-            color="primary"
-            isLoading={changePassword.isPending}
+            variant="primary"
+            isDisabled={changePassword.isPending}
             className="bg-gradient-to-r from-violet-600 to-indigo-600"
           >
             Alterar senha
@@ -146,9 +171,8 @@ export function ProfilePage() {
           Todos os seus dados serão excluídos permanentemente. Essa ação não pode ser desfeita.
         </p>
         <Button
-          variant="bordered"
-          color="danger"
-          isLoading={deleteAccount.isPending}
+          variant="danger"
+          isDisabled={deleteAccount.isPending}
           onPress={() => {
             const pwd = prompt('Digite sua senha para confirmar a exclusão da conta:')
             if (pwd) deleteAccount.mutate(pwd)
