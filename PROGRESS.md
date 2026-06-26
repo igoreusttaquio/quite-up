@@ -7,7 +7,7 @@
 ## Stack definida
 
 - **Backend:** .NET 10 + ASP.NET Core — Clean Architecture, Minimal APIs, CQRS com MediatR
-- **Frontend:** React + Vite + TypeScript + HeroUI + Tailwind (base do HeroUI)
+- **Frontend:** React 19 + Vite 8 + TypeScript 6 + **Fluent UI v9** (`@fluentui/react-components`) + Tailwind (utilitários de layout)
 - **Banco:** PostgreSQL 16 — snake_case via EFCore.NamingConventions
 - **Mensageria:** RabbitMQ 3 — SDK `RabbitMQ.Client` (sem MassTransit)
 - **IDs:** internos `long` auto-increment; externos via `Hashids.net` (string curta, reversível)
@@ -120,10 +120,16 @@
 - Entidade `Notification`
 - Consumer RabbitMQ para triggers de notificação
 
-#### Frontend (todas as fases)
-- Scaffold Vite + React + TypeScript + HeroUI + Tailwind
-- Configuração TanStack Query, Zustand, Axios com interceptors JWT
-- Todas as páginas e componentes (ver FEATURES.md)
+#### Frontend (todas as fases) — reconstruir do zero com Fluent UI v9
+- Scaffold: `npm create vite@latest` (React + TypeScript)
+- Instalar: `@fluentui/react-components @fluentui/react-icons @tanstack/react-query zustand axios react-router-dom react-hook-form @hookform/resolvers zod framer-motion tailwindcss @tailwindcss/vite`
+- Configuração: `FluentProvider` (webLightTheme), TanStack Query, Zustand auth store, Axios com interceptors JWT
+- Páginas de auth: Login, Register, ForgotPassword, ResetPassword, VerifyEmail
+- Layout: AuthLayout, DashboardLayout (header manual + Menu do Fluent UI)
+- Páginas app: Dashboard, Contas, Categorias, Transações, Perfil
+- Componentes Fluent UI a usar: `Button`, `Field`+`Input`, `Card`, `Badge`, `Dialog`, `Select`, `Menu`, `Spinner`
+- Dialog com `useState(open)` + `onOpenChange` (sem hook de overlay)
+- Validação de formulários: `Field` com `validationState="error"` + `validationMessage` + `react-hook-form` Controller quando necessário
 
 ---
 
@@ -134,12 +140,19 @@
 | `35c2f3b` | Initial commit |
 | `89f595c` | feat: scaffold backend com autenticação completa (Fase 1) |
 | `644ec93` | docs: adiciona PROGRESS.md |
-| (próximo) | feat: Fase 2 — Contas, Categorias, Transações e Perfil (backend) |
+| `f90386a` | feat: frontend com React + Vite + Tailwind |
+| `5c1bc5a` | feat: adiciona container frontend com nginx e proxy reverso para api |
+| `bc2b36a` | feat: frontend com HeroUI v3 + animações framer-motion |
+| `9605275` | feat: Fase 2 — Contas, Categorias, Transações e Perfil (backend) |
+| `1e48af3` | fix: [FromBody] no MapDelete de perfil |
+| `b73165d` | DELETE FRONT — frontend removido para reconstrução com Fluent UI v9 |
+| (próximo) | feat: frontend com Fluent UI v9 (Fase 1 — Auth) |
 
 ---
 
 ## Como retomar
 
 1. Abrir este arquivo para ver o que está pendente
-2. Continuar a partir de **Fase 2 — backend**: entidades `Account`, `Category`, `Transaction`
-3. Após o backend de cada fase, implementar o frontend correspondente
+2. **Próximo passo: reconstruir o frontend** com Fluent UI v9 — usar o prompt de migração
+3. Após o frontend base, implementar Fase 3 (Dashboard) no backend + frontend
+4. Seguir a sequência: backend → frontend por fase

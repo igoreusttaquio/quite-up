@@ -5,7 +5,7 @@
 ## Stack
 
 - **Backend:** .NET + ASP.NET Core (CQRS com MediatR)
-- **Frontend:** React + Vite + HeroUI
+- **Frontend:** React 19 + Vite + Fluent UI v9
 - **Banco de dados:** PostgreSQL
 - **Mensageria:** RabbitMQ
 
