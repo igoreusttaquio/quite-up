@@ -69,7 +69,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./src/frontend
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
