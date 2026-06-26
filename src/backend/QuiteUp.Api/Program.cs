@@ -85,7 +85,19 @@ _ = Task.Run(async () =>
         {
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<QuiteUp.Infrastructure.Persistence.ApplicationDbContext>();
-            await db.Database.MigrateAsync();
+
+            var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
+            Log.Information("Pending migrations ({Count}): {Migrations}", pending.Count, string.Join(", ", pending));
+
+            if (pending.Count > 0)
+            {
+                var strategy = db.Database.CreateExecutionStrategy();
+                await strategy.ExecuteAsync(async () => await db.Database.MigrateAsync());
+            }
+
+            var applied = (await db.Database.GetAppliedMigrationsAsync()).ToList();
+            Log.Information("Applied migrations ({Count}): {Migrations}", applied.Count, string.Join(", ", applied));
+
             await QuiteUp.Infrastructure.Persistence.DatabaseSeeder.SeedAsync(db);
             Log.Information("Database migrations and seeding completed successfully");
             return;
