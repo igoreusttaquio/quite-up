@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Common.Results;
 using QuiteUp.Application.Features.Auth.DTOs;
@@ -12,7 +13,8 @@ public class RegisterUserCommandHandler(
     IApplicationDbContext context,
     IPasswordHasher passwordHasher,
     IEmailService emailService,
-    ITokenService tokenService) : IRequestHandler<RegisterUserCommand, Result<UserDto>>
+    ITokenService tokenService,
+    ILogger<RegisterUserCommandHandler> logger) : IRequestHandler<RegisterUserCommand, Result<UserDto>>
 {
     public async Task<Result<UserDto>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
@@ -41,7 +43,15 @@ public class RegisterUserCommandHandler(
         });
 
         await context.SaveChangesAsync(cancellationToken);
-        await emailService.SendEmailVerificationAsync(user.Email, user.Name, token, cancellationToken);
+
+        try
+        {
+            await emailService.SendEmailVerificationAsync(user.Email, user.Name, token, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to send verification email to {Email}", user.Email);
+        }
 
         return Result<UserDto>.Success(new UserDto(user.Id, user.Name, user.Email, user.Status, user.CreatedAt));
     }
