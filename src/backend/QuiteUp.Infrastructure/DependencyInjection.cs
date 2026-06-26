@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QuiteUp.Application.Common.Interfaces;
+using QuiteUp.Infrastructure.Messaging;
 using QuiteUp.Infrastructure.Persistence;
 using QuiteUp.Infrastructure.Services;
 
@@ -33,9 +34,12 @@ public static class DependencyInjection
             int.Parse(configuration["Hashids:MinLength"]!)));
 
         services.AddScoped<IIdEncoder, IdEncoderService>();
+        services.AddSingleton<IEventBus, RabbitMqEventBus>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        services.AddHostedService<EmailNotificationConsumer>();
 
         return services;
     }

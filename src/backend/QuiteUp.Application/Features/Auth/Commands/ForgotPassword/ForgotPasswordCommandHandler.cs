@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using QuiteUp.Application.Common.Interfaces;
+using QuiteUp.Application.Events;
 using QuiteUp.Domain.Entities;
 
 namespace QuiteUp.Application.Features.Auth.Commands.ForgotPassword;
@@ -8,7 +9,7 @@ namespace QuiteUp.Application.Features.Auth.Commands.ForgotPassword;
 public class ForgotPasswordCommandHandler(
     IApplicationDbContext context,
     ITokenService tokenService,
-    IEmailService emailService) : IRequestHandler<ForgotPasswordCommand>
+    IEventBus eventBus) : IRequestHandler<ForgotPasswordCommand>
 {
     public async Task Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
@@ -31,6 +32,9 @@ public class ForgotPasswordCommandHandler(
         });
 
         await context.SaveChangesAsync(cancellationToken);
-        await emailService.SendPasswordResetAsync(user.Email, user.Name, token, cancellationToken);
+
+        await eventBus.PublishAsync(
+            new ForgotPasswordRequestedEvent(user.Email, user.Name, token),
+            cancellationToken);
     }
 }
