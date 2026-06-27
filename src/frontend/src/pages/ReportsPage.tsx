@@ -6,7 +6,6 @@ import { SkeletonLine, SkeletonTable } from '../components/Skeleton'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
 const MONTHS = [
