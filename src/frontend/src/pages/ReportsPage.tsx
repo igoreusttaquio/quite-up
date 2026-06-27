@@ -163,7 +163,7 @@ export function ReportsPage() {
           <div className="w-44">
             <Field label="Ano">
               <NativeSelect value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
-                {[2024, 2025, 2026, 2027, 2028, 2029, 2030].map((year) => (
+                {Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - 3 + i).map((year) => (
                   <option key={year} value={year}>{year}</option>
                 ))}
               </NativeSelect>
