@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { useForm, Controller, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,6 +10,8 @@ import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
+import { CurrencyInput } from '../components/ui/currency-input'
+import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
@@ -173,16 +176,16 @@ export function DebtsPage() {
       />
 
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-6">
+      <div className="flex gap-1 mb-6 bg-muted/50 p-1 rounded-lg w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setFilterTab(tab.key)}
-            className={`px-4 py-1.5 text-sm rounded-full transition-colors ${
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer ${
               filterTab === tab.key
-                ? 'bg-primary text-primary-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                ? 'bg-card shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab.label}
@@ -287,21 +290,14 @@ export function DebtsPage() {
             <Controller
               name="amount"
               control={paymentForm.control}
-              render={({ field: { onChange, value, ...rest } }) => (
+              render={({ field: { onChange, value } }) => (
                 <Field
                   label="Valor do Pagamento"
                   required
                   validationState={paymentForm.formState.errors.amount ? 'error' : undefined}
                   validationMessage={paymentForm.formState.errors.amount?.message}
                 >
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={String(value ?? '')}
-                    onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                    {...rest}
-                  />
+                  <CurrencyInput value={value ?? 0} onChange={onChange} />
                 </Field>
               )}
             />
@@ -315,7 +311,7 @@ export function DebtsPage() {
                   validationState={paymentForm.formState.errors.paymentDate ? 'error' : undefined}
                   validationMessage={paymentForm.formState.errors.paymentDate?.message}
                 >
-                  <Input type="date" {...field} />
+                  <DateInput {...field} />
                 </Field>
               )}
             />
@@ -339,16 +335,9 @@ export function DebtsPage() {
               <Controller
                 name="discount"
                 control={paymentForm.control}
-                render={({ field: { onChange, value, ...rest } }) => (
+                render={({ field: { onChange, value } }) => (
                   <Field label="Desconto">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0,00"
-                      value={String(value ?? '')}
-                      onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                      {...rest}
-                    />
+                    <CurrencyInput value={value ?? 0} onChange={onChange} />
                   </Field>
                 )}
               />
@@ -446,8 +435,14 @@ export function DebtsPage() {
                 </div>
               </div>
               <div className="space-y-2 max-h-72 overflow-y-auto">
-                {snowball.debts.map((item) => (
-                  <div key={item.debtId} className="flex items-center justify-between border border-border rounded-lg p-3">
+                {snowball.debts.map((item, index) => (
+                  <motion.div
+                    key={item.debtId}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.06, duration: 0.25, ease: 'easeOut' }}
+                    className="flex items-center justify-between border border-border rounded-lg p-3"
+                  >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-lg flex-shrink-0">{debtTypeEmoji[item.type]}</span>
                       <div className="min-w-0">
@@ -458,7 +453,7 @@ export function DebtsPage() {
                     <div className="text-right flex-shrink-0 ml-3">
                       <CurrencyBadge value={item.remainingAmount} size="sm" />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -601,21 +596,14 @@ function DebtFormContent({
         <Controller
           name="totalAmount"
           control={form.control}
-          render={({ field: { onChange, value, ...rest } }) => (
+          render={({ field: { onChange, value } }) => (
             <Field
               label="Valor Total"
               required
               validationState={form.formState.errors.totalAmount ? 'error' : undefined}
               validationMessage={form.formState.errors.totalAmount?.message}
             >
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                value={String(value ?? '')}
-                onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                {...rest}
-              />
+              <CurrencyInput value={value ?? 0} onChange={onChange} />
             </Field>
           )}
         />
@@ -645,7 +633,7 @@ function DebtFormContent({
               validationState={form.formState.errors.dueDate ? 'error' : undefined}
               validationMessage={form.formState.errors.dueDate?.message}
             >
-              <Input type="date" {...field} />
+              <DateInput {...field} />
             </Field>
           )}
         />

@@ -16,6 +16,8 @@ import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
+import { CurrencyInput } from '../components/ui/currency-input'
+import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
@@ -223,21 +225,14 @@ export function FinancialGoalsPage() {
               <Controller
                 name="targetAmount"
                 control={createForm.control}
-                render={({ field: { onChange, value, ...rest } }) => (
+                render={({ field: { onChange, value } }) => (
                   <Field
                     label="Valor Alvo"
                     required
                     validationState={createForm.formState.errors.targetAmount ? 'error' : undefined}
                     validationMessage={createForm.formState.errors.targetAmount?.message}
                   >
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0,00"
-                      value={String(value ?? '')}
-                      onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                      {...rest}
-                    />
+                    <CurrencyInput value={value ?? 0} onChange={onChange} />
                   </Field>
                 )}
               />
@@ -246,7 +241,7 @@ export function FinancialGoalsPage() {
                 control={createForm.control}
                 render={({ field }) => (
                   <Field label="Data Alvo">
-                    <Input type="date" {...field} />
+                    <DateInput {...field} />
                   </Field>
                 )}
               />
@@ -291,20 +286,14 @@ export function FinancialGoalsPage() {
               <Controller
                 name="targetAmount"
                 control={editForm.control}
-                render={({ field: { onChange, value, ...rest } }) => (
+                render={({ field: { onChange, value } }) => (
                   <Field
                     label="Valor Alvo"
                     required
                     validationState={editForm.formState.errors.targetAmount ? 'error' : undefined}
                     validationMessage={editForm.formState.errors.targetAmount?.message}
                   >
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={String(value ?? '')}
-                      onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                      {...rest}
-                    />
+                    <CurrencyInput value={value ?? 0} onChange={onChange} />
                   </Field>
                 )}
               />
@@ -313,7 +302,7 @@ export function FinancialGoalsPage() {
                 control={editForm.control}
                 render={({ field }) => (
                   <Field label="Data Alvo">
-                    <Input type="date" {...field} />
+                    <DateInput {...field} />
                   </Field>
                 )}
               />
@@ -346,21 +335,14 @@ export function FinancialGoalsPage() {
             <Controller
               name="amount"
               control={contributionForm.control}
-              render={({ field: { onChange, value, ...rest } }) => (
+              render={({ field: { onChange, value } }) => (
                 <Field
                   label="Valor"
                   required
                   validationState={contributionForm.formState.errors.amount ? 'error' : undefined}
                   validationMessage={contributionForm.formState.errors.amount?.message}
                 >
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={String(value ?? '')}
-                    onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                    {...rest}
-                  />
+                  <CurrencyInput value={value ?? 0} onChange={onChange} />
                 </Field>
               )}
             />
@@ -374,7 +356,7 @@ export function FinancialGoalsPage() {
                   validationState={contributionForm.formState.errors.date ? 'error' : undefined}
                   validationMessage={contributionForm.formState.errors.date?.message}
                 >
-                  <Input type="date" {...field} />
+                  <DateInput {...field} />
                 </Field>
               )}
             />

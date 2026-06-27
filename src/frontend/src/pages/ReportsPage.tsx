@@ -4,6 +4,7 @@ import { usePeriodReport, useEvolutionReport } from '../hooks/useReports'
 import { PageHeader } from '../components/PageHeader'
 import { SkeletonLine, SkeletonTable } from '../components/Skeleton'
 import { CurrencyBadge } from '../components/CurrencyBadge'
+import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
@@ -51,12 +52,12 @@ export function ReportsPage() {
           <div className="flex flex-wrap items-end gap-4">
             <div className="w-44">
               <Field label="Data Início">
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </Field>
             </div>
             <div className="w-44">
               <Field label="Data Fim">
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </Field>
             </div>
             <Button onClick={handleGeneratePeriod} icon={<BarChart3 size={16} />}>

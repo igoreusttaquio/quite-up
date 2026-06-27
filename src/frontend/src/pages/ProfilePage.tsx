@@ -21,6 +21,7 @@ import { Field } from '../components/ui/field'
 import { Alert, AlertDescription } from '../components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
+import { cn } from '../lib/utils'
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
@@ -46,6 +47,15 @@ type ProfileFormData = z.infer<typeof profileSchema>
 type EmailFormData = z.infer<typeof emailSchema>
 type PasswordFormData = z.infer<typeof passwordSchema>
 
+type Tab = 'profile' | 'email' | 'password' | 'danger'
+
+const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: 'profile', label: 'Dados Pessoais', icon: <User size={15} /> },
+  { id: 'email', label: 'Alterar E-mail', icon: <Mail size={15} /> },
+  { id: 'password', label: 'Alterar Senha', icon: <Lock size={15} /> },
+  { id: 'danger', label: 'Zona de Perigo', icon: <Trash2 size={15} /> },
+]
+
 export function ProfilePage() {
   const { data: profile, isLoading } = useProfile()
   const updateProfile = useUpdateProfile()
@@ -55,6 +65,7 @@ export function ProfilePage() {
   const user = useAuthStore((s) => s.user)
   const toast = useAppToast()
 
+  const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const profileForm = useForm<ProfileFormData>({
@@ -120,7 +131,6 @@ export function ProfilePage() {
         <div className="max-w-2xl space-y-4">
           <SkeletonCard />
           <SkeletonCard />
-          <SkeletonCard />
         </div>
       </div>
     )
@@ -130,9 +140,9 @@ export function ProfilePage() {
     <div>
       <PageHeader title="Perfil" />
 
-      <div className="max-w-2xl space-y-5">
+      <div className="max-w-2xl">
         {/* Avatar section */}
-        <div className="card p-5 flex items-center gap-4">
+        <div className="card p-5 flex items-center gap-4 mb-5">
           <AvatarUser name={profile?.name || user?.name} size={52} />
           <div>
             <p className="text-base font-semibold">{profile?.name}</p>
@@ -140,142 +150,164 @@ export function ProfilePage() {
           </div>
         </div>
 
-        {/* Personal data */}
-        <SectionCard icon={<User size={17} />} title="Dados Pessoais">
-          <form onSubmit={profileForm.handleSubmit(handleProfileSubmit as () => Promise<void>)} className="space-y-4">
-            <Controller
-              name="name"
-              control={profileForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Nome"
-                  validationState={profileForm.formState.errors.name ? 'error' : undefined}
-                  validationMessage={profileForm.formState.errors.name?.message}
-                >
-                  <Input {...field} />
-                </Field>
-              )}
-            />
-            <Field label="E-mail">
-              <Input value={profile?.email || ''} disabled />
-            </Field>
-            <Button
-              type="submit"
-              disabled={updateProfile.isPending}
-              icon={updateProfile.isPending ? <Spinner size="tiny" /> : undefined}
-            >
-              {updateProfile.isPending ? 'Salvando…' : 'Salvar alterações'}
-            </Button>
-          </form>
-        </SectionCard>
-
-        {/* Change email */}
-        <SectionCard icon={<Mail size={17} />} title="Alterar E-mail">
-          <form onSubmit={emailForm.handleSubmit(handleEmailSubmit as () => Promise<void>)} className="space-y-4">
-            <Controller
-              name="newEmail"
-              control={emailForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Novo E-mail"
-                  validationState={emailForm.formState.errors.newEmail ? 'error' : undefined}
-                  validationMessage={emailForm.formState.errors.newEmail?.message}
-                >
-                  <Input {...field} type="email" placeholder="novo@email.com" />
-                </Field>
-              )}
-            />
-            <Controller
-              name="currentPassword"
-              control={emailForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Senha Atual"
-                  validationState={emailForm.formState.errors.currentPassword ? 'error' : undefined}
-                  validationMessage={emailForm.formState.errors.currentPassword?.message}
-                >
-                  <Input {...field} type="password" />
-                </Field>
-              )}
-            />
-            <Button
-              type="submit"
-              disabled={changeEmail.isPending}
-              icon={changeEmail.isPending ? <Spinner size="tiny" /> : undefined}
-            >
-              {changeEmail.isPending ? 'Alterando…' : 'Alterar E-mail'}
-            </Button>
-          </form>
-        </SectionCard>
-
-        {/* Change password */}
-        <SectionCard icon={<Lock size={17} />} title="Alterar Senha">
-          <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit as () => Promise<void>)} className="space-y-4">
-            <Controller
-              name="currentPassword"
-              control={passwordForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Senha Atual"
-                  validationState={passwordForm.formState.errors.currentPassword ? 'error' : undefined}
-                  validationMessage={passwordForm.formState.errors.currentPassword?.message}
-                >
-                  <Input {...field} type="password" />
-                </Field>
-              )}
-            />
-            <Controller
-              name="newPassword"
-              control={passwordForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Nova Senha"
-                  validationState={passwordForm.formState.errors.newPassword ? 'error' : undefined}
-                  validationMessage={passwordForm.formState.errors.newPassword?.message}
-                >
-                  <Input {...field} type="password" placeholder="Mínimo 6 caracteres" />
-                </Field>
-              )}
-            />
-            <Controller
-              name="confirmNewPassword"
-              control={passwordForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Confirmar Nova Senha"
-                  validationState={passwordForm.formState.errors.confirmNewPassword ? 'error' : undefined}
-                  validationMessage={passwordForm.formState.errors.confirmNewPassword?.message}
-                >
-                  <Input {...field} type="password" />
-                </Field>
-              )}
-            />
-            <Button
-              type="submit"
-              disabled={changePassword.isPending}
-              icon={changePassword.isPending ? <Spinner size="tiny" /> : undefined}
-            >
-              {changePassword.isPending ? 'Alterando…' : 'Alterar Senha'}
-            </Button>
-          </form>
-        </SectionCard>
-
-        {/* Danger zone */}
-        <div className="card p-5 space-y-4 border-destructive/50">
-          <div className="flex items-center gap-2 pb-3 border-b border-border">
-            <Trash2 size={17} className="text-destructive" />
-            <span className="font-semibold text-destructive">Zona de Perigo</span>
+        {/* Tab layout */}
+        <div className="card overflow-hidden">
+          {/* Tab bar */}
+          <div className="flex border-b border-border overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
+                  activeTab === tab.id
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
+                  tab.id === 'danger' && activeTab === tab.id && 'text-destructive border-destructive',
+                  tab.id === 'danger' && activeTab !== tab.id && 'hover:text-destructive',
+                )}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Excluir sua conta é uma ação permanente e irreversível. Todos os seus dados serão removidos definitivamente.
-          </p>
-          <Button
-            variant="outline"
-            className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            onClick={() => setDeleteOpen(true)}
-          >
-            Excluir minha conta
-          </Button>
+
+          {/* Tab content */}
+          <div className="p-5">
+            {activeTab === 'profile' && (
+              <form onSubmit={profileForm.handleSubmit(handleProfileSubmit as () => Promise<void>)} className="space-y-4">
+                <Controller
+                  name="name"
+                  control={profileForm.control}
+                  render={({ field }) => (
+                    <Field
+                      label="Nome"
+                      validationState={profileForm.formState.errors.name ? 'error' : undefined}
+                      validationMessage={profileForm.formState.errors.name?.message}
+                    >
+                      <Input {...field} />
+                    </Field>
+                  )}
+                />
+                <Field label="E-mail">
+                  <Input value={profile?.email || ''} disabled />
+                </Field>
+                <Button
+                  type="submit"
+                  disabled={updateProfile.isPending}
+                  icon={updateProfile.isPending ? <Spinner size="tiny" /> : undefined}
+                >
+                  {updateProfile.isPending ? 'Salvando…' : 'Salvar alterações'}
+                </Button>
+              </form>
+            )}
+
+            {activeTab === 'email' && (
+              <form onSubmit={emailForm.handleSubmit(handleEmailSubmit as () => Promise<void>)} className="space-y-4">
+                <Controller
+                  name="newEmail"
+                  control={emailForm.control}
+                  render={({ field }) => (
+                    <Field
+                      label="Novo E-mail"
+                      validationState={emailForm.formState.errors.newEmail ? 'error' : undefined}
+                      validationMessage={emailForm.formState.errors.newEmail?.message}
+                    >
+                      <Input {...field} type="email" placeholder="novo@email.com" />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="currentPassword"
+                  control={emailForm.control}
+                  render={({ field }) => (
+                    <Field
+                      label="Senha Atual"
+                      validationState={emailForm.formState.errors.currentPassword ? 'error' : undefined}
+                      validationMessage={emailForm.formState.errors.currentPassword?.message}
+                    >
+                      <Input {...field} type="password" />
+                    </Field>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  disabled={changeEmail.isPending}
+                  icon={changeEmail.isPending ? <Spinner size="tiny" /> : undefined}
+                >
+                  {changeEmail.isPending ? 'Alterando…' : 'Alterar E-mail'}
+                </Button>
+              </form>
+            )}
+
+            {activeTab === 'password' && (
+              <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit as () => Promise<void>)} className="space-y-4">
+                <Controller
+                  name="currentPassword"
+                  control={passwordForm.control}
+                  render={({ field }) => (
+                    <Field
+                      label="Senha Atual"
+                      validationState={passwordForm.formState.errors.currentPassword ? 'error' : undefined}
+                      validationMessage={passwordForm.formState.errors.currentPassword?.message}
+                    >
+                      <Input {...field} type="password" />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="newPassword"
+                  control={passwordForm.control}
+                  render={({ field }) => (
+                    <Field
+                      label="Nova Senha"
+                      validationState={passwordForm.formState.errors.newPassword ? 'error' : undefined}
+                      validationMessage={passwordForm.formState.errors.newPassword?.message}
+                    >
+                      <Input {...field} type="password" placeholder="Mínimo 6 caracteres" />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="confirmNewPassword"
+                  control={passwordForm.control}
+                  render={({ field }) => (
+                    <Field
+                      label="Confirmar Nova Senha"
+                      validationState={passwordForm.formState.errors.confirmNewPassword ? 'error' : undefined}
+                      validationMessage={passwordForm.formState.errors.confirmNewPassword?.message}
+                    >
+                      <Input {...field} type="password" />
+                    </Field>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  disabled={changePassword.isPending}
+                  icon={changePassword.isPending ? <Spinner size="tiny" /> : undefined}
+                >
+                  {changePassword.isPending ? 'Alterando…' : 'Alterar Senha'}
+                </Button>
+              </form>
+            )}
+
+            {activeTab === 'danger' && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Excluir sua conta é uma ação permanente e irreversível. Todos os seus dados serão removidos definitivamente.
+                </p>
+                <Button
+                  variant="outline"
+                  className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => setDeleteOpen(true)}
+                  icon={<Trash2 size={15} />}
+                >
+                  Excluir minha conta
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -285,26 +317,6 @@ export function ProfilePage() {
         onConfirm={handleDeleteAccount}
         loading={deleteAccount.isPending}
       />
-    </div>
-  )
-}
-
-function SectionCard({
-  icon,
-  title,
-  children,
-}: {
-  icon: React.ReactNode
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="card p-5 space-y-4">
-      <div className="flex items-center gap-2 pb-3 border-b border-border">
-        <span className="text-primary">{icon}</span>
-        <span className="font-semibold">{title}</span>
-      </div>
-      {children}
     </div>
   )
 }

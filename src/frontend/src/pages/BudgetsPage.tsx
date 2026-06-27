@@ -10,6 +10,7 @@ import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
+import { CurrencyInput } from '../components/ui/currency-input'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
@@ -101,7 +102,7 @@ export function BudgetsPage() {
   const isSaving = createBudget.isPending || updateBudget.isPending
   const sheetOpen = createOpen || !!editTarget
 
-  const years = [currentYear, currentYear + 1]
+  const years = Array.from({ length: 6 }, (_, i) => currentYear - 1 + i)
 
   return (
     <div>
@@ -197,21 +198,14 @@ export function BudgetsPage() {
               <Controller
                 name="amount"
                 control={form.control}
-                render={({ field: { onChange, value, ...rest } }) => (
+                render={({ field: { onChange, value } }) => (
                   <Field
                     label="Valor Orçado"
                     required
                     validationState={form.formState.errors.amount ? 'error' : undefined}
                     validationMessage={form.formState.errors.amount?.message}
                   >
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0,00"
-                      value={String(value ?? '')}
-                      onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                      {...rest}
-                    />
+                    <CurrencyInput value={value ?? 0} onChange={onChange} />
                   </Field>
                 )}
               />

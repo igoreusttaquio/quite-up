@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Outlet, NavLink, Link } from 'react-router-dom'
+import { Outlet, NavLink, Link, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   LayoutDashboard,
   Wallet,
@@ -16,6 +17,7 @@ import {
   Target,
   Bell,
   BarChart3,
+  MoreHorizontal,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useLogout } from '../hooks/useAuth'
@@ -39,11 +41,19 @@ const navItems = [
   { label: 'Perfil', path: '/profile', Icon: User },
 ]
 
+const bottomNavItems = [
+  { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
+  { label: 'Transações', path: '/transactions', Icon: ArrowRightLeft },
+  { label: 'Contas', path: '/accounts', Icon: Wallet },
+  { label: 'Perfil', path: '/profile', Icon: User },
+]
+
 export function DashboardLayout() {
   const user = useAuthStore((s) => s.user)
   const logout = useLogout()
   const { mode, toggle } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const location = useLocation()
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -199,7 +209,17 @@ export function DashboardLayout() {
           <div className="flex-1 p-4 md:p-6 lg:p-8">
             <div className="max-w-[1400px] mx-auto">
               <ErrorBoundary>
-                <Outlet />
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={location.pathname}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                  >
+                    <Outlet />
+                  </motion.div>
+                </AnimatePresence>
               </ErrorBoundary>
             </div>
           </div>
@@ -207,21 +227,32 @@ export function DashboardLayout() {
 
         {/* Bottom nav — Mobile */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex justify-around border-t border-border bg-card pb-safe">
-          {navItems.map(({ label, path, Icon }) => (
+          {bottomNavItems.map(({ label, path, Icon }) => (
             <NavLink
               key={path}
               to={path}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-3 min-w-0 flex-1 transition-colors',
+                  'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-4 min-w-0 flex-1 transition-colors',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )
               }
             >
               <Icon size={20} />
-              <span className="truncate max-w-16">{label}</span>
+              <span>{label}</span>
             </NavLink>
           ))}
+          <button
+            type="button"
+            onClick={() => setMobileOpen((v) => !v)}
+            className={cn(
+              'flex flex-col items-center gap-0.5 text-xs py-2 px-4 flex-1 transition-colors',
+              mobileOpen ? 'text-primary' : 'text-muted-foreground'
+            )}
+          >
+            <MoreHorizontal size={20} />
+            <span>Mais</span>
+          </button>
         </nav>
       </div>
     </TooltipProvider>

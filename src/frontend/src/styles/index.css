@@ -92,6 +92,29 @@
   }
 }
 
+@keyframes overlay-show {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes overlay-hide {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes dialog-show {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes dialog-hide {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to   { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+}
+
+/* Radix UI Dialog animations via data-state */
+.radix-dialog-overlay[data-state="open"]   { animation: overlay-show 0.15s ease-out; }
+.radix-dialog-overlay[data-state="closed"] { animation: overlay-hide 0.12s ease-in; }
+.radix-dialog-content[data-state="open"]   { animation: dialog-show 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.radix-dialog-content[data-state="closed"] { animation: dialog-hide 0.15s ease-in; }
+
 @layer utilities {
   /* Finance colors */
   .text-income { color: var(--income); }

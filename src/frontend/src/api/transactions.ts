@@ -7,18 +7,12 @@ import type {
   TransactionFilters,
 } from '../types'
 
-const transactionTypeToInt: Record<string, number> = {
-  Income: 0,
-  Expense: 1,
-  Transfer: 2,
-}
-
 export const transactionsApi = {
   list: (filters?: TransactionFilters) =>
     api.get<PaginatedResult<Transaction>>('/transactions', { params: filters }),
   create: (data: CreateTransactionRequest) =>
     api.post<Transaction>('/transactions', {
-      type: transactionTypeToInt[data.type],
+      type: data.type,
       amount: data.amount,
       date: data.date,
       accountId: data.accountId,

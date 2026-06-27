@@ -20,8 +20,10 @@ import { CurrencyBadge } from '../components/CurrencyBadge'
 import { TransactionTypeIcon } from '../components/TransactionTypeIcon'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { DateInput } from '../components/ui/date-input'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
+import { CurrencyInput } from '../components/ui/currency-input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
@@ -245,15 +247,13 @@ export function TransactionsPage() {
             ))}
           </NativeSelect>
           <div className="flex items-center gap-2 flex-wrap">
-            <Input
-              type="date"
+            <DateInput
               value={filterStartDate}
               onChange={(e) => updateFilter('from', e.target.value)}
               style={{ width: 148 }}
             />
             <span className="text-sm text-muted-foreground">até</span>
-            <Input
-              type="date"
+            <DateInput
               value={filterEndDate}
               onChange={(e) => updateFilter('to', e.target.value)}
               style={{ width: 148 }}
@@ -312,21 +312,14 @@ export function TransactionsPage() {
             <Controller
               name="amount"
               control={editForm.control}
-              render={({ field: { onChange, value, ...rest } }) => (
+              render={({ field: { onChange, value } }) => (
                 <Field
                   label="Valor"
                   required
                   validationState={editForm.formState.errors.amount ? 'error' : undefined}
                   validationMessage={editForm.formState.errors.amount?.message}
                 >
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={String(value ?? '')}
-                    onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                    {...rest}
-                  />
+                  <CurrencyInput value={value ?? 0} onChange={onChange} />
                 </Field>
               )}
             />
@@ -340,7 +333,7 @@ export function TransactionsPage() {
                   validationState={editForm.formState.errors.date ? 'error' : undefined}
                   validationMessage={editForm.formState.errors.date?.message}
                 >
-                  <Input {...field} type="date" />
+                  <DateInput {...field} />
                 </Field>
               )}
             />
@@ -613,21 +606,14 @@ function TransactionFormSheet({
             <Controller
               name="amount"
               control={form.control}
-              render={({ field: { onChange, value, ...rest } }) => (
+              render={({ field: { onChange, value } }) => (
                 <Field
                   label="Valor"
                   required
                   validationState={form.formState.errors.amount ? 'error' : undefined}
                   validationMessage={getFieldError(form.formState.errors, 'amount')}
                 >
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={String(value ?? '')}
-                    onChange={(e) => onChange(e.target.value ? Number(e.target.value) : 0)}
-                    {...rest}
-                  />
+                  <CurrencyInput value={value ?? 0} onChange={onChange} />
                 </Field>
               )}
             />
@@ -642,7 +628,7 @@ function TransactionFormSheet({
                   validationState={form.formState.errors.date ? 'error' : undefined}
                   validationMessage={getFieldError(form.formState.errors, 'date')}
                 >
-                  <Input {...field} type="date" />
+                  <DateInput {...field} />
                 </Field>
               )}
             />
