@@ -22,8 +22,8 @@ public class GetDashboardSummaryQueryHandler(
 
         var accounts = await context.Accounts
             .Where(a => a.UserId == userId && a.IsActive)
-            .Include(a => a.Transactions.Where(t => t.Date <= today))
-            .Include(a => a.IncomingTransfers.Where(t => t.Date <= today))
+            .Include(a => a.Transactions)
+            .Include(a => a.IncomingTransfers)
             .ToListAsync(cancellationToken);
 
         var totalBalance = accounts.Sum(a =>
