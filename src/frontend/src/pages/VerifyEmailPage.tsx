@@ -6,13 +6,13 @@ import { useVerifyEmail } from '../hooks/useAuth'
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') || ''
-  const verifyEmail = useVerifyEmail()
+  const { mutate, isPending, isSuccess, isError, error } = useVerifyEmail()
 
   useEffect(() => {
     if (token) {
-      verifyEmail.mutate({ token })
+      mutate({ token })
     }
-  }, [token, verifyEmail])
+  }, [token, mutate])
 
   if (!token) {
     return (
@@ -22,7 +22,7 @@ export function VerifyEmailPage() {
     )
   }
 
-  if (verifyEmail.isPending) {
+  if (isPending) {
     return (
       <div className="flex flex-col items-center gap-4 py-8">
         <Spinner size="large" />
@@ -31,7 +31,7 @@ export function VerifyEmailPage() {
     )
   }
 
-  if (verifyEmail.isSuccess) {
+  if (isSuccess) {
     return (
       <div className="space-y-4">
         <MessageBar intent="success">
@@ -46,13 +46,13 @@ export function VerifyEmailPage() {
     )
   }
 
-  if (verifyEmail.isError) {
-    const error = verifyEmail.error as { response?: { data?: { message?: string } } }
+  if (isError) {
+    const apiError = error as { response?: { data?: { message?: string } } }
     return (
       <div className="space-y-4">
         <MessageBar intent="error">
           <MessageBarBody>
-            {error?.response?.data?.message || 'Erro ao verificar e-mail.'}
+            {apiError?.response?.data?.message || 'Erro ao verificar e-mail.'}
           </MessageBarBody>
         </MessageBar>
         <div className="text-center">
