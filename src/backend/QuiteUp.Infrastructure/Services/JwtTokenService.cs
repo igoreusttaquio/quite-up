@@ -38,7 +38,10 @@ public class JwtTokenService(IConfiguration configuration) : ITokenService
 
     public (string token, string tokenHash) GenerateSecureToken()
     {
-        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64))
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .TrimEnd('=');
         var hash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
         return (token, hash);
     }
