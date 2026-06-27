@@ -15,6 +15,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Drawer,
+  DrawerBody,
+  DrawerHeader,
+  DrawerHeaderNavigation,
+  DrawerHeaderTitle,
   Spinner,
 } from '@fluentui/react-components'
 import {
@@ -27,7 +32,6 @@ import {
   FilterFilled,
   DismissRegular,
 } from '@fluentui/react-icons'
-import { SlidePanel } from '../components/SlidePanel'
 import {
   useTransactions,
   useCreateTransaction,
@@ -605,12 +609,138 @@ function TransactionFormDialog({
   onClose: () => void
 }) {
   return (
-    <SlidePanel
+    <Drawer
+type="overlay"
+        modalType="non-modal"
+        position="end"
+      size="medium"
       open={open}
-      title={title}
-      onClose={onClose}
-      footer={
-        <div className="flex gap-2">
+      onOpenChange={(_, { open }) => { if (!open) onClose() }}
+    >
+      <DrawerHeader>
+        <DrawerHeaderNavigation>
+          <Button appearance="subtle" icon={<DismissRegular />} onClick={onClose} />
+        </DrawerHeaderNavigation>
+        <DrawerHeaderTitle>{title}</DrawerHeaderTitle>
+      </DrawerHeader>
+      <DrawerBody>
+        <div className="space-y-4">
+          <Controller
+            name="type"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Tipo" required>
+                <Select {...field}>
+                  {(Object.entries(transactionTypeLabels) as [TransactionType, string][]).map(([v, l]) => (
+                    <option key={v} value={v}>{l}</option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="accountId"
+            control={form.control}
+            render={({ field }) => (
+              <Field
+                label="Conta"
+                required
+                validationState={form.formState.errors.accountId ? 'error' : undefined}
+                validationMessage={getFieldError(form.formState.errors, 'accountId')}
+              >
+                <Select {...field} value={field.value || ''}>
+                  <option value="">Selecione uma conta</option>
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+          />
+
+          {watchType === 'Transfer' && (
+            <Controller
+              name="destinationAccountId"
+              control={form.control}
+              render={({ field }) => (
+                <Field label="Conta de Destino">
+                  <Select {...field} value={field.value || ''}>
+                    <option value="">Selecione uma conta</option>
+                    {accounts
+                      .filter((a) => a.id !== form.watch('accountId'))
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                  </Select>
+                </Field>
+              )}
+            />
+          )}
+
+          <Controller
+            name="categoryId"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Categoria">
+                <Select {...field} value={field.value || ''}>
+                  <option value="">Sem categoria</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="amount"
+            control={form.control}
+            render={({ field: { onChange, value, ...rest } }) => (
+              <Field
+                label="Valor"
+                required
+                validationState={form.formState.errors.amount ? 'error' : undefined}
+                validationMessage={getFieldError(form.formState.errors, 'amount')}
+              >
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={String(value ?? '')}
+                  onChange={(_e, d) => onChange(d.value ? Number(d.value) : 0)}
+                  {...rest}
+                />
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="date"
+            control={form.control}
+            render={({ field }) => (
+              <Field
+                label="Data"
+                required
+                validationState={form.formState.errors.date ? 'error' : undefined}
+                validationMessage={getFieldError(form.formState.errors, 'date')}
+              >
+                <Input {...field} type="date" />
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="description"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Descrição">
+                <Input {...field} placeholder="Descrição opcional" />
+              </Field>
+            )}
+          />
+        </div>
+        <div className="flex gap-2 pt-5">
           <Button
             appearance="primary"
             className="flex-1"
@@ -622,124 +752,7 @@ function TransactionFormDialog({
           </Button>
           <Button onClick={onClose}>Cancelar</Button>
         </div>
-      }
-    >
-      <div className="space-y-4">
-        <Controller
-          name="type"
-          control={form.control}
-          render={({ field }) => (
-            <Field label="Tipo" required>
-              <Select {...field}>
-                {(Object.entries(transactionTypeLabels) as [TransactionType, string][]).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </Select>
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="accountId"
-          control={form.control}
-          render={({ field }) => (
-            <Field
-              label="Conta"
-              required
-              validationState={form.formState.errors.accountId ? 'error' : undefined}
-              validationMessage={getFieldError(form.formState.errors, 'accountId')}
-            >
-              <Select {...field} value={field.value || ''}>
-                <option value="">Selecione uma conta</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </Select>
-            </Field>
-          )}
-        />
-
-        {watchType === 'Transfer' && (
-          <Controller
-            name="destinationAccountId"
-            control={form.control}
-            render={({ field }) => (
-              <Field label="Conta de Destino">
-                <Select {...field} value={field.value || ''}>
-                  <option value="">Selecione uma conta</option>
-                  {accounts
-                    .filter((a) => a.id !== form.watch('accountId'))
-                    .map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                </Select>
-              </Field>
-            )}
-          />
-        )}
-
-        <Controller
-          name="categoryId"
-          control={form.control}
-          render={({ field }) => (
-            <Field label="Categoria">
-              <Select {...field} value={field.value || ''}>
-                <option value="">Sem categoria</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Select>
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="amount"
-          control={form.control}
-          render={({ field: { onChange, value, ...rest } }) => (
-            <Field
-              label="Valor"
-              required
-              validationState={form.formState.errors.amount ? 'error' : undefined}
-              validationMessage={getFieldError(form.formState.errors, 'amount')}
-            >
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                value={String(value ?? '')}
-                onChange={(_e, d) => onChange(d.value ? Number(d.value) : 0)}
-                {...rest}
-              />
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="date"
-          control={form.control}
-          render={({ field }) => (
-            <Field
-              label="Data"
-              required
-              validationState={form.formState.errors.date ? 'error' : undefined}
-              validationMessage={getFieldError(form.formState.errors, 'date')}
-            >
-              <Input {...field} type="date" />
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="description"
-          control={form.control}
-          render={({ field }) => (
-            <Field label="Descrição">
-              <Input {...field} placeholder="Descrição opcional" />
-            </Field>
-          )}
-        />
-      </div>
-    </SlidePanel>
+      </DrawerBody>
+    </Drawer>
   )
 }

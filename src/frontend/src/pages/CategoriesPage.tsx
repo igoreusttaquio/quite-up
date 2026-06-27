@@ -9,10 +9,14 @@ import {
   Select,
   Text,
   Tag,
+  Drawer,
+  DrawerBody,
+  DrawerHeader,
+  DrawerHeaderNavigation,
+  DrawerHeaderTitle,
   Spinner,
 } from '@fluentui/react-components'
-import { AddFilled, EditFilled, DeleteFilled, TagFilled } from '@fluentui/react-icons'
-import { SlidePanel } from '../components/SlidePanel'
+import { AddFilled, EditFilled, DeleteFilled, TagFilled, DismissRegular } from '@fluentui/react-icons'
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../hooks/useCategories'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
@@ -147,13 +151,75 @@ export function CategoriesPage() {
         </div>
       )}
 
-      {/* Create / Edit slide panel — shared form */}
-      <SlidePanel
+      {/* Create / Edit drawer — shared form */}
+      <Drawer
+        type="overlay"
+        modalType="non-modal"
+        position="end"
+        size="medium"
         open={dialogOpen}
-        title={editTarget ? 'Editar Categoria' : 'Nova Categoria'}
-        onClose={() => { setCreateOpen(false); setEditTarget(null) }}
-        footer={
-          <div className="flex gap-2">
+        onOpenChange={(_, { open }) => {
+          if (!open) { setCreateOpen(false); setEditTarget(null) }
+        }}
+      >
+        <DrawerHeader>
+          <DrawerHeaderNavigation>
+            <Button appearance="subtle" icon={<DismissRegular />} onClick={() => { setCreateOpen(false); setEditTarget(null) }} />
+          </DrawerHeaderNavigation>
+          <DrawerHeaderTitle>{editTarget ? 'Editar Categoria' : 'Nova Categoria'}</DrawerHeaderTitle>
+        </DrawerHeader>
+        <DrawerBody>
+          <div className="space-y-5">
+            <Controller
+              name="name"
+              control={form.control}
+              render={({ field }) => (
+                <Field
+                  label="Nome"
+                  required
+                  validationState={form.formState.errors.name ? 'error' : undefined}
+                  validationMessage={form.formState.errors.name?.message}
+                >
+                  <Input {...field} placeholder="Ex: Alimentação" />
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="type"
+              control={form.control}
+              render={({ field }) => (
+                <Field label="Tipo" required>
+                  <Select {...field} disabled={!!editTarget}>
+                    {(Object.entries(categoryTypeLabels) as [CategoryType, string][]).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="icon"
+              control={form.control}
+              render={({ field }) => (
+                <Field label="Ícone">
+                  <IconPicker value={field.value} onChange={field.onChange} />
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="color"
+              control={form.control}
+              render={({ field }) => (
+                <Field label="Cor">
+                  <ColorPicker value={field.value} onChange={field.onChange} />
+                </Field>
+              )}
+            />
+          </div>
+          <div className="flex gap-2 pt-5">
             <Button
               appearance="primary"
               className="flex-1"
@@ -171,59 +237,8 @@ export function CategoriesPage() {
               Cancelar
             </Button>
           </div>
-        }
-      >
-        <div className="space-y-5">
-          <Controller
-            name="name"
-            control={form.control}
-            render={({ field }) => (
-              <Field
-                label="Nome"
-                required
-                validationState={form.formState.errors.name ? 'error' : undefined}
-                validationMessage={form.formState.errors.name?.message}
-              >
-                <Input {...field} placeholder="Ex: Alimentação" />
-              </Field>
-            )}
-          />
-
-          <Controller
-            name="type"
-            control={form.control}
-            render={({ field }) => (
-              <Field label="Tipo" required>
-                <Select {...field} disabled={!!editTarget}>
-                  {(Object.entries(categoryTypeLabels) as [CategoryType, string][]).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-          />
-
-          <Controller
-            name="icon"
-            control={form.control}
-            render={({ field }) => (
-              <Field label="Ícone">
-                <IconPicker value={field.value} onChange={field.onChange} />
-              </Field>
-            )}
-          />
-
-          <Controller
-            name="color"
-            control={form.control}
-            render={({ field }) => (
-              <Field label="Cor">
-                <ColorPicker value={field.value} onChange={field.onChange} />
-              </Field>
-            )}
-          />
-        </div>
-      </SlidePanel>
+        </DrawerBody>
+      </Drawer>
 
       <ConfirmDialog
         open={!!deleteTarget}

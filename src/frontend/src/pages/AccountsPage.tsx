@@ -8,10 +8,14 @@ import {
   Input,
   Select,
   Text,
+  Drawer,
+  DrawerBody,
+  DrawerHeader,
+  DrawerHeaderNavigation,
+  DrawerHeaderTitle,
   Spinner,
 } from '@fluentui/react-components'
-import { AddFilled, EditFilled, DeleteFilled, MoneyFilled } from '@fluentui/react-icons'
-import { SlidePanel } from '../components/SlidePanel'
+import { AddFilled, EditFilled, DeleteFilled, MoneyFilled, DismissRegular } from '@fluentui/react-icons'
 import { useAccounts, useCreateAccount, useUpdateAccount, useDeactivateAccount } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
@@ -138,13 +142,68 @@ export function AccountsPage() {
         </div>
       )}
 
-      {/* Create slide panel */}
-      <SlidePanel
+      {/* Create drawer */}
+      <Drawer
+        type="overlay"
+        modalType="non-modal"
+        position="end"
+        size="medium"
         open={createOpen}
-        title="Nova Conta"
-        onClose={() => setCreateOpen(false)}
-        footer={
-          <div className="flex gap-2">
+        onOpenChange={(_, { open }) => setCreateOpen(open)}
+      >
+        <DrawerHeader>
+          <DrawerHeaderNavigation>
+            <Button appearance="subtle" icon={<DismissRegular />} onClick={() => setCreateOpen(false)} />
+          </DrawerHeaderNavigation>
+          <DrawerHeaderTitle>Nova Conta</DrawerHeaderTitle>
+        </DrawerHeader>
+        <DrawerBody>
+          <div className="space-y-4">
+            <Controller
+              name="name"
+              control={createForm.control}
+              render={({ field }) => (
+                <Field
+                  label="Nome"
+                  required
+                  validationState={createForm.formState.errors.name ? 'error' : undefined}
+                  validationMessage={createForm.formState.errors.name?.message}
+                >
+                  <Input {...field} placeholder="Ex: Conta Bradesco" />
+                </Field>
+              )}
+            />
+            <Controller
+              name="type"
+              control={createForm.control}
+              render={({ field }) => (
+                <Field label="Tipo" required>
+                  <Select {...field}>
+                    {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+            />
+            <Controller
+              name="initialBalance"
+              control={createForm.control}
+              render={({ field: { onChange, value, ...rest } }) => (
+                <Field label="Saldo Inicial" required>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={String(value ?? '')}
+                    onChange={(_e, data) => onChange(data.value ? Number(data.value) : 0)}
+                    {...rest}
+                  />
+                </Field>
+              )}
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
             <Button
               appearance="primary"
               className="flex-1"
@@ -156,62 +215,55 @@ export function AccountsPage() {
             </Button>
             <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
           </div>
-        }
-      >
-        <div className="space-y-4">
-          <Controller
-            name="name"
-            control={createForm.control}
-            render={({ field }) => (
-              <Field
-                label="Nome"
-                required
-                validationState={createForm.formState.errors.name ? 'error' : undefined}
-                validationMessage={createForm.formState.errors.name?.message}
-              >
-                <Input {...field} placeholder="Ex: Conta Bradesco" />
-              </Field>
-            )}
-          />
-          <Controller
-            name="type"
-            control={createForm.control}
-            render={({ field }) => (
-              <Field label="Tipo" required>
-                <Select {...field}>
-                  {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-          />
-          <Controller
-            name="initialBalance"
-            control={createForm.control}
-            render={({ field: { onChange, value, ...rest } }) => (
-              <Field label="Saldo Inicial" required>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={String(value ?? '')}
-                  onChange={(_e, data) => onChange(data.value ? Number(data.value) : 0)}
-                  {...rest}
-                />
-              </Field>
-            )}
-          />
-        </div>
-      </SlidePanel>
+        </DrawerBody>
+      </Drawer>
 
-      {/* Edit slide panel */}
-      <SlidePanel
+      {/* Edit drawer */}
+      <Drawer
+        type="overlay"
+        modalType="non-modal"
+        position="end"
+        size="medium"
         open={!!editTarget}
-        title="Editar Conta"
-        onClose={() => setEditTarget(null)}
-        footer={
-          <div className="flex gap-2">
+        onOpenChange={(_, { open }) => { if (!open) setEditTarget(null) }}
+      >
+        <DrawerHeader>
+          <DrawerHeaderNavigation>
+            <Button appearance="subtle" icon={<DismissRegular />} onClick={() => setEditTarget(null)} />
+          </DrawerHeaderNavigation>
+          <DrawerHeaderTitle>Editar Conta</DrawerHeaderTitle>
+        </DrawerHeader>
+        <DrawerBody>
+          <div className="space-y-4">
+            <Controller
+              name="name"
+              control={editForm.control}
+              render={({ field }) => (
+                <Field
+                  label="Nome"
+                  required
+                  validationState={editForm.formState.errors.name ? 'error' : undefined}
+                  validationMessage={editForm.formState.errors.name?.message}
+                >
+                  <Input {...field} />
+                </Field>
+              )}
+            />
+            <Controller
+              name="type"
+              control={editForm.control}
+              render={({ field }) => (
+                <Field label="Tipo" required>
+                  <Select {...field}>
+                    {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
             <Button
               appearance="primary"
               className="flex-1"
@@ -223,38 +275,8 @@ export function AccountsPage() {
             </Button>
             <Button onClick={() => setEditTarget(null)}>Cancelar</Button>
           </div>
-        }
-      >
-        <div className="space-y-4">
-          <Controller
-            name="name"
-            control={editForm.control}
-            render={({ field }) => (
-              <Field
-                label="Nome"
-                required
-                validationState={editForm.formState.errors.name ? 'error' : undefined}
-                validationMessage={editForm.formState.errors.name?.message}
-              >
-                <Input {...field} />
-              </Field>
-            )}
-          />
-          <Controller
-            name="type"
-            control={editForm.control}
-            render={({ field }) => (
-              <Field label="Tipo" required>
-                <Select {...field}>
-                  {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-          />
-        </div>
-      </SlidePanel>
+        </DrawerBody>
+      </Drawer>
 
       <ConfirmDialog
         open={!!deleteTarget}
