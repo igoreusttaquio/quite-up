@@ -27,14 +27,16 @@ export function ReportsPage() {
   const [endDate, setEndDate] = useState(today)
   const [queryStartDate, setQueryStartDate] = useState(startDate)
   const [queryEndDate, setQueryEndDate] = useState(endDate)
+  const [hasGenerated, setHasGenerated] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
 
-  const { data: periodReport, isLoading: loadingPeriod } = usePeriodReport(queryStartDate, queryEndDate)
+  const { data: periodReport, isLoading: loadingPeriod } = usePeriodReport(queryStartDate, queryEndDate, hasGenerated)
   const { data: evolutionReport, isLoading: loadingEvolution } = useEvolutionReport(selectedYear)
 
   const handleGeneratePeriod = () => {
     setQueryStartDate(startDate)
     setQueryEndDate(endDate)
+    setHasGenerated(true)
   }
 
   return (

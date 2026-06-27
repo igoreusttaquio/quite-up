@@ -317,6 +317,15 @@ export interface Notification {
   createdAt: string
 }
 
+// === Dashboard ===
+
+export interface DashboardSummary {
+  totalBalance: number
+  monthlyIncome: number
+  monthlyExpenses: number
+  recentTransactions: Transaction[]
+}
+
 // === Reports ===
 
 export interface PeriodReport {

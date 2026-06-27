@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi } from '../api/reports'
 
-export function usePeriodReport(startDate: string, endDate: string) {
+export function usePeriodReport(startDate: string, endDate: string, enabled = false) {
   return useQuery({
     queryKey: ['reports', 'period', startDate, endDate] as const,
     queryFn: () => reportsApi.getPeriod(startDate, endDate).then((r) => r.data),
-    enabled: !!startDate && !!endDate,
+    enabled: enabled && !!startDate && !!endDate,
   })
 }
 

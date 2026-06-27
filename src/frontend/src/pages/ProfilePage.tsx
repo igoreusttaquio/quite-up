@@ -153,7 +153,7 @@ export function ProfilePage() {
         {/* Tab layout */}
         <div className="card overflow-hidden">
           {/* Tab bar */}
-          <div className="flex border-b border-border overflow-x-auto">
+          <div className="flex border-b border-border overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}

@@ -1,8 +1,6 @@
-import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Wallet, ArrowUp, ArrowDown, ArrowRightLeft, Building2, Tag, User } from 'lucide-react'
-import { useAccounts } from '../hooks/useAccounts'
-import { useTransactions } from '../hooks/useTransactions'
+import { useDashboard } from '../hooks/useDashboard'
 import { useAuthStore } from '../store/authStore'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { SkeletonCard } from '../components/Skeleton'
@@ -19,41 +17,19 @@ const typeLabels: Record<TransactionType, string> = {
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user)
-  const { data: accounts, isLoading: loadingAccounts } = useAccounts()
-  const { data: recentResult, isLoading: loadingRecent } = useTransactions({ pageSize: 8 })
+  const { data: dashboard, isLoading } = useDashboard()
 
   const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
-  const monthStr = String(month).padStart(2, '0')
-  const lastDay = new Date(year, month, 0).getDate()
-  const startDate = `${year}-${monthStr}-01`
-  const endDate = `${year}-${monthStr}-${String(lastDay).padStart(2, '0')}`
-
-  const { data: monthlyResult } = useTransactions({ startDate, endDate, pageSize: 500 })
-
   const monthName = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(now)
 
-  const totalBalance = useMemo(
-    () => accounts?.filter((a) => a.isActive).reduce((sum, a) => sum + a.balance, 0) ?? 0,
-    [accounts]
-  )
-
-  const monthlyIncome = useMemo(
-    () => monthlyResult?.items.filter((t) => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0) ?? 0,
-    [monthlyResult]
-  )
-
-  const monthlyExpenses = useMemo(
-    () => monthlyResult?.items.filter((t) => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0) ?? 0,
-    [monthlyResult]
-  )
+  const totalBalance = dashboard?.totalBalance ?? 0
+  const monthlyIncome = dashboard?.monthlyIncome ?? 0
+  const monthlyExpenses = dashboard?.monthlyExpenses ?? 0
+  const recentTransactions = dashboard?.recentTransactions ?? []
 
   const savingsRate = monthlyIncome > 0
     ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100
     : 0
-
-  const isLoading = loadingAccounts || loadingRecent
 
   return (
     <div className="space-y-6">
@@ -120,7 +96,7 @@ export function DashboardPage() {
           </Link>
         </div>
 
-        {loadingRecent ? (
+        {isLoading ? (
           <div className="p-5 space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 animate-pulse">
@@ -133,7 +109,7 @@ export function DashboardPage() {
               </div>
             ))}
           </div>
-        ) : !recentResult?.items.length ? (
+        ) : !recentTransactions.length ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4 text-center px-5">
             <ArrowRightLeft size={44} className="text-muted-foreground opacity-40" />
             <div className="space-y-1">
@@ -146,7 +122,7 @@ export function DashboardPage() {
           </div>
         ) : (
           <ul className="divide-y divide-subtle">
-            {recentResult.items.map((tx) => (
+            {recentTransactions.map((tx) => (
               <li key={tx.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
                 <TransactionTypeIcon type={tx.type} />
                 <div className="flex-1 min-w-0">
@@ -155,7 +131,7 @@ export function DashboardPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {tx.categoryName && `${tx.categoryName} · `}
-                    {dateFormatter.format(new Date(tx.date))}
+                    {dateFormatter.format(new Date(tx.date + 'T12:00:00'))}
                   </p>
                 </div>
                 <CurrencyBadge value={tx.type === 'Expense' ? -tx.amount : tx.amount} />
