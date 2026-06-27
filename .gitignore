@@ -9,8 +9,7 @@ obj/
 **/appsettings.Development.json
 **/appsettings.Local.json
 
-# EF Core
-**/Migrations/*Designer.cs
+# EF Core — Designer files are required for migration discovery at runtime
 
 # Logs
 logs/
