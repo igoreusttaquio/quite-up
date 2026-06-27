@@ -87,7 +87,7 @@ export function DashboardLayout() {
             <Avatar name={user?.name} size={32} color="colorful" />
             <div className="flex-1 min-w-0">
               <Text size={200} weight="semibold" block truncate>{user?.name}</Text>
-              <Text size={75} className="text-subtle" block truncate>{user?.email}</Text>
+              <Text size={100} className="text-subtle" block truncate>{user?.email}</Text>
             </div>
           </div>
           <div className="flex items-center gap-1 px-1">

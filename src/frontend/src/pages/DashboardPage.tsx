@@ -8,7 +8,6 @@ import {
   DataFunnelFilled,
   BuildingBankFilled,
   PersonFilled,
-  VehicleBicycleFilled,
 } from '@fluentui/react-icons'
 import { Link } from 'react-router-dom'
 import { useAccounts } from '../hooks/useAccounts'

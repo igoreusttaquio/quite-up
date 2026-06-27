@@ -479,7 +479,7 @@ function TransactionTable({
         {/* Desktop header */}
         <div className="hidden md:grid grid-cols-[44px_1fr_140px_140px_130px_72px] gap-3 px-4 py-2.5 border-b border-subtle bg-canvas">
           {['', 'Descrição / Data', 'Categoria', 'Conta', 'Valor', ''].map((h, i) => (
-            <Text key={i} size={75} weight="semibold" className="text-muted uppercase tracking-wider">{h}</Text>
+            <Text key={i} size={100} weight="semibold" className="text-muted uppercase tracking-wider">{h}</Text>
           ))}
         </div>
 
