@@ -1,14 +1,18 @@
-import { cn } from '../lib/utils'
+import { mergeClasses } from '@fluentui/react-components'
 
-interface SkeletonProps { className?: string }
+interface SkeletonProps {
+  className?: string
+}
 
 export function SkeletonLine({ className }: SkeletonProps) {
-  return <div className={cn('animate-pulse rounded-md bg-muted', className)} />
+  return (
+    <div className={mergeClasses('animate-pulse rounded-md bg-surface-3', className)} />
+  )
 }
 
 export function SkeletonCard({ className }: SkeletonProps) {
   return (
-    <div className={cn('rounded-xl border bg-card p-6 space-y-4 shadow-sm', className)}>
+    <div className={mergeClasses('rounded-xl border border-subtle bg-surface p-6 space-y-4 shadow-sm', className)}>
       <div className="flex items-center gap-3">
         <SkeletonLine className="h-10 w-10 rounded-full" />
         <div className="flex-1 space-y-2">

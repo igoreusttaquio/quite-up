@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tailwindcss-animate";
 
 @layer base {
   *, *::before, *::after {
@@ -11,98 +10,48 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  a { text-decoration: none; }
-
-  :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.623 0.214 259.815);
-    --primary-foreground: oklch(0.97 0.014 254.604);
-    --secondary: oklch(0.965 0.001 286.375);
-    --secondary-foreground: oklch(0.205 0.042 265.755);
-    --muted: oklch(0.965 0.001 286.375);
-    --muted-foreground: oklch(0.556 0.028 286.289);
-    --accent: oklch(0.965 0.001 286.375);
-    --accent-foreground: oklch(0.205 0.042 265.755);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0.004 286.375);
-    --input: oklch(0.922 0.004 286.375);
-    --ring: oklch(0.623 0.214 259.815);
-    --radius: 0.625rem;
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.623 0.214 259.815);
-    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-    --sidebar-accent: oklch(0.965 0.001 286.375);
-    --sidebar-accent-foreground: oklch(0.205 0.042 265.755);
-    --sidebar-border: oklch(0.922 0.004 286.375);
-    --sidebar-ring: oklch(0.623 0.214 259.815);
-    --income: oklch(0.527 0.154 150.069);
-    --expense: oklch(0.577 0.245 27.325);
-  }
-
-  .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.623 0.214 259.815);
-    --primary-foreground: oklch(0.97 0.014 254.604);
-    --secondary: oklch(0.269 0.015 286.375);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0.015 286.375);
-    --muted-foreground: oklch(0.708 0.01 286.289);
-    --accent: oklch(0.269 0.015 286.375);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.269 0.015 286.375);
-    --input: oklch(0.269 0.015 286.375);
-    --ring: oklch(0.623 0.214 259.815);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --sidebar: oklch(0.205 0.042 265.755);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.623 0.214 259.815);
-    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-    --sidebar-accent: oklch(0.269 0.015 286.375);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0.015 286.375);
-    --sidebar-ring: oklch(0.623 0.214 259.815);
-    --income: oklch(0.72 0.16 150.069);
-    --expense: oklch(0.637 0.237 25.331);
+  /* Improve default link styles */
+  a {
+    text-decoration: none;
   }
 }
 
 @layer utilities {
-  .card-shadcn {
-    background-color: hsl(var(--card));
-    color: hsl(var(--card-foreground));
-    border: 1px solid hsl(var(--border));
-    border-radius: var(--radius);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  /* Fluent UI design token shortcuts — change automatically with dark theme */
+  .text-brand       { color: var(--colorBrandForeground1); }
+  .text-brand-2     { color: var(--colorBrandForeground2); }
+  .text-muted       { color: var(--colorNeutralForeground2); }
+  .text-subtle      { color: var(--colorNeutralForeground3); }
+  .bg-surface       { background-color: var(--colorNeutralBackground1); }
+  .bg-canvas        { background-color: var(--colorNeutralBackground2); }
+  .bg-surface-3     { background-color: var(--colorNeutralBackground3); }
+  .bg-brand-light   { background-color: var(--colorBrandBackground2); }
+  .border-subtle    { border-color: var(--colorNeutralStroke1); }
+  .text-income      { color: var(--colorPaletteGreenForeground1); }
+  .text-expense     { color: var(--colorPaletteRedForeground1); }
+  .text-danger      { color: var(--colorPaletteRedForeground1); }
+  .bg-danger-subtle { background-color: var(--colorPaletteRedBackground2); }
+
+  /* Card styles */
+  .card {
+    background-color: var(--colorNeutralBackground1);
+    border: 1px solid var(--colorNeutralStroke1);
+    border-radius: var(--borderRadiusXLarge);
+    box-shadow: var(--shadow4);
+  }
+  .card-sm {
+    background-color: var(--colorNeutralBackground1);
+    border: 1px solid var(--colorNeutralStroke1);
+    border-radius: var(--borderRadiusLarge);
+    box-shadow: var(--shadow2);
   }
 
+  /* Safe-area insets for notched phones */
   .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
 }
 
-@layer base {
-  * { border-color: hsl(var(--border)); }
-  body { background-color: hsl(var(--background)); color: hsl(var(--foreground)); }
+/* OverlayDrawer backdrop — transparent para nao ocultar o conteudo */
+.fui-DialogSurface__backdrop {
+  background-color: transparent !important;
 }

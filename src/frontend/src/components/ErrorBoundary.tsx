@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react'
-import { Button } from './ui/button'
-import { AlertCircle } from 'lucide-react'
+import { Button, Text } from '@fluentui/react-components'
+import { ErrorCircleFilled } from '@fluentui/react-icons'
 
 interface Props { children: ReactNode }
 interface State { hasError: boolean; error?: Error }
@@ -16,12 +16,12 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 p-8 text-center">
-          <AlertCircle className="h-12 w-12 text-destructive" />
-          <h2 className="text-lg font-semibold">Algo deu errado</h2>
-          <p className="text-sm text-muted-foreground max-w-md">
+          <ErrorCircleFilled className="text-expense" style={{ fontSize: 48 }} />
+          <Text as="h2" size={600} weight="semibold">Algo deu errado</Text>
+          <Text size={300} className="text-muted max-w-md">
             {this.state.error?.message || 'Ocorreu um erro inesperado nesta página.'}
-          </p>
-          <Button onClick={() => this.setState({ hasError: false })}>
+          </Text>
+          <Button appearance="primary" onClick={() => this.setState({ hasError: false })}>
             Tentar novamente
           </Button>
         </div>

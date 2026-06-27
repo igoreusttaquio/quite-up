@@ -1,39 +1,45 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
 import { Link } from 'react-router-dom'
-import { Mail, CheckCircle2 } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
-import { Alert, AlertDescription } from '../components/ui/alert'
+import { MailFilled, CheckmarkCircleFilled } from '@fluentui/react-icons'
 import { useForgotPassword } from '../hooks/useAuth'
 
-const schema = z.object({ email: z.string().email('E-mail inválido') })
+const schema = z.object({
+  email: z.string().email('E-mail inválido'),
+})
+
 type FormData = z.infer<typeof schema>
 
 export function ForgotPasswordPage() {
   const forgotPassword = useForgotPassword()
-  const { register, handleSubmit, setError, formState: { errors } } = useForm<FormData>({
+
+  const { control, handleSubmit, setError, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: { email: '' },
   })
 
   const onSubmit = async (data: FormData) => {
-    try { await forgotPassword.mutateAsync(data) }
-    catch { setError('root', { message: 'Erro ao enviar recuperação.' }) }
+    try {
+      await forgotPassword.mutateAsync(data)
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } }
+      setError('root', { message: axiosError?.response?.data?.message || 'Erro ao enviar recuperação.' })
+    }
   }
 
   if (forgotPassword.isSuccess) {
     return (
       <div className="space-y-6 text-center py-4">
-        <CheckCircle2 className="h-14 w-14 text-emerald-500 mx-auto" />
+        <CheckmarkCircleFilled className="text-income" style={{ fontSize: 56 }} />
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">E-mail enviado!</h2>
-          <p className="text-sm text-muted-foreground mt-2">
+          <Text as="h2" size={700} weight="semibold" block>E-mail enviado!</Text>
+          <Text size={300} className="text-muted mt-2 block">
             Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-          </p>
+          </Text>
         </div>
-        <Link to="/login" className="text-sm text-primary hover:underline font-medium inline-block">
+        <Link to="/login" className="text-brand hover:underline text-sm font-medium">
           Voltar para o login
         </Link>
       </div>
@@ -43,36 +49,57 @@ export function ForgotPasswordPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center gap-3 text-center">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <Mail className="h-6 w-6 text-primary" />
+        <div className="w-12 h-12 rounded-full bg-brand-light flex items-center justify-center">
+          <MailFilled className="text-brand" style={{ fontSize: 24 }} />
         </div>
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Recuperar Senha</h2>
-          <p className="text-sm text-muted-foreground mt-1">Informe seu e-mail e enviaremos um link de recuperação</p>
+          <Text as="h2" size={700} weight="semibold" block>Recuperar Senha</Text>
+          <Text size={300} className="text-muted mt-1 block">
+            Informe seu e-mail e enviaremos um link de recuperação
+          </Text>
         </div>
       </div>
 
       {errors.root && (
-        <Alert variant="destructive">
-          <AlertDescription>{errors.root.message}</AlertDescription>
-        </Alert>
+        <MessageBar intent="error">
+          <MessageBarBody>{errors.root.message}</MessageBarBody>
+        </MessageBar>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" placeholder="seu@email.com" {...register('email')} />
-          {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-        </div>
-        <Button type="submit" className="w-full" size="lg" disabled={forgotPassword.isPending}>
+        <Controller
+          name="email"
+          control={control}
+          render={({ field }) => (
+            <Field
+              label="E-mail"
+              required
+              validationState={errors.email ? 'error' : undefined}
+              validationMessage={errors.email?.message}
+            >
+              <Input {...field} type="email" placeholder="seu@email.com" size="large" />
+            </Field>
+          )}
+        />
+
+        <Button
+          type="submit"
+          appearance="primary"
+          className="w-full"
+          size="large"
+          disabled={forgotPassword.isPending}
+          icon={forgotPassword.isPending ? <Spinner size="tiny" /> : undefined}
+        >
           {forgotPassword.isPending ? 'Enviando…' : 'Enviar Link'}
         </Button>
       </form>
 
-      <p className="text-xs text-muted-foreground text-center">
+      <Text size={200} className="text-muted text-center block">
         Lembrou a senha?{' '}
-        <Link to="/login" className="text-primary hover:underline font-medium">Entrar</Link>
-      </p>
+        <Link to="/login" className="text-brand hover:underline font-medium">
+          Entrar
+        </Link>
+      </Text>
     </div>
   )
 }
