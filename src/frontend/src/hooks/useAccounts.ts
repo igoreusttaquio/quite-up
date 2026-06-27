@@ -3,6 +3,7 @@ import { accountsApi } from '../api/accounts'
 import type { CreateAccountRequest, UpdateAccountRequest } from '../types'
 
 const ACCOUNTS_KEY = ['accounts'] as const
+const DASHBOARD_KEY = ['dashboard'] as const
 
 export function useAccounts() {
   return useQuery({
@@ -24,7 +25,10 @@ export function useCreateAccount() {
 
   return useMutation({
     mutationFn: (data: CreateAccountRequest) => accountsApi.create(data).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEY })
+    },
   })
 }
 
@@ -34,7 +38,10 @@ export function useUpdateAccount() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateAccountRequest }) =>
       accountsApi.update(id, data).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEY })
+    },
   })
 }
 
@@ -43,6 +50,9 @@ export function useDeactivateAccount() {
 
   return useMutation({
     mutationFn: (id: string) => accountsApi.deactivate(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY })
+      queryClient.invalidateQueries({ queryKey: DASHBOARD_KEY })
+    },
   })
 }
