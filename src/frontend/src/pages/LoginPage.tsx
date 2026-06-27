@@ -1,8 +1,17 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
+import {
+  Input,
+  Button,
+  Field,
+  Text,
+  MessageBar,
+  MessageBarBody,
+  Spinner,
+} from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
+import { LockClosedFilled } from '@fluentui/react-icons'
 import { useLogin } from '../hooks/useAuth'
 import { useAuthStore } from '../store/authStore'
 import { useEffect } from 'react'
@@ -46,9 +55,16 @@ export function LoginPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Text as="h2" size={700} weight="semibold" block>Entrar</Text>
-        <Text size={300} className="text-muted">Acesse sua conta para continuar</Text>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="w-12 h-12 rounded-full bg-brand-light flex items-center justify-center">
+          <LockClosedFilled className="text-brand" style={{ fontSize: 24 }} />
+        </div>
+        <div>
+          <Text as="h2" size={600} weight="semibold" block>Entrar</Text>
+          <Text size={200} className="text-muted mt-0.5 block">
+            Acesse sua conta para continuar
+          </Text>
+        </div>
       </div>
 
       {errors.root && (
@@ -89,7 +105,7 @@ export function LoginPage() {
         />
 
         <div className="text-right">
-          <Link to="/forgot-password" className="text-sm text-brand hover:underline">
+          <Link to="/forgot-password" className="text-sm text-brand hover:underline font-medium">
             Esqueceu a senha?
           </Link>
         </div>
@@ -108,7 +124,7 @@ export function LoginPage() {
 
       <Text size={200} className="text-muted text-center block">
         Não tem conta?{' '}
-        <Link to="/register" className="text-brand hover:underline font-medium">
+        <Link to="/register" className="text-brand hover:underline font-semibold">
           Cadastre-se grátis
         </Link>
       </Text>

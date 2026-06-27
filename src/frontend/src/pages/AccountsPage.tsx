@@ -288,16 +288,16 @@ function AccountCard({
   const label = accountTypeLabels[account.type]
 
   return (
-    <div className="bg-surface rounded-xl border border-subtle shadow-sm p-5 space-y-4">
+    <div className="card p-5 space-y-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{emoji}</span>
-          <div>
-            <Text weight="semibold" size={400} block>{account.name}</Text>
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-2xl flex-shrink-0">{emoji}</span>
+          <div className="min-w-0">
+            <Text weight="semibold" size={400} block truncate>{account.name}</Text>
             <Text size={200} className="text-muted">{label}</Text>
           </div>
         </div>
-        <div className="flex gap-1 flex-shrink-0">
+        <div className="flex gap-0.5 flex-shrink-0">
           <Button appearance="subtle" icon={<EditFilled />} size="small" onClick={onEdit} />
           <Button appearance="subtle" icon={<DeleteFilled />} size="small" onClick={onDeactivate} />
         </div>

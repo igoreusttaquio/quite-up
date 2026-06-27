@@ -1,8 +1,17 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
+import {
+  Input,
+  Button,
+  Field,
+  Text,
+  MessageBar,
+  MessageBarBody,
+  Spinner,
+} from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
+import { PersonAddFilled } from '@fluentui/react-icons'
 import { useRegister } from '../hooks/useAuth'
 import { useAuthStore } from '../store/authStore'
 import { useEffect } from 'react'
@@ -53,9 +62,16 @@ export function RegisterPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Text as="h2" size={700} weight="semibold" block>Criar conta</Text>
-        <Text size={300} className="text-muted">Comece a organizar suas finanças hoje</Text>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="w-12 h-12 rounded-full bg-brand-light flex items-center justify-center">
+          <PersonAddFilled className="text-brand" style={{ fontSize: 24 }} />
+        </div>
+        <div>
+          <Text as="h2" size={600} weight="semibold" block>Criar conta</Text>
+          <Text size={200} className="text-muted mt-0.5 block">
+            Comece a organizar suas finanças hoje
+          </Text>
+        </div>
       </div>
 
       {errors.root && (
@@ -139,7 +155,7 @@ export function RegisterPage() {
 
       <Text size={200} className="text-muted text-center block">
         Já tem conta?{' '}
-        <Link to="/login" className="text-brand hover:underline font-medium">
+        <Link to="/login" className="text-brand hover:underline font-semibold">
           Entrar
         </Link>
       </Text>

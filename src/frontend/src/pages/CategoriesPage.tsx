@@ -40,7 +40,7 @@ const ICON_OPTIONS = [
 const COLOR_PRESETS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
   '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280',
-  '#84cc16', '#f59e0b', '#10b981', '#0ea5e9', '#6366f1',
+  '#84cc16', '#f59e0b', '#10b981', '#0ea5e5', '#6366f1',
 ]
 
 const schema = z.object({
@@ -291,10 +291,10 @@ function CategoryCard({
   onDelete: () => void
 }) {
   return (
-    <div className="bg-surface rounded-xl border border-subtle shadow-sm p-4 flex items-center gap-3">
+    <div className="card-sm p-3.5 flex items-center gap-3">
       <div
         className="w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0"
-        style={{ backgroundColor: category.color + '28' }}
+        style={{ backgroundColor: category.color + '20' }}
       >
         {category.icon || <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: category.color }} />}
       </div>
@@ -305,7 +305,7 @@ function CategoryCard({
         )}
       </div>
       {!category.isDefault && (
-        <div className="flex gap-1 flex-shrink-0">
+        <div className="flex gap-0.5 flex-shrink-0">
           <Button appearance="subtle" icon={<EditFilled />} size="small" onClick={onEdit} />
           <Button appearance="subtle" icon={<DeleteFilled />} size="small" onClick={onDelete} />
         </div>

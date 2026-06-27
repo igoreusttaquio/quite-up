@@ -403,7 +403,7 @@ function TransactionFilterBar({
   onClear: () => void
 }) {
   return (
-    <div className="mb-5 bg-surface rounded-xl border border-subtle shadow-sm p-4">
+    <div className="mb-5 card p-4">
       <div className="flex items-center gap-2 mb-3">
         <FilterFilled className="text-muted" style={{ fontSize: 14 }} />
         <Text size={200} weight="semibold" className="text-muted">Filtros</Text>
@@ -472,23 +472,23 @@ function TransactionTable({
   return (
     <div>
       <div
-        className={`bg-surface rounded-xl border border-subtle shadow-sm overflow-hidden transition-opacity duration-150 ${
+        className={`card overflow-hidden transition-opacity duration-150 ${
           isFetching ? 'opacity-60' : 'opacity-100'
         }`}
       >
         {/* Desktop header */}
         <div className="hidden md:grid grid-cols-[44px_1fr_140px_140px_130px_72px] gap-3 px-4 py-2.5 border-b border-subtle bg-canvas">
           {['', 'Descrição / Data', 'Categoria', 'Conta', 'Valor', ''].map((h, i) => (
-            <Text key={i} size={100} weight="semibold" className="text-muted uppercase tracking-wide">{h}</Text>
+            <Text key={i} size={75} weight="semibold" className="text-muted uppercase tracking-wider">{h}</Text>
           ))}
         </div>
 
         {/* Rows */}
-        <ul className="divide-y divide-[var(--colorNeutralStroke1)]">
+        <ul className="divide-y border-subtle">
           {transactions.map((tx) => (
             <li
               key={tx.id}
-              className="grid grid-cols-[44px_1fr_auto] md:grid-cols-[44px_1fr_140px_140px_130px_72px] gap-3 px-4 py-3.5 items-center"
+              className="grid grid-cols-[44px_1fr_auto] md:grid-cols-[44px_1fr_140px_140px_130px_72px] gap-3 px-4 py-3.5 items-center hover:bg-surface-3 transition-colors"
             >
               <div className="flex items-center justify-center">
                 <TransactionTypeIcon type={tx.type} />

@@ -51,15 +51,15 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen flex bg-canvas">
       {/* Sidebar — Desktop */}
-      <aside className="hidden md:flex flex-col w-64 fixed h-full z-10 border-r border-subtle bg-surface">
+      <aside className="hidden md:flex flex-col w-64 fixed h-full z-20 border-r border-subtle bg-surface">
         {/* Logo */}
-        <div className="px-5 py-4 border-b border-subtle">
-          <Text size={600} weight="bold" className="text-brand">Quite-Up</Text>
+        <div className="px-5 py-5 border-b border-subtle">
+          <Text size={600} weight="bold" className="text-brand tracking-tight">Quite-Up</Text>
           <Text size={100} className="text-muted block mt-0.5">Finanças pessoais</Text>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 p-2.5 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path
             const Icon = isActive ? item.activeIcon : item.icon
@@ -71,7 +71,7 @@ export function DashboardLayout() {
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm no-underline transition-colors font-medium',
                   isActive
                     ? 'bg-brand-light text-brand'
-                    : 'text-muted hover:bg-surface-3'
+                    : 'text-muted hover:bg-surface-3 hover:text-[var(--colorNeutralForeground1)]'
                 )}
               >
                 <Icon className="flex-shrink-0" style={{ fontSize: 18 }} />
@@ -82,12 +82,12 @@ export function DashboardLayout() {
         </nav>
 
         {/* Footer: user + dark mode + logout */}
-        <div className="p-3 border-t border-subtle space-y-1">
-          <div className="flex items-center gap-2 px-2 py-2 rounded-lg">
-            <Avatar name={user?.name} size={32} />
+        <div className="p-2.5 border-t border-subtle space-y-1">
+          <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg">
+            <Avatar name={user?.name} size={32} color="colorful" />
             <div className="flex-1 min-w-0">
               <Text size={200} weight="semibold" block truncate>{user?.name}</Text>
-              <Text size={100} className="text-subtle" block truncate>{user?.email}</Text>
+              <Text size={75} className="text-subtle" block truncate>{user?.email}</Text>
             </div>
           </div>
           <div className="flex items-center gap-1 px-1">
@@ -116,7 +116,7 @@ export function DashboardLayout() {
       <main className="flex-1 md:ml-64 pb-16 md:pb-0 min-h-screen">
         {/* Mobile header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-subtle bg-surface sticky top-0 z-10">
-          <Text size={500} weight="bold" className="text-brand">Quite-Up</Text>
+          <Text size={500} weight="bold" className="text-brand tracking-tight">Quite-Up</Text>
           <div className="flex items-center gap-1">
             <Button
               appearance="subtle"
@@ -124,7 +124,7 @@ export function DashboardLayout() {
               onClick={toggle}
               size="small"
             />
-            <Avatar name={user?.name} size={28} />
+            <Avatar name={user?.name} size={28} color="colorful" />
           </div>
         </div>
 
@@ -146,12 +146,12 @@ export function DashboardLayout() {
               key={item.path}
               to={item.path}
               className={mergeClasses(
-                'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-3',
+                'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-3 min-w-0',
                 isActive ? 'text-brand' : 'text-subtle'
               )}
             >
               <Icon style={{ fontSize: 20 }} />
-              <span>{item.label}</span>
+              <span className="truncate max-w-16">{item.label}</span>
             </NavLink>
           )
         })}

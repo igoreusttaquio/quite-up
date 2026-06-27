@@ -146,8 +146,8 @@ export function ProfilePage() {
 
       <div className="max-w-2xl space-y-5">
         {/* Avatar section */}
-        <div className="bg-surface rounded-xl border border-subtle shadow-sm p-5 flex items-center gap-4">
-          <Avatar name={profile?.name || user?.name} size={56} />
+        <div className="card p-5 flex items-center gap-4">
+          <Avatar name={profile?.name || user?.name} size={56} color="colorful" />
           <div>
             <Text size={500} weight="semibold" block>{profile?.name}</Text>
             <Text size={300} className="text-muted">{profile?.email}</Text>
@@ -287,7 +287,7 @@ export function ProfilePage() {
         </SectionCard>
 
         {/* Danger zone */}
-        <div className="bg-surface rounded-xl border border-subtle shadow-sm p-5 space-y-4">
+        <div className="card p-5 space-y-4 border-[var(--colorPaletteRedBorderActive)]">
           <div className="flex items-center gap-2 pb-3 border-b border-subtle">
             <DeleteFilled className="text-danger" style={{ fontSize: 18 }} />
             <Text weight="semibold" className="text-danger">Zona de Perigo</Text>
@@ -325,7 +325,7 @@ function SectionCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-surface rounded-xl border border-subtle shadow-sm p-5 space-y-4">
+    <div className="card p-5 space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-subtle">
         <span className="text-brand">{icon}</span>
         <Text weight="semibold">{title}</Text>
