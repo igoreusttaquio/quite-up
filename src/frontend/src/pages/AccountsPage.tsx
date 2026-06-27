@@ -144,7 +144,8 @@ export function AccountsPage() {
 
       {/* Create drawer */}
       <Drawer
-        type="inline"
+        type="overlay"
+        modalType="non-modal"
         position="end"
         size="medium"
         open={createOpen}
@@ -219,7 +220,8 @@ export function AccountsPage() {
 
       {/* Edit drawer */}
       <Drawer
-        type="inline"
+        type="overlay"
+        modalType="non-modal"
         position="end"
         size="medium"
         open={!!editTarget}

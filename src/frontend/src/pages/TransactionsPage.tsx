@@ -610,8 +610,9 @@ function TransactionFormDialog({
 }) {
   return (
     <Drawer
-      type="inline"
-      position="end"
+type="overlay"
+        modalType="non-modal"
+        position="end"
       size="medium"
       open={open}
       onOpenChange={(_, { open }) => { if (!open) onClose() }}
