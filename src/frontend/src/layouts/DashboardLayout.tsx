@@ -160,47 +160,55 @@ export function DashboardLayout() {
             </div>
           </header>
 
-          {/* Mobile slide-down menu */}
+          {/* Mobile slide-down menu — fixed overlay */}
           {mobileOpen && (
-            <div className="md:hidden border-b border-border bg-card z-10">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-                <AvatarUser name={user?.name} size={36} />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate">{user?.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            <div className="md:hidden fixed inset-0 top-14 z-20 flex flex-col">
+              {/* Backdrop */}
+              <div
+                className="absolute inset-0 bg-black/40"
+                onClick={() => setMobileOpen(false)}
+              />
+              {/* Menu panel */}
+              <div className="relative bg-card border-b border-border overflow-y-auto max-h-[calc(100vh-3.5rem-4rem)]">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+                  <AvatarUser name={user?.name} size={36} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
                 </div>
-              </div>
-              <nav className="p-3 space-y-0.5">
-                {navItems.map(({ label, path, Icon }) => (
-                  <NavLink
-                    key={path}
-                    to={path}
-                    onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium no-underline transition-colors',
-                        isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-accent'
-                      )
-                    }
+                <nav className="p-3 space-y-0.5">
+                  {navItems.map(({ label, path, Icon }) => (
+                    <NavLink
+                      key={path}
+                      to={path}
+                      onClick={() => setMobileOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium no-underline transition-colors',
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent'
+                        )
+                      }
+                    >
+                      <Icon size={17} />
+                      <span>{label}</span>
+                    </NavLink>
+                  ))}
+                </nav>
+                <div className="px-4 pb-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => { logout.mutate(); setMobileOpen(false) }}
+                    disabled={logout.isPending}
+                    icon={<LogOut size={14} />}
                   >
-                    <Icon size={17} />
-                    <span>{label}</span>
-                  </NavLink>
-                ))}
-              </nav>
-              <div className="px-4 pb-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => { logout.mutate(); setMobileOpen(false) }}
-                  disabled={logout.isPending}
-                  icon={<LogOut size={14} />}
-                >
-                  Sair
-                </Button>
+                    Sair
+                  </Button>
+                </div>
               </div>
             </div>
           )}
