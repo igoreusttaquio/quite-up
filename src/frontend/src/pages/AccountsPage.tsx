@@ -8,15 +8,14 @@ import {
   Input,
   Select,
   Text,
-  Dialog,
-  DialogSurface,
-  DialogBody,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Drawer,
+  DrawerBody,
+  DrawerHeader,
+  DrawerHeaderNavigation,
+  DrawerHeaderTitle,
   Spinner,
 } from '@fluentui/react-components'
-import { AddFilled, EditFilled, DeleteFilled, MoneyFilled } from '@fluentui/react-icons'
+import { AddFilled, EditFilled, DeleteFilled, MoneyFilled, DismissRegular } from '@fluentui/react-icons'
 import { useAccounts, useCreateAccount, useUpdateAccount, useDeactivateAccount } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
@@ -143,123 +142,139 @@ export function AccountsPage() {
         </div>
       )}
 
-      {/* Create dialog */}
-      <Dialog open={createOpen} onOpenChange={(_, data) => setCreateOpen(data.open)}>
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>Nova Conta</DialogTitle>
-            <DialogContent>
-              <div className="space-y-4 mt-2">
-                <Controller
-                  name="name"
-                  control={createForm.control}
-                  render={({ field }) => (
-                    <Field
-                      label="Nome"
-                      required
-                      validationState={createForm.formState.errors.name ? 'error' : undefined}
-                      validationMessage={createForm.formState.errors.name?.message}
-                    >
-                      <Input {...field} placeholder="Ex: Conta Bradesco" />
-                    </Field>
-                  )}
-                />
-                <Controller
-                  name="type"
-                  control={createForm.control}
-                  render={({ field }) => (
-                    <Field label="Tipo" required>
-                      <Select {...field}>
-                        {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </Select>
-                    </Field>
-                  )}
-                />
-                <Controller
-                  name="initialBalance"
-                  control={createForm.control}
-                  render={({ field: { onChange, value, ...rest } }) => (
-                    <Field label="Saldo Inicial" required>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0,00"
-                        value={String(value ?? '')}
-                        onChange={(_e, data) => onChange(data.value ? Number(data.value) : 0)}
-                        {...rest}
-                      />
-                    </Field>
-                  )}
-                />
-              </div>
-            </DialogContent>
-            <DialogActions>
-              <Button
-                appearance="primary"
-                onClick={createForm.handleSubmit(handleCreate as () => Promise<void>)}
-                disabled={createAccount.isPending}
-                icon={createAccount.isPending ? <Spinner size="tiny" /> : undefined}
-              >
-                {createAccount.isPending ? 'Salvando…' : 'Criar Conta'}
-              </Button>
-              <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+      {/* Create drawer */}
+      <Drawer
+        type="overlay"
+        position="end"
+        size="medium"
+        open={createOpen}
+        onOpenChange={(_, { open }) => setCreateOpen(open)}
+      >
+        <DrawerHeader>
+          <DrawerHeaderNavigation>
+            <Button appearance="subtle" icon={<DismissRegular />} onClick={() => setCreateOpen(false)} />
+          </DrawerHeaderNavigation>
+          <DrawerHeaderTitle>Nova Conta</DrawerHeaderTitle>
+        </DrawerHeader>
+        <DrawerBody>
+          <div className="space-y-4">
+            <Controller
+              name="name"
+              control={createForm.control}
+              render={({ field }) => (
+                <Field
+                  label="Nome"
+                  required
+                  validationState={createForm.formState.errors.name ? 'error' : undefined}
+                  validationMessage={createForm.formState.errors.name?.message}
+                >
+                  <Input {...field} placeholder="Ex: Conta Bradesco" />
+                </Field>
+              )}
+            />
+            <Controller
+              name="type"
+              control={createForm.control}
+              render={({ field }) => (
+                <Field label="Tipo" required>
+                  <Select {...field}>
+                    {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+            />
+            <Controller
+              name="initialBalance"
+              control={createForm.control}
+              render={({ field: { onChange, value, ...rest } }) => (
+                <Field label="Saldo Inicial" required>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={String(value ?? '')}
+                    onChange={(_e, data) => onChange(data.value ? Number(data.value) : 0)}
+                    {...rest}
+                  />
+                </Field>
+              )}
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button
+              appearance="primary"
+              className="flex-1"
+              onClick={createForm.handleSubmit(handleCreate as () => Promise<void>)}
+              disabled={createAccount.isPending}
+              icon={createAccount.isPending ? <Spinner size="tiny" /> : undefined}
+            >
+              {createAccount.isPending ? 'Salvando…' : 'Criar Conta'}
+            </Button>
+            <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
+          </div>
+        </DrawerBody>
+      </Drawer>
 
-      {/* Edit dialog */}
-      <Dialog open={!!editTarget} onOpenChange={(_, data) => { if (!data.open) setEditTarget(null) }}>
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>Editar Conta</DialogTitle>
-            <DialogContent>
-              <div className="space-y-4 mt-2">
-                <Controller
-                  name="name"
-                  control={editForm.control}
-                  render={({ field }) => (
-                    <Field
-                      label="Nome"
-                      required
-                      validationState={editForm.formState.errors.name ? 'error' : undefined}
-                      validationMessage={editForm.formState.errors.name?.message}
-                    >
-                      <Input {...field} />
-                    </Field>
-                  )}
-                />
-                <Controller
-                  name="type"
-                  control={editForm.control}
-                  render={({ field }) => (
-                    <Field label="Tipo" required>
-                      <Select {...field}>
-                        {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </Select>
-                    </Field>
-                  )}
-                />
-              </div>
-            </DialogContent>
-            <DialogActions>
-              <Button
-                appearance="primary"
-                onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
-                disabled={updateAccount.isPending}
-                icon={updateAccount.isPending ? <Spinner size="tiny" /> : undefined}
-              >
-                {updateAccount.isPending ? 'Salvando…' : 'Salvar'}
-              </Button>
-              <Button onClick={() => setEditTarget(null)}>Cancelar</Button>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+      {/* Edit drawer */}
+      <Drawer
+        type="overlay"
+        position="end"
+        size="medium"
+        open={!!editTarget}
+        onOpenChange={(_, { open }) => { if (!open) setEditTarget(null) }}
+      >
+        <DrawerHeader>
+          <DrawerHeaderNavigation>
+            <Button appearance="subtle" icon={<DismissRegular />} onClick={() => setEditTarget(null)} />
+          </DrawerHeaderNavigation>
+          <DrawerHeaderTitle>Editar Conta</DrawerHeaderTitle>
+        </DrawerHeader>
+        <DrawerBody>
+          <div className="space-y-4">
+            <Controller
+              name="name"
+              control={editForm.control}
+              render={({ field }) => (
+                <Field
+                  label="Nome"
+                  required
+                  validationState={editForm.formState.errors.name ? 'error' : undefined}
+                  validationMessage={editForm.formState.errors.name?.message}
+                >
+                  <Input {...field} />
+                </Field>
+              )}
+            />
+            <Controller
+              name="type"
+              control={editForm.control}
+              render={({ field }) => (
+                <Field label="Tipo" required>
+                  <Select {...field}>
+                    {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button
+              appearance="primary"
+              className="flex-1"
+              onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
+              disabled={updateAccount.isPending}
+              icon={updateAccount.isPending ? <Spinner size="tiny" /> : undefined}
+            >
+              {updateAccount.isPending ? 'Salvando…' : 'Salvar'}
+            </Button>
+            <Button onClick={() => setEditTarget(null)}>Cancelar</Button>
+          </div>
+        </DrawerBody>
+      </Drawer>
 
       <ConfirmDialog
         open={!!deleteTarget}
