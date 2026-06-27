@@ -4,9 +4,7 @@ import { useAuthStore } from '../store/authStore'
 export function ProtectedRoute() {
   const token = useAuthStore((s) => s.accessToken)
 
-  if (!token) {
-    return <Navigate to="/login" replace />
-  }
+  if (!token) return <Navigate to="/login" replace />
 
   return <Outlet />
 }

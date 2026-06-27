@@ -1,19 +1,25 @@
-import { Text } from '@fluentui/react-components'
-import { mergeClasses } from '@fluentui/react-components'
+import { cn } from '../lib/utils'
+
+const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 interface CurrencyBadgeProps {
   value: number
   className?: string
 }
 
-const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-
 export function CurrencyBadge({ value, className }: CurrencyBadgeProps) {
-  const colorClass = value > 0 ? 'text-income' : value < 0 ? 'text-expense' : undefined
+  const isNegative = value < 0
+  const absValue = Math.abs(value)
 
   return (
-    <Text size={400} weight="semibold" className={mergeClasses(colorClass, className)}>
-      {formatter.format(value)}
-    </Text>
+    <span
+      className={cn(
+        'text-sm font-semibold tabular-nums',
+        isNegative ? 'text-[hsl(var(--expense))]' : 'text-[hsl(var(--income))]',
+        className
+      )}
+    >
+      {isNegative ? '- ' : '+ '}{fmt.format(absValue)}
+    </span>
   )
 }

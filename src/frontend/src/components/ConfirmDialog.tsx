@@ -1,13 +1,12 @@
 import {
   Dialog,
-  DialogSurface,
-  DialogBody,
-  DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  Spinner,
-} from '@fluentui/react-components'
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from './ui/dialog'
+import { Button } from './ui/button'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -15,9 +14,8 @@ interface ConfirmDialogProps {
   title: string
   message: string
   confirmText?: string
-  cancelText?: string
-  onConfirm: () => void
   destructive?: boolean
+  onConfirm: () => void
   loading?: boolean
 }
 
@@ -27,33 +25,30 @@ export function ConfirmDialog({
   title,
   message,
   confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
+  destructive,
   onConfirm,
-  destructive = false,
-  loading = false,
+  loading,
 }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={(_, data) => onOpenChange(data.open)}>
-      <DialogSurface>
-        <DialogBody>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogContent>{message}</DialogContent>
-          <DialogActions>
-            <Button
-              appearance="primary"
-              onClick={onConfirm}
-              disabled={loading}
-              icon={loading ? <Spinner size="tiny" /> : undefined}
-              style={destructive ? { backgroundColor: 'var(--colorPaletteRedBackground3)' } : undefined}
-            >
-              {confirmText}
-            </Button>
-            <Button onClick={() => onOpenChange(false)} disabled={loading}>
-              {cancelText}
-            </Button>
-          </DialogActions>
-        </DialogBody>
-      </DialogSurface>
+          <DialogDescription>{message}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button
+            variant={destructive ? 'destructive' : 'default'}
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading ? 'Aguarde…' : confirmText}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   )
 }
