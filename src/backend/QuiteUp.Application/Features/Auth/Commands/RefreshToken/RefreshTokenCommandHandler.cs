@@ -12,7 +12,8 @@ namespace QuiteUp.Application.Features.Auth.Commands.RefreshToken;
 
 public class RefreshTokenCommandHandler(
     IApplicationDbContext context,
-    ITokenService tokenService) : IRequestHandler<RefreshTokenCommand, Result<AuthResultDto>>
+    ITokenService tokenService,
+    IConfiguration configuration) : IRequestHandler<RefreshTokenCommand, Result<AuthResultDto>>
 {
     public async Task<Result<AuthResultDto>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
@@ -43,13 +44,15 @@ public class RefreshTokenCommandHandler(
         var user = storedToken.User;
         var accessToken = tokenService.GenerateAccessToken(user.Id, user.Email, user.Name);
         var (newRefreshToken, newTokenHash) = tokenService.GenerateRefreshToken();
-        var expiresAt = DateTime.UtcNow.AddMinutes(15);
+        var accessExpiryMinutes = int.Parse(configuration["Jwt:AccessTokenExpiryMinutes"] ?? "15");
+        var refreshExpiryDays = int.Parse(configuration["Jwt:RefreshTokenExpiryDays"] ?? "7");
+        var expiresAt = DateTime.UtcNow.AddMinutes(accessExpiryMinutes);
 
         context.RefreshTokens.Add(new RefreshTokenEntity
         {
             UserId = user.Id,
             TokenHash = newTokenHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(7)
+            ExpiresAt = DateTime.UtcNow.AddDays(refreshExpiryDays)
         });
 
         await context.SaveChangesAsync(cancellationToken);

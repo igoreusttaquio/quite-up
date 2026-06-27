@@ -25,17 +25,18 @@ public class AuthEndpoints : IEndpoint
                 : Results.BadRequest(result.Error);
         }).AllowAnonymous();
 
-        group.MapPost("/login", async (LoginCommand command, ISender sender, HttpContext ctx) =>
+        group.MapPost("/login", async (LoginCommand command, ISender sender, HttpContext ctx, IConfiguration config) =>
         {
             var result = await sender.Send(command);
             if (result.IsFailure)
                 return Results.BadRequest(result.Error);
 
-            SetRefreshTokenCookie(ctx, result.Value!.RefreshToken);
+            var expiryDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "7");
+            SetRefreshTokenCookie(ctx, result.Value!.RefreshToken, expiryDays);
             return Results.Ok(new { result.Value.AccessToken, result.Value.ExpiresAt });
         }).AllowAnonymous();
 
-        group.MapPost("/refresh", async (ISender sender, HttpContext ctx) =>
+        group.MapPost("/refresh", async (ISender sender, HttpContext ctx, IConfiguration config) =>
         {
             var refreshToken = ctx.Request.Cookies["refresh_token"];
             if (string.IsNullOrEmpty(refreshToken))
@@ -45,7 +46,8 @@ public class AuthEndpoints : IEndpoint
             if (result.IsFailure)
                 return Results.Unauthorized();
 
-            SetRefreshTokenCookie(ctx, result.Value!.RefreshToken);
+            var expiryDays = int.Parse(config["Jwt:RefreshTokenExpiryDays"] ?? "7");
+            SetRefreshTokenCookie(ctx, result.Value!.RefreshToken, expiryDays);
             return Results.Ok(new { result.Value.AccessToken, result.Value.ExpiresAt });
         }).AllowAnonymous();
 
@@ -84,14 +86,14 @@ public class AuthEndpoints : IEndpoint
         }).AllowAnonymous();
     }
 
-    private static void SetRefreshTokenCookie(HttpContext ctx, string refreshToken)
+    private static void SetRefreshTokenCookie(HttpContext ctx, string refreshToken, int expiryDays = 7)
     {
         ctx.Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
+            Secure = ctx.Request.IsHttps,
+            SameSite = ctx.Request.IsHttps ? SameSiteMode.Strict : SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddDays(expiryDays)
         });
     }
 }
