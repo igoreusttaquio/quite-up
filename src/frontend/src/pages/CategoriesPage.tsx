@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Pencil, Trash2, Tag } from 'lucide-react'
+import { CategoryIcon } from '../lib/category-icon'
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../hooks/useCategories'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
@@ -261,7 +262,9 @@ function CategoryCard({ category, onEdit, onDelete }: { category: Category; onEd
         className="w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0"
         style={{ backgroundColor: category.color + '20' }}
       >
-        {category.icon || <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: category.color }} />}
+        {category.icon
+          ? <CategoryIcon icon={category.icon} size={20} color={category.color} />
+          : <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: category.color }} />}
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate">{category.name}</p>

@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Pencil, Trash2, PiggyBank } from 'lucide-react'
+import { resolveIconText } from '../lib/category-icon'
 import { useBudgets, useCreateBudget, useUpdateBudget, useDeleteBudget } from '../hooks/useBudgets'
 import { useCategories } from '../hooks/useCategories'
 import { PageHeader } from '../components/PageHeader'
@@ -187,7 +188,7 @@ export function BudgetsPage() {
                       <option value="">Selecione uma categoria</option>
                       {expenseCategories.map((cat: Category) => (
                         <option key={cat.id} value={cat.id}>
-                          {cat.icon} {cat.name}
+                          {resolveIconText(cat.icon)} {cat.name}
                         </option>
                       ))}
                     </NativeSelect>
