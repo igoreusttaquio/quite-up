@@ -7,7 +7,7 @@
 ## Stack definida
 
 - **Backend:** .NET 10 + ASP.NET Core — Clean Architecture, Minimal APIs, CQRS com MediatR
-- **Frontend:** React 19 + Vite 8 + TypeScript 6 + **Fluent UI v9** (`@fluentui/react-components`) + Tailwind (utilitários de layout)
+- **Frontend:** React 19 + Vite 8 + TypeScript 6 + **shadcn/ui** (componentes próprios em `src/components/ui/`) + Tailwind CSS v4 + lucide-react + sonner + vaul
 - **Banco:** PostgreSQL 16 — snake_case via EFCore.NamingConventions
 - **Mensageria:** RabbitMQ 3 — SDK `RabbitMQ.Client` (sem MassTransit)
 - **IDs:** internos `long` auto-increment; externos via `Hashids.net` (string curta, reversível)
@@ -128,34 +128,40 @@
 - Entidade `Notification`
 - Consumer RabbitMQ para triggers de notificação
 
-#### Frontend (todas as fases) — reconstruir do zero com Fluent UI v9
+#### Frontend (Fases 1–3) ✅
 
-- Scaffold: `npm create vite@latest` (React + TypeScript)
-- Instalar: `@fluentui/react-components @fluentui/react-icons @tanstack/react-query zustand axios react-router-dom react-hook-form @hookform/resolvers zod framer-motion tailwindcss @tailwindcss/vite`
-- Configuração: `FluentProvider` (webLightTheme), TanStack Query, Zustand auth store, Axios com interceptors JWT
-- Páginas de auth: Login, Register, ForgotPassword, ResetPassword, VerifyEmail
-- Layout: AuthLayout, DashboardLayout (header manual + Menu do Fluent UI)
-- Páginas app: Dashboard, Contas, Categorias, Transações, Perfil
-- Componentes Fluent UI a usar: `Button`, `Field`+`Input`, `Card`, `Badge`, `Dialog`, `Select`, `Menu`, `Spinner`
-- Dialog com `useState(open)` + `onOpenChange` (sem hook de overlay)
-- Validação de formulários: `Field` com `validationState="error"` + `validationMessage` + `react-hook-form` Controller quando necessário
+Stack: React 19 + Vite 8 + **shadcn/ui** + Tailwind CSS v4 + lucide-react + sonner + vaul + framer-motion.
+
+- Componentes próprios em `src/components/ui/`: Button, Input, Label, Field, NativeSelect, Dialog, Sheet, Avatar, Tooltip, Badge, Spinner, Alert, Separator
+- Ícones: lucide-react (não @fluentui/react-icons)
+- Toasts globais: sonner via `useAppToast()`
+- Drawers de create/edit: vaul (`Sheet`)
+- Dark mode: classe `.dark` no `<html>`, toggle persistido em localStorage
+- Design tokens oklch no `index.css` com `@theme inline` (Tailwind v4)
+- Páginas implementadas: Login, Register, ForgotPassword, ResetPassword, VerifyEmail, Dashboard, Contas, Categorias, Transações, Perfil
+- Filtros de URL em Transações: `useSearchParams` com keys `account`, `type`, `from`, `to`, `page`
+- Skeleton loading + ErrorBoundary em todas as páginas
+- **Atenção:** nunca instalar `tailwindcss-animate` — incompatível com Tailwind v4
 
 ---
 
 ## Commits realizados
 
-| Hash      | Descrição                                                            |
-| --------- | -------------------------------------------------------------------- |
-| `35c2f3b` | Initial commit                                                       |
-| `89f595c` | feat: scaffold backend com autenticação completa (Fase 1)            |
-| `644ec93` | docs: adiciona PROGRESS.md                                           |
-| `f90386a` | feat: frontend com React + Vite + Tailwind                           |
-| `5c1bc5a` | feat: adiciona container frontend com nginx e proxy reverso para api |
-| `bc2b36a` | feat: frontend com HeroUI v3 + animações framer-motion               |
-| `9605275` | feat: Fase 2 — Contas, Categorias, Transações e Perfil (backend)     |
-| `1e48af3` | fix: [FromBody] no MapDelete de perfil                               |
-| `b73165d` | DELETE FRONT — frontend removido para reconstrução com Fluent UI v9  |
-| (próximo) | feat: frontend com Fluent UI v9 (Fase 1 — Auth)                      |
+| Hash      | Descrição                                                                     |
+| --------- | ----------------------------------------------------------------------------- |
+| `35c2f3b` | Initial commit                                                                |
+| `89f595c` | feat: scaffold backend com autenticação completa (Fase 1)                     |
+| `644ec93` | docs: adiciona PROGRESS.md                                                    |
+| `f90386a` | feat: frontend com React + Vite + Tailwind                                    |
+| `5c1bc5a` | feat: adiciona container frontend com nginx e proxy reverso para api          |
+| `bc2b36a` | feat: frontend com HeroUI v3 + animações framer-motion                        |
+| `8391222` | feat: Fase 2 — Contas, Categorias, Transações e Perfil (backend)              |
+| `1e48af3` | fix: [FromBody] no MapDelete de perfil                                        |
+| `0c69e45` | fix: VerifyEmailPage em loop infinito                                         |
+| `897fcc1` | fix: token URL-safe e APP_URL configurável                                    |
+| `dd8b61c` | feat: redesign visual completo do frontend (design system, dark mode, toasts) |
+| `bc3bc69` | feat: aprimora visual com design tokens e ícones Fluent                       |
+| `ca03730` | feat: migra frontend de Fluent UI para shadcn/ui                              |
 
 ---
 
