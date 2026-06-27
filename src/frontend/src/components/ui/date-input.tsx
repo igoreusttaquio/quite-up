@@ -19,6 +19,7 @@ export const DateInput = forwardRef<HTMLInputElement, Omit<InputProps, 'type'>>(
           else if (ref) ref.current = node
         }}
         type="date"
+        lang="pt-BR"
         onClick={handleClick}
         className={cn(
           'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
