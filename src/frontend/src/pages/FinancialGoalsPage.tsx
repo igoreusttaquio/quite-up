@@ -28,12 +28,12 @@ import type { FinancialGoal, GoalContribution } from '../types'
 
 const createSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  targetAmount: z.number({ required_error: 'Valor é obrigatório' }).positive('Valor deve ser positivo'),
+  targetAmount: z.number().positive('Valor deve ser positivo'),
   targetDate: z.string().optional(),
 })
 
 const contributionSchema = z.object({
-  amount: z.number({ required_error: 'Valor é obrigatório' }).positive('Valor deve ser positivo'),
+  amount: z.number().positive('Valor deve ser positivo'),
   date: z.string().min(1, 'Data é obrigatória'),
   notes: z.string().optional(),
 })

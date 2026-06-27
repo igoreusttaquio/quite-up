@@ -216,7 +216,7 @@ export interface RegisterDebtPaymentRequest {
   amount: number
   paymentDate: string
   isEarlyPayment: boolean
-  discount: number
+  discount?: number
   notes?: string
 }
 

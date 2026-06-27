@@ -8,8 +8,6 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
-import { Spinner } from '../components/ui/spinner'
-
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
@@ -43,7 +41,6 @@ export function ReportsPage() {
     <div>
       <PageHeader
         title="Relatórios"
-        icon={<BarChart3 size={20} />}
       />
 
       <div className="space-y-8">

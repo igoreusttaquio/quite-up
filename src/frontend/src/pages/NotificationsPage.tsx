@@ -3,8 +3,6 @@ import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead 
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { Button } from '../components/ui/button'
-import { Badge } from '../components/ui/badge'
-import { Spinner } from '../components/ui/spinner'
 import { SkeletonLine } from '../components/Skeleton'
 import { useAppToast } from '../hooks/useAppToast'
 import type { Notification } from '../types'
