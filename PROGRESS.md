@@ -101,32 +101,50 @@
 - **Migration:** `Phase2AccountsCategoriesTransactions` gerada
 - **Api:** `AccountEndpoints`, `CategoryEndpoints`, `TransactionEndpoints`, `ProfileEndpoints`
 
-### 🔲 Pendente
+### ✅ Concluído
 
-#### Fase 3 — Dashboard (backend)
+#### Fase 3 — Dashboard (backend) ✅
 
-- Query `GetDashboardSummary` (saldo total, resumo do mês, total de dívidas, últimas transações)
+- Query `GetDashboardSummary` (saldo total, resumo do mês, últimas transações)
 - Endpoint `/api/dashboard`
 
-#### Fase 4 — Dívidas (backend)
+#### Fase 4 — Dívidas (backend) ✅
 
-- Entidades: `Debt`, `DebtPayment`
-- Enums: `DebtType` (Loan, Financing, CreditCard)
-- Commands: `CreateDebt`, `UpdateDebt`, `DeleteDebt`, `RegisterDebtPayment`
-- Queries: `GetDebts`, `GetDebtById`, `GetDebtPayments`, `GetSnowballStrategy`
-- Lógica de gamificação (marcos de progresso), desconto por antecipação, Snowball
-- RabbitMQ: publicar `DebtPaidOffEvent` quando saldo zera
+- **Domain:** `Debt`, `DebtPayment`, `DebtType` (Loan, Financing, CreditCard)
+- **Application:**
+  - Commands: `CreateDebt`, `UpdateDebt`, `DeleteDebt`, `RegisterDebtPayment`
+  - Queries: `GetDebts`, `GetDebtById`, `GetDebtPayments`, `GetSnowballStrategy`
+  - Event: `DebtPaidOffEvent` publicado via RabbitMQ quando saldo zera
+  - Lógica Snowball (ordenar por menor saldo), desconto por antecipação (`IsEarlyPayment` + `Discount`)
+- **Infrastructure:** `DebtConfiguration`, `DebtPaymentConfiguration`
+- **Api:** `DebtEndpoints` — CRUD + payments + snowball
 
-#### Fase 5 — Orçamento e Metas (backend)
+#### Fase 5 — Orçamento e Metas (backend) ✅
 
-- Entidades: `Budget`, `FinancialGoal`, `GoalContribution`
-- Commands e Queries correspondentes
+- **Domain:** `Budget`, `FinancialGoal`, `GoalContribution`
+- **Application:**
+  - Budgets: `CreateBudget`, `UpdateBudget`, `DeleteBudget`, `GetBudgets` (com spent/remaining computado)
+  - FinancialGoals: `CreateFinancialGoal`, `UpdateFinancialGoal`, `DeleteFinancialGoal`, `AddGoalContribution`, `GetFinancialGoals`, `GetFinancialGoalById`, `GetGoalContributions`
+- **Infrastructure:** `BudgetConfiguration`, `FinancialGoalConfiguration`, `GoalContributionConfiguration`
+- **Api:** `BudgetEndpoints`, `FinancialGoalEndpoints`
 
-#### Fase 6 — Relatórios e Notificações (backend)
+#### Fase 6 — Relatórios e Notificações (backend) ✅
 
-- Queries de relatórios (por período, por categoria, evolução)
-- Entidade `Notification`
-- Consumer RabbitMQ para triggers de notificação
+- **Domain:** `Notification` (title, message, type, is_read, reference)
+- **Application:**
+  - Notificações: `GetNotifications`, `GetUnreadCount`, `MarkNotificationRead`, `MarkAllNotificationsRead`
+  - Relatórios: `GetPeriodReport` (income/expense/net + categorias), `GetEvolutionReport` (12 meses)
+- **Infrastructure:** `NotificationConfiguration`
+- **Api:** `NotificationEndpoints`, `ReportEndpoints`
+- **TODO:** Consumer RabbitMQ para notificações (`Infrastructure/Messaging/NotificationConsumer`)
+
+---
+
+### 🔲 Pendente
+
+#### Frontend (Fases 4–6)
+
+Páginas e hooks para Dívidas, Orçamento, Metas, Notificações e Relatórios.
 
 #### Frontend (Fases 1–3) ✅
 
@@ -162,11 +180,14 @@ Stack: React 19 + Vite 8 + **shadcn/ui** + Tailwind CSS v4 + lucide-react + sonn
 | `dd8b61c` | feat: redesign visual completo do frontend (design system, dark mode, toasts) |
 | `bc3bc69` | feat: aprimora visual com design tokens e ícones Fluent                       |
 | `ca03730` | feat: migra frontend de Fluent UI para shadcn/ui                              |
+| `17dbecf` | docs: atualiza README e PROGRESS com stack shadcn/ui                           |
+| `30bc698` | feat: Fase 3 — Dashboard (backend)                                             |
+| `eacbe7c` | feat: Fases 4, 5 e 6 — Dívidas, Orçamento/Metas e Relatórios/Notificações      |
 
 ---
 
 ## Como retomar
 
 1. Abrir este arquivo para ver o que está pendente
-2. Continuar a partir de **Fase 2 — backend**: entidades `Account`, `Category`, `Transaction`
-3. Após o backend de cada fase, implementar o frontend correspondente
+2. Fazer migrations no banco: `dotnet ef migrations add Phase3to6 --project src/backend/QuiteUp.Infrastructure --startup-project src/backend/QuiteUp.Api`
+3. Implementar frontend para Fases 4–6

@@ -1,0 +1,7 @@
+using MediatR;
+using QuiteUp.Application.Common.Results;
+using QuiteUp.Application.Features.Debts.DTOs;
+
+namespace QuiteUp.Application.Features.Debts.Queries.GetDebtPayments;
+
+public record GetDebtPaymentsQuery(long DebtId) : IRequest<Result<IReadOnlyList<DebtPaymentDto>>>;
