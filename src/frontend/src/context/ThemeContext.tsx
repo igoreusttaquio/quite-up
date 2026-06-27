@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import { FluentProvider, webLightTheme, webDarkTheme, type Theme } from '@fluentui/react-components'
 
 type ThemeMode = 'light' | 'dark'
 
@@ -20,14 +19,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle('dark', mode === 'dark')
   }, [mode])
 
-  const toggle = () => setMode(m => m === 'light' ? 'dark' : 'light')
-  const theme: Theme = mode === 'light' ? webLightTheme : webDarkTheme
+  const toggle = () => setMode(m => (m === 'light' ? 'dark' : 'light'))
 
   return (
     <ThemeContext.Provider value={{ mode, toggle }}>
-      <FluentProvider theme={theme} className="min-h-screen">
-        {children}
-      </FluentProvider>
+      {children}
     </ThemeContext.Provider>
   )
 }

@@ -2,28 +2,7 @@ import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import {
-  Button,
-  Field,
-  Input,
-  Text,
-  Dialog,
-  DialogSurface,
-  DialogBody,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Spinner,
-  Avatar,
-  MessageBar,
-  MessageBarBody,
-} from '@fluentui/react-components'
-import {
-  PersonFilled,
-  MailFilled,
-  LockClosedFilled,
-  DeleteFilled,
-} from '@fluentui/react-icons'
+import { User, Mail, Lock, Trash2, Loader2 } from 'lucide-react'
 import {
   useProfile,
   useUpdateProfile,
@@ -35,6 +14,13 @@ import { PageHeader } from '../components/PageHeader'
 import { SkeletonCard } from '../components/Skeleton'
 import { useAppToast } from '../hooks/useAppToast'
 import { useAuthStore } from '../store/authStore'
+import { AvatarUser } from '../components/ui/avatar'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Field } from '../components/ui/field'
+import { Alert, AlertDescription } from '../components/ui/alert'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
+import { Spinner } from '../components/ui/spinner'
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
@@ -147,18 +133,15 @@ export function ProfilePage() {
       <div className="max-w-2xl space-y-5">
         {/* Avatar section */}
         <div className="card p-5 flex items-center gap-4">
-          <Avatar name={profile?.name || user?.name} size={56} color="colorful" />
+          <AvatarUser name={profile?.name || user?.name} size={52} />
           <div>
-            <Text size={500} weight="semibold" block>{profile?.name}</Text>
-            <Text size={300} className="text-muted">{profile?.email}</Text>
+            <p className="text-base font-semibold">{profile?.name}</p>
+            <p className="text-sm text-muted-foreground">{profile?.email}</p>
           </div>
         </div>
 
         {/* Personal data */}
-        <SectionCard
-          icon={<PersonFilled style={{ fontSize: 18 }} />}
-          title="Dados Pessoais"
-        >
+        <SectionCard icon={<User size={17} />} title="Dados Pessoais">
           <form onSubmit={profileForm.handleSubmit(handleProfileSubmit as () => Promise<void>)} className="space-y-4">
             <Controller
               name="name"
@@ -178,7 +161,6 @@ export function ProfilePage() {
             </Field>
             <Button
               type="submit"
-              appearance="primary"
               disabled={updateProfile.isPending}
               icon={updateProfile.isPending ? <Spinner size="tiny" /> : undefined}
             >
@@ -188,10 +170,7 @@ export function ProfilePage() {
         </SectionCard>
 
         {/* Change email */}
-        <SectionCard
-          icon={<MailFilled style={{ fontSize: 18 }} />}
-          title="Alterar E-mail"
-        >
+        <SectionCard icon={<Mail size={17} />} title="Alterar E-mail">
           <form onSubmit={emailForm.handleSubmit(handleEmailSubmit as () => Promise<void>)} className="space-y-4">
             <Controller
               name="newEmail"
@@ -221,7 +200,6 @@ export function ProfilePage() {
             />
             <Button
               type="submit"
-              appearance="primary"
               disabled={changeEmail.isPending}
               icon={changeEmail.isPending ? <Spinner size="tiny" /> : undefined}
             >
@@ -231,10 +209,7 @@ export function ProfilePage() {
         </SectionCard>
 
         {/* Change password */}
-        <SectionCard
-          icon={<LockClosedFilled style={{ fontSize: 18 }} />}
-          title="Alterar Senha"
-        >
+        <SectionCard icon={<Lock size={17} />} title="Alterar Senha">
           <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit as () => Promise<void>)} className="space-y-4">
             <Controller
               name="currentPassword"
@@ -277,7 +252,6 @@ export function ProfilePage() {
             />
             <Button
               type="submit"
-              appearance="primary"
               disabled={changePassword.isPending}
               icon={changePassword.isPending ? <Spinner size="tiny" /> : undefined}
             >
@@ -287,17 +261,17 @@ export function ProfilePage() {
         </SectionCard>
 
         {/* Danger zone */}
-        <div className="card p-5 space-y-4" style={{ borderColor: 'var(--colorPaletteRedBorder2)' }}>
-          <div className="flex items-center gap-2 pb-3 border-b border-subtle">
-            <DeleteFilled className="text-danger" style={{ fontSize: 18 }} />
-            <Text weight="semibold" className="text-danger">Zona de Perigo</Text>
+        <div className="card p-5 space-y-4 border-destructive/50">
+          <div className="flex items-center gap-2 pb-3 border-b border-border">
+            <Trash2 size={17} className="text-destructive" />
+            <span className="font-semibold text-destructive">Zona de Perigo</span>
           </div>
-          <Text size={300} className="text-muted">
+          <p className="text-sm text-muted-foreground">
             Excluir sua conta é uma ação permanente e irreversível. Todos os seus dados serão removidos definitivamente.
-          </Text>
+          </p>
           <Button
-            appearance="outline"
-            className="border-[var(--colorPaletteRedBorderActive)] text-danger"
+            variant="outline"
+            className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
             onClick={() => setDeleteOpen(true)}
           >
             Excluir minha conta
@@ -326,9 +300,9 @@ function SectionCard({
 }) {
   return (
     <div className="card p-5 space-y-4">
-      <div className="flex items-center gap-2 pb-3 border-b border-subtle">
-        <span className="text-brand">{icon}</span>
-        <Text weight="semibold">{title}</Text>
+      <div className="flex items-center gap-2 pb-3 border-b border-border">
+        <span className="text-primary">{icon}</span>
+        <span className="font-semibold">{title}</span>
       </div>
       {children}
     </div>
@@ -356,50 +330,46 @@ function DeleteAccountDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(_, data) => { if (!data.open) close() }}>
-      <DialogSurface>
-        <DialogBody>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) close() }}>
+      <DialogContent showClose={false}>
+        <DialogHeader>
           <DialogTitle>Excluir conta permanentemente</DialogTitle>
-          <DialogContent>
-            <div className="space-y-4">
-              <MessageBar intent="warning">
-                <MessageBarBody>
-                  Esta ação é irreversível. Todos os seus dados serão apagados.
-                </MessageBarBody>
-              </MessageBar>
+        </DialogHeader>
 
-              <Field label='Digite "excluir" para confirmar'>
-                <Input
-                  value={confirmText}
-                  onChange={(_, d) => setConfirmText(d.value)}
-                  placeholder="excluir"
-                />
-              </Field>
+        <Alert intent="warning">
+          <AlertDescription>Esta ação é irreversível. Todos os seus dados serão apagados.</AlertDescription>
+        </Alert>
 
-              <Field label="Sua senha atual">
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(_, d) => setPassword(d.value)}
-                  placeholder="Senha atual"
-                />
-              </Field>
-            </div>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              appearance="primary"
-              onClick={() => onConfirm(password)}
-              disabled={loading || !password || confirmText.toLowerCase() !== 'excluir'}
-              icon={loading ? <Spinner size="tiny" /> : undefined}
-              style={{ backgroundColor: 'var(--colorPaletteRedBackground3)' }}
-            >
-              {loading ? 'Excluindo…' : 'Excluir minha conta'}
-            </Button>
-            <Button onClick={close} disabled={loading}>Cancelar</Button>
-          </DialogActions>
-        </DialogBody>
-      </DialogSurface>
+        <div className="space-y-4">
+          <Field label='Digite "excluir" para confirmar'>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="excluir"
+            />
+          </Field>
+          <Field label="Sua senha atual">
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Senha atual"
+            />
+          </Field>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="destructive"
+            onClick={() => onConfirm(password)}
+            disabled={loading || !password || confirmText.toLowerCase() !== 'excluir'}
+            icon={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}
+          >
+            {loading ? 'Excluindo…' : 'Excluir minha conta'}
+          </Button>
+          <Button variant="outline" onClick={close} disabled={loading}>Cancelar</Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   )
 }

@@ -1,10 +1,13 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
 import { Link } from 'react-router-dom'
-import { MailFilled, CheckmarkCircleFilled } from '@fluentui/react-icons'
+import { Mail, CheckCircle2, Loader2 } from 'lucide-react'
 import { useForgotPassword } from '../hooks/useAuth'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Field } from '../components/ui/field'
+import { Alert, AlertDescription } from '../components/ui/alert'
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -32,14 +35,14 @@ export function ForgotPasswordPage() {
   if (forgotPassword.isSuccess) {
     return (
       <div className="space-y-6 text-center py-4">
-        <CheckmarkCircleFilled className="text-income" style={{ fontSize: 56 }} />
+        <CheckCircle2 className="text-income mx-auto" size={56} />
         <div>
-          <Text as="h2" size={700} weight="semibold" block>E-mail enviado!</Text>
-          <Text size={300} className="text-muted mt-2 block">
+          <h2 className="text-2xl font-semibold">E-mail enviado!</h2>
+          <p className="text-sm text-muted-foreground mt-2">
             Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-          </Text>
+          </p>
         </div>
-        <Link to="/login" className="text-brand hover:underline text-sm font-medium">
+        <Link to="/login" className="text-sm text-primary hover:underline font-medium">
           Voltar para o login
         </Link>
       </div>
@@ -50,20 +53,20 @@ export function ForgotPasswordPage() {
     <div className="space-y-6">
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="w-12 h-12 rounded-full bg-brand-light flex items-center justify-center">
-          <MailFilled className="text-brand" style={{ fontSize: 24 }} />
+          <Mail className="text-primary" size={22} />
         </div>
         <div>
-          <Text as="h2" size={700} weight="semibold" block>Recuperar Senha</Text>
-          <Text size={300} className="text-muted mt-1 block">
+          <h2 className="text-xl font-semibold">Recuperar Senha</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             Informe seu e-mail e enviaremos um link de recuperação
-          </Text>
+          </p>
         </div>
       </div>
 
       {errors.root && (
-        <MessageBar intent="error">
-          <MessageBarBody>{errors.root.message}</MessageBarBody>
-        </MessageBar>
+        <Alert intent="error">
+          <AlertDescription>{errors.root.message}</AlertDescription>
+        </Alert>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -77,29 +80,29 @@ export function ForgotPasswordPage() {
               validationState={errors.email ? 'error' : undefined}
               validationMessage={errors.email?.message}
             >
-              <Input {...field} type="email" placeholder="seu@email.com" size="large" />
+              <Input {...field} type="email" placeholder="seu@email.com" className="h-10" />
             </Field>
           )}
         />
 
-        <Button
-          type="submit"
-          appearance="primary"
-          className="w-full"
-          size="large"
-          disabled={forgotPassword.isPending}
-          icon={forgotPassword.isPending ? <Spinner size="tiny" /> : undefined}
-        >
-          {forgotPassword.isPending ? 'Enviando…' : 'Enviar Link'}
+        <Button type="submit" className="w-full h-10" disabled={forgotPassword.isPending}>
+          {forgotPassword.isPending ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Enviando…
+            </>
+          ) : (
+            'Enviar Link'
+          )}
         </Button>
       </form>
 
-      <Text size={200} className="text-muted text-center block">
+      <p className="text-sm text-muted-foreground text-center">
         Lembrou a senha?{' '}
-        <Link to="/login" className="text-brand hover:underline font-medium">
+        <Link to="/login" className="text-primary hover:underline font-medium">
           Entrar
         </Link>
-      </Text>
+      </p>
     </div>
   )
 }

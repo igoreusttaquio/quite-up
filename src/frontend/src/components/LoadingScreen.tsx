@@ -1,4 +1,4 @@
-import { Spinner } from '@fluentui/react-components'
+import { Spinner } from './ui/spinner'
 
 export function LoadingScreen() {
   return (

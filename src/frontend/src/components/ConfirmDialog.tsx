@@ -1,13 +1,6 @@
-import {
-  Dialog,
-  DialogSurface,
-  DialogBody,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Spinner,
-} from '@fluentui/react-components'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
+import { Button } from './ui/button'
+import { Spinner } from './ui/spinner'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -33,27 +26,26 @@ export function ConfirmDialog({
   loading = false,
 }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={(_, data) => onOpenChange(data.open)}>
-      <DialogSurface>
-        <DialogBody>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent showClose={false}>
+        <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogContent>{message}</DialogContent>
-          <DialogActions>
-            <Button
-              appearance="primary"
-              onClick={onConfirm}
-              disabled={loading}
-              icon={loading ? <Spinner size="tiny" /> : undefined}
-              style={destructive ? { backgroundColor: 'var(--colorPaletteRedBackground3)' } : undefined}
-            >
-              {confirmText}
-            </Button>
-            <Button onClick={() => onOpenChange(false)} disabled={loading}>
-              {cancelText}
-            </Button>
-          </DialogActions>
-        </DialogBody>
-      </DialogSurface>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">{message}</p>
+        <DialogFooter>
+          <Button
+            variant={destructive ? 'destructive' : 'default'}
+            onClick={onConfirm}
+            disabled={loading}
+            icon={loading ? <Spinner size="tiny" /> : undefined}
+          >
+            {confirmText}
+          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            {cancelText}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   )
 }

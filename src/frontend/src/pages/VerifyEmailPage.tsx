@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { Text, Spinner } from '@fluentui/react-components'
-import { CheckmarkCircleFilled, ErrorCircleFilled } from '@fluentui/react-icons'
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { useVerifyEmail } from '../hooks/useAuth'
 
 export function VerifyEmailPage() {
@@ -17,14 +16,14 @@ export function VerifyEmailPage() {
   if (!token) {
     return (
       <div className="space-y-5 text-center py-4">
-        <ErrorCircleFilled className="text-expense" style={{ fontSize: 56 }} />
+        <XCircle className="text-expense mx-auto" size={56} />
         <div>
-          <Text as="h2" size={700} weight="semibold" block>Token ausente</Text>
-          <Text size={300} className="text-muted mt-2 block">
+          <h2 className="text-2xl font-semibold">Token ausente</h2>
+          <p className="text-sm text-muted-foreground mt-2">
             O link de verificação é inválido ou já foi utilizado.
-          </Text>
+          </p>
         </div>
-        <Link to="/login" className="text-brand hover:underline text-sm font-medium">
+        <Link to="/login" className="text-sm text-primary hover:underline font-medium">
           Ir para o login
         </Link>
       </div>
@@ -34,8 +33,8 @@ export function VerifyEmailPage() {
   if (isPending) {
     return (
       <div className="flex flex-col items-center gap-5 py-8">
-        <Spinner size="large" />
-        <Text size={300} className="text-muted">Verificando seu e-mail…</Text>
+        <Loader2 className="text-primary animate-spin" size={40} />
+        <p className="text-sm text-muted-foreground">Verificando seu e-mail…</p>
       </div>
     )
   }
@@ -43,16 +42,16 @@ export function VerifyEmailPage() {
   if (isSuccess) {
     return (
       <div className="space-y-5 text-center py-4">
-        <CheckmarkCircleFilled className="text-income" style={{ fontSize: 56 }} />
+        <CheckCircle2 className="text-income mx-auto" size={56} />
         <div>
-          <Text as="h2" size={700} weight="semibold" block>E-mail verificado!</Text>
-          <Text size={300} className="text-muted mt-2 block">
+          <h2 className="text-2xl font-semibold">E-mail verificado!</h2>
+          <p className="text-sm text-muted-foreground mt-2">
             Sua conta está ativa. Faça login para começar.
-          </Text>
+          </p>
         </div>
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-brand hover:underline text-sm font-medium"
+          className="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium"
         >
           Ir para o login →
         </Link>
@@ -64,14 +63,14 @@ export function VerifyEmailPage() {
     const apiError = error as { response?: { data?: { message?: string } } }
     return (
       <div className="space-y-5 text-center py-4">
-        <ErrorCircleFilled className="text-expense" style={{ fontSize: 56 }} />
+        <XCircle className="text-expense mx-auto" size={56} />
         <div>
-          <Text as="h2" size={700} weight="semibold" block>Falha na verificação</Text>
-          <Text size={300} className="text-muted mt-2 block">
+          <h2 className="text-2xl font-semibold">Falha na verificação</h2>
+          <p className="text-sm text-muted-foreground mt-2">
             {apiError?.response?.data?.message || 'O link pode ter expirado. Solicite um novo.'}
-          </Text>
+          </p>
         </div>
-        <Link to="/login" className="text-brand hover:underline text-sm font-medium">
+        <Link to="/login" className="text-sm text-primary hover:underline font-medium">
           Voltar para o login
         </Link>
       </div>

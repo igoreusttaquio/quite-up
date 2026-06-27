@@ -1,10 +1,9 @@
 import { Outlet } from 'react-router-dom'
-import { Text } from '@fluentui/react-components'
 import { motion } from 'framer-motion'
 
 export function AuthLayout() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-canvas p-4 md:p-8">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 md:p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -12,12 +11,8 @@ export function AuthLayout() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <Text as="h1" size={900} weight="bold" className="text-brand tracking-tight">
-            Quite-Up
-          </Text>
-          <Text size={300} className="text-muted mt-1.5 block">
-            Gerencie suas finanças com clareza
-          </Text>
+          <h1 className="text-4xl font-bold text-primary tracking-tight">Quite-Up</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">Gerencie suas finanças com clareza</p>
         </div>
 
         <div className="card p-7 md:p-8">

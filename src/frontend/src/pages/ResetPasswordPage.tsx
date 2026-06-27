@@ -1,10 +1,13 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { LockClosedFilled } from '@fluentui/react-icons'
+import { KeyRound, Loader2 } from 'lucide-react'
 import { useResetPassword } from '../hooks/useAuth'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Field } from '../components/ui/field'
+import { Alert, AlertDescription } from '../components/ui/alert'
 
 const schema = z
   .object({
@@ -42,10 +45,10 @@ export function ResetPasswordPage() {
   if (!token) {
     return (
       <div className="space-y-4 text-center py-4">
-        <MessageBar intent="error">
-          <MessageBarBody>Token de recuperação inválido ou ausente.</MessageBarBody>
-        </MessageBar>
-        <Link to="/forgot-password" className="text-brand hover:underline text-sm">
+        <Alert intent="error">
+          <AlertDescription>Token de recuperação inválido ou ausente.</AlertDescription>
+        </Alert>
+        <Link to="/forgot-password" className="text-sm text-primary hover:underline">
           Solicitar novo link
         </Link>
       </div>
@@ -56,20 +59,18 @@ export function ResetPasswordPage() {
     <div className="space-y-6">
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="w-12 h-12 rounded-full bg-brand-light flex items-center justify-center">
-          <LockClosedFilled className="text-brand" style={{ fontSize: 24 }} />
+          <KeyRound className="text-primary" size={22} />
         </div>
         <div>
-          <Text as="h2" size={700} weight="semibold" block>Redefinir Senha</Text>
-          <Text size={300} className="text-muted mt-1 block">
-            Escolha uma nova senha para sua conta
-          </Text>
+          <h2 className="text-xl font-semibold">Redefinir Senha</h2>
+          <p className="text-sm text-muted-foreground mt-1">Escolha uma nova senha para sua conta</p>
         </div>
       </div>
 
       {errors.root && (
-        <MessageBar intent="error">
-          <MessageBarBody>{errors.root.message}</MessageBarBody>
-        </MessageBar>
+        <Alert intent="error">
+          <AlertDescription>{errors.root.message}</AlertDescription>
+        </Alert>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -83,7 +84,7 @@ export function ResetPasswordPage() {
               validationState={errors.newPassword ? 'error' : undefined}
               validationMessage={errors.newPassword?.message}
             >
-              <Input {...field} type="password" placeholder="Mínimo 6 caracteres" size="large" />
+              <Input {...field} type="password" placeholder="Mínimo 6 caracteres" className="h-10" />
             </Field>
           )}
         />
@@ -98,28 +99,28 @@ export function ResetPasswordPage() {
               validationState={errors.confirmNewPassword ? 'error' : undefined}
               validationMessage={errors.confirmNewPassword?.message}
             >
-              <Input {...field} type="password" placeholder="Repita a nova senha" size="large" />
+              <Input {...field} type="password" placeholder="Repita a nova senha" className="h-10" />
             </Field>
           )}
         />
 
-        <Button
-          type="submit"
-          appearance="primary"
-          className="w-full"
-          size="large"
-          disabled={resetPassword.isPending}
-          icon={resetPassword.isPending ? <Spinner size="tiny" /> : undefined}
-        >
-          {resetPassword.isPending ? 'Redefinindo…' : 'Redefinir Senha'}
+        <Button type="submit" className="w-full h-10" disabled={resetPassword.isPending}>
+          {resetPassword.isPending ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Redefinindo…
+            </>
+          ) : (
+            'Redefinir Senha'
+          )}
         </Button>
       </form>
 
-      <Text size={200} className="text-muted text-center block">
-        <Link to="/login" className="text-brand hover:underline font-medium">
+      <p className="text-sm text-muted-foreground text-center">
+        <Link to="/login" className="text-primary hover:underline font-medium">
           Voltar para o login
         </Link>
-      </Text>
+      </p>
     </div>
   )
 }
