@@ -215,19 +215,11 @@ export function TransactionsPage() {
       />
 
       {/* Filter bar */}
-      <div className="mb-5 card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Filter size={14} className="text-muted-foreground" />
-          <span className="text-sm font-semibold text-muted-foreground">Filtros</span>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto h-7 px-2" icon={<X size={12} />}>
-              Limpar
-            </Button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-3">
+      <div className="mb-5 card px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <Filter size={14} className="text-muted-foreground flex-shrink-0" />
           <NativeSelect
-            className="w-48"
+            className="w-auto min-w-[140px]"
             value={filterAccountId}
             onChange={(e) => updateFilter('account', e.target.value)}
           >
@@ -237,7 +229,7 @@ export function TransactionsPage() {
             ))}
           </NativeSelect>
           <NativeSelect
-            className="w-40"
+            className="w-auto min-w-[130px]"
             value={filterType}
             onChange={(e) => updateFilter('type', e.target.value)}
           >
@@ -246,19 +238,25 @@ export function TransactionsPage() {
               <option key={value} value={value}>{label}</option>
             ))}
           </NativeSelect>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">De</span>
             <DateInput
               value={filterStartDate}
               onChange={(e) => updateFilter('from', e.target.value)}
-              style={{ width: 148 }}
+              className="w-[130px]"
             />
-            <span className="text-sm text-muted-foreground">até</span>
+            <span className="text-xs text-muted-foreground">até</span>
             <DateInput
               value={filterEndDate}
               onChange={(e) => updateFilter('to', e.target.value)}
-              style={{ width: 148 }}
+              className="w-[130px]"
             />
           </div>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 px-2 ml-auto" icon={<X size={12} />}>
+              Limpar
+            </Button>
+          )}
         </div>
       </div>
 
