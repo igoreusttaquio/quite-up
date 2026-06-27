@@ -50,3 +50,8 @@
   .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
 }
+
+/* OverlayDrawer backdrop — transparent para nao ocultar o conteudo */
+.fui-DialogSurface__backdrop {
+  background-color: transparent !important;
+}
