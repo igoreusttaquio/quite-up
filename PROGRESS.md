@@ -181,7 +181,7 @@ Stack: React 19 + Vite 8 + **shadcn/ui** + Tailwind CSS v4 + lucide-react + sonn
 | `30bc698` | feat: Fase 3 — Dashboard (backend)                                             |
 | `eacbe7c` | feat: Fases 4, 5 e 6 — Dívidas, Orçamento/Metas e Relatórios/Notificações      |
 | `2216984` | feat: Fases 4, 5 e 6 — backend completo                                           |
-| `7e5b3f1` | feat: frontend Fases 4–6 — páginas, hooks, API modules e NotificationConsumer      |
+| `2cd565d` | feat: frontend Fases 4–6 + NotificationConsumer + migration Phase3to6                |
 
 ---
 
