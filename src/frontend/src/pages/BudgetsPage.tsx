@@ -39,10 +39,7 @@ const now = new Date()
 const currentMonth = now.getMonth() + 1
 const currentYear = now.getFullYear()
 
-// Filtro: inclui até 3 anos passados (para consultar orçamentos antigos)
-const filterYears = Array.from({ length: 14 }, (_, i) => currentYear - 3 + i)
-// Formulário: apenas ano atual em diante (não se cria orçamento no passado)
-const formYears = Array.from({ length: 10 }, (_, i) => currentYear + i)
+const years = Array.from({ length: 10 }, (_, i) => currentYear + i)
 
 export function BudgetsPage() {
   const [month, setMonth] = useState(currentMonth)
@@ -134,7 +131,7 @@ export function BudgetsPage() {
           onChange={(e) => setYear(Number(e.target.value))}
           className="w-28"
         >
-          {filterYears.map((y) => (
+          {years.map((y) => (
             <option key={y} value={y}>{y}</option>
           ))}
         </NativeSelect>
@@ -231,7 +228,7 @@ export function BudgetsPage() {
                 render={({ field }) => (
                   <Field label="Ano" required>
                     <NativeSelect {...field}>
-                      {formYears.map((y) => (
+                      {years.map((y) => (
                         <option key={y} value={y}>{y}</option>
                       ))}
                     </NativeSelect>
