@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Wallet, TrendingUp, TrendingDown, ArrowLeftRight, Tags, UserCircle } from 'lucide-react'
+import { Wallet, TrendingUp, TrendingDown, ArrowLeftRight, LayoutDashboard, Tags, UserCircle } from 'lucide-react'
 import { useAccounts } from '../hooks/useAccounts'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAuthStore } from '../store/authStore'

@@ -23,7 +23,6 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 const SHEET_SIZES = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-xl', full: 'max-w-full' }
 
 interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content> {
-  side?: 'top' | 'bottom' | 'left' | 'right'
   size?: keyof typeof SHEET_SIZES
 }
 
