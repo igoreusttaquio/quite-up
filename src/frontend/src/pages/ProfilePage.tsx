@@ -287,7 +287,7 @@ export function ProfilePage() {
         </SectionCard>
 
         {/* Danger zone */}
-        <div className="card p-5 space-y-4 border-[var(--colorPaletteRedBorderActive)]">
+        <div className="card p-5 space-y-4" style={{ borderColor: 'var(--colorPaletteRedBorder2)' }}>
           <div className="flex items-center gap-2 pb-3 border-b border-subtle">
             <DeleteFilled className="text-danger" style={{ fontSize: 18 }} />
             <Text weight="semibold" className="text-danger">Zona de Perigo</Text>

@@ -489,7 +489,7 @@ function TransactionTable({
         </div>
 
         {/* Rows */}
-        <ul className="divide-y border-subtle">
+        <ul className="divide-y divide-subtle">
           {transactions.map((tx) => (
             <li
               key={tx.id}
@@ -610,9 +610,9 @@ function TransactionFormDialog({
 }) {
   return (
     <Drawer
-type="overlay"
-        modalType="non-modal"
-        position="end"
+      type="overlay"
+      modalType="non-modal"
+      position="end"
       size="medium"
       open={open}
       onOpenChange={(_, { open }) => { if (!open) onClose() }}

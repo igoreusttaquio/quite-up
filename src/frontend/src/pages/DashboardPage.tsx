@@ -4,6 +4,7 @@ import {
   MoneyRegular,
   ArrowUpFilled,
   ArrowDownFilled,
+  ArrowRepeatAllFilled,
   ArrowSyncRegular,
   DataFunnelFilled,
   BuildingBankFilled,
@@ -153,17 +154,21 @@ export function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <ul className="divide-y border-subtle">
+          <ul className="divide-y divide-subtle">
             {recentResult.items.map((tx) => (
               <li key={tx.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-surface-3 transition-colors">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-medium ${
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                   tx.type === 'Income'
                     ? 'bg-[var(--colorPaletteGreenBackground2)] text-income'
                     : tx.type === 'Expense'
                     ? 'bg-[var(--colorPaletteRedBackground2)] text-expense'
                     : 'bg-brand-light text-brand'
                 }`}>
-                  {tx.type === 'Income' ? '↑' : tx.type === 'Expense' ? '↓' : '⇄'}
+                  {tx.type === 'Income'
+                    ? <ArrowUpFilled style={{ fontSize: 16 }} />
+                    : tx.type === 'Expense'
+                    ? <ArrowDownFilled style={{ fontSize: 16 }} />
+                    : <ArrowRepeatAllFilled style={{ fontSize: 16 }} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <Text size={300} weight="semibold" block truncate>
@@ -213,9 +218,7 @@ function StatCard({
         <div>
           <Text size={200} className="text-muted" block>{label}</Text>
           <div className="mt-1.5">
-            <Text size={600} weight="semibold" block>
-              <CurrencyBadge value={value} />
-            </Text>
+            <CurrencyBadge value={value} size={600} />
           </div>
         </div>
         <div className={`w-10 h-10 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center flex-shrink-0`}>
@@ -232,7 +235,7 @@ function QuickLink({ to, icon, label }: { to: string; icon: React.ReactNode; lab
       to={to}
       className="card p-4 flex flex-col items-center gap-2.5 hover:bg-surface-3 transition-colors no-underline"
     >
-      <span className="text-muted">{icon}</span>
+      <span className="text-brand" style={{ fontSize: 24 }}>{icon}</span>
       <Text size={200} weight="semibold" className="text-muted">{label}</Text>
     </Link>
   )

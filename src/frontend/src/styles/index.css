@@ -46,6 +46,11 @@
     box-shadow: var(--shadow2);
   }
 
+  /* Divider color using Fluent stroke token */
+  .divide-subtle > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--colorNeutralStroke1);
+  }
+
   /* Safe-area insets for notched phones */
   .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
