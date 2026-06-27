@@ -1,8 +1,9 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input, Button, Field, Text, MessageBar, MessageBarBody } from '@fluentui/react-components'
+import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
 import { Link } from 'react-router-dom'
+import { MailFilled, CheckmarkCircleFilled } from '@fluentui/react-icons'
 import { useForgotPassword } from '../hooks/useAuth'
 
 const schema = z.object({
@@ -28,28 +29,44 @@ export function ForgotPasswordPage() {
     }
   }
 
+  if (forgotPassword.isSuccess) {
+    return (
+      <div className="space-y-6 text-center py-4">
+        <CheckmarkCircleFilled className="text-income" style={{ fontSize: 56 }} />
+        <div>
+          <Text as="h2" size={700} weight="semibold" block>E-mail enviado!</Text>
+          <Text size={300} className="text-muted mt-2 block">
+            Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+          </Text>
+        </div>
+        <Link to="/login" className="text-brand hover:underline text-sm font-medium">
+          Voltar para o login
+        </Link>
+      </div>
+    )
+  }
+
   return (
-    <div>
-      <Text as="h2" size={600} weight="semibold" block className="mb-2 text-center">
-        Recuperar Senha
-      </Text>
-      <Text size={300} className="text-center mb-6 block" style={{ color: 'var(--colorNeutralForeground2)' }}>
-        Receba um link para redefinir sua senha
-      </Text>
+    <div className="space-y-6">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="w-12 h-12 rounded-full bg-brand-light flex items-center justify-center">
+          <MailFilled className="text-brand" style={{ fontSize: 24 }} />
+        </div>
+        <div>
+          <Text as="h2" size={700} weight="semibold" block>Recuperar Senha</Text>
+          <Text size={300} className="text-muted mt-1 block">
+            Informe seu e-mail e enviaremos um link de recuperação
+          </Text>
+        </div>
+      </div>
 
       {errors.root && (
-        <MessageBar intent="error" className="mb-4">
+        <MessageBar intent="error">
           <MessageBarBody>{errors.root.message}</MessageBarBody>
         </MessageBar>
       )}
 
-      {forgotPassword.isSuccess && (
-        <MessageBar intent="success" className="mb-4">
-          <MessageBarBody>Link de recuperação enviado para seu e-mail.</MessageBarBody>
-        </MessageBar>
-      )}
-
-      <div className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Controller
           name="email"
           control={control}
@@ -60,30 +77,29 @@ export function ForgotPasswordPage() {
               validationState={errors.email ? 'error' : undefined}
               validationMessage={errors.email?.message}
             >
-              <Input {...field} type="email" placeholder="seu@email.com" />
+              <Input {...field} type="email" placeholder="seu@email.com" size="large" />
             </Field>
           )}
         />
-      </div>
 
-      <Button
-        appearance="primary"
-        className="w-full mt-6"
-        size="large"
-        onClick={handleSubmit(onSubmit)}
-        disabled={forgotPassword.isPending || forgotPassword.isSuccess}
-      >
-        {forgotPassword.isPending ? 'Enviando...' : 'Enviar Link'}
-      </Button>
+        <Button
+          type="submit"
+          appearance="primary"
+          className="w-full"
+          size="large"
+          disabled={forgotPassword.isPending}
+          icon={forgotPassword.isPending ? <Spinner size="tiny" /> : undefined}
+        >
+          {forgotPassword.isPending ? 'Enviando…' : 'Enviar Link'}
+        </Button>
+      </form>
 
-      <div className="text-center mt-6">
-        <Text size={200}>
-          Lembrou a senha?{' '}
-          <Link to="/login" style={{ color: 'var(--colorBrandForeground1)' }}>
-            Entrar
-          </Link>
-        </Text>
-      </div>
+      <Text size={200} className="text-muted text-center block">
+        Lembrou a senha?{' '}
+        <Link to="/login" className="text-brand hover:underline font-medium">
+          Entrar
+        </Link>
+      </Text>
     </div>
   )
 }

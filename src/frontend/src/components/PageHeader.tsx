@@ -3,16 +3,20 @@ import { Text } from '@fluentui/react-components'
 
 interface PageHeaderProps {
   title: string
+  subtitle?: string
   action?: ReactNode
 }
 
-export function PageHeader({ title, action }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-6">
-      <Text as="h1" size={700} weight="semibold">
-        {title}
-      </Text>
-      {action && <div>{action}</div>}
+    <div className="flex items-start justify-between mb-6 gap-4">
+      <div>
+        <Text as="h1" size={800} weight="semibold" block>{title}</Text>
+        {subtitle && (
+          <Text size={300} className="text-muted mt-0.5 block">{subtitle}</Text>
+        )}
+      </div>
+      {action && <div className="flex-shrink-0">{action}</div>}
     </div>
   )
 }

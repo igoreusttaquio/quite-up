@@ -1,11 +1,10 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input, Button, Field, Text, MessageBar, MessageBarBody } from '@fluentui/react-components'
-import { Link } from 'react-router-dom'
+import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
+import { Link, useNavigate } from 'react-router-dom'
 import { useLogin } from '../hooks/useAuth'
 import { useAuthStore } from '../store/authStore'
-import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 
 const schema = z.object({
@@ -39,84 +38,80 @@ export function LoginPage() {
         for (const [field, messages] of Object.entries(errorData.errors)) {
           setError(field as keyof FormData, { message: messages[0] })
         }
-      } else if (errorData?.message) {
-        setError('root', { message: errorData.message })
       } else {
-        setError('root', { message: 'Erro ao fazer login. Tente novamente.' })
+        setError('root', { message: errorData?.message || 'Erro ao fazer login. Tente novamente.' })
       }
     }
   }
 
   return (
-    <div>
-      <Text as="h2" size={600} weight="semibold" block className="mb-6 text-center">
-        Entrar
-      </Text>
+    <div className="space-y-6">
+      <div>
+        <Text as="h2" size={700} weight="semibold" block>Entrar</Text>
+        <Text size={300} className="text-muted">Acesse sua conta para continuar</Text>
+      </div>
 
       {errors.root && (
-        <MessageBar intent="error" className="mb-4">
+        <MessageBar intent="error">
           <MessageBarBody>{errors.root.message}</MessageBarBody>
         </MessageBar>
       )}
 
-      <div onSubmit={handleSubmit(onSubmit)}>
-        <div className="space-y-4">
-          <Controller
-            name="email"
-            control={control}
-            render={({ field }) => (
-              <Field
-                label="E-mail"
-                required
-                validationState={errors.email ? 'error' : undefined}
-                validationMessage={errors.email?.message}
-              >
-                <Input {...field} type="email" placeholder="seu@email.com" />
-              </Field>
-            )}
-          />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Controller
+          name="email"
+          control={control}
+          render={({ field }) => (
+            <Field
+              label="E-mail"
+              required
+              validationState={errors.email ? 'error' : undefined}
+              validationMessage={errors.email?.message}
+            >
+              <Input {...field} type="email" placeholder="seu@email.com" size="large" />
+            </Field>
+          )}
+        />
 
-          <Controller
-            name="password"
-            control={control}
-            render={({ field }) => (
-              <Field
-                label="Senha"
-                required
-                validationState={errors.password ? 'error' : undefined}
-                validationMessage={errors.password?.message}
-              >
-                <Input {...field} type="password" placeholder="Sua senha" />
-              </Field>
-            )}
-          />
-        </div>
+        <Controller
+          name="password"
+          control={control}
+          render={({ field }) => (
+            <Field
+              label="Senha"
+              required
+              validationState={errors.password ? 'error' : undefined}
+              validationMessage={errors.password?.message}
+            >
+              <Input {...field} type="password" placeholder="Sua senha" size="large" />
+            </Field>
+          )}
+        />
 
-        <div className="text-right mt-2">
-          <Link to="/forgot-password" style={{ color: 'var(--colorBrandForeground1)', fontSize: '0.875rem' }}>
+        <div className="text-right">
+          <Link to="/forgot-password" className="text-sm text-brand hover:underline">
             Esqueceu a senha?
           </Link>
         </div>
 
         <Button
+          type="submit"
           appearance="primary"
-          className="w-full mt-6"
+          className="w-full"
           size="large"
-          onClick={handleSubmit(onSubmit)}
           disabled={login.isPending}
+          icon={login.isPending ? <Spinner size="tiny" /> : undefined}
         >
-          {login.isPending ? 'Entrando...' : 'Entrar'}
+          {login.isPending ? 'Entrando…' : 'Entrar'}
         </Button>
-      </div>
+      </form>
 
-      <div className="text-center mt-6">
-        <Text size={200}>
-          Não tem conta?{' '}
-          <Link to="/register" style={{ color: 'var(--colorBrandForeground1)' }}>
-            Cadastre-se
-          </Link>
-        </Text>
-      </div>
+      <Text size={200} className="text-muted text-center block">
+        Não tem conta?{' '}
+        <Link to="/register" className="text-brand hover:underline font-medium">
+          Cadastre-se grátis
+        </Link>
+      </Text>
     </div>
   )
 }

@@ -1,8 +1,9 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input, Button, Field, Text, MessageBar, MessageBarBody } from '@fluentui/react-components'
+import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { LockClosedFilled } from '@fluentui/react-icons'
 import { useResetPassword } from '../hooks/useAuth'
 
 const schema = z
@@ -40,25 +41,38 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <MessageBar intent="error">
-        <MessageBarBody>Token de recuperação inválido ou ausente.</MessageBarBody>
-      </MessageBar>
+      <div className="space-y-4 text-center py-4">
+        <MessageBar intent="error">
+          <MessageBarBody>Token de recuperação inválido ou ausente.</MessageBarBody>
+        </MessageBar>
+        <Link to="/forgot-password" className="text-brand hover:underline text-sm">
+          Solicitar novo link
+        </Link>
+      </div>
     )
   }
 
   return (
-    <div>
-      <Text as="h2" size={600} weight="semibold" block className="mb-6 text-center">
-        Redefinir Senha
-      </Text>
+    <div className="space-y-6">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="w-12 h-12 rounded-full bg-brand-light flex items-center justify-center">
+          <LockClosedFilled className="text-brand" style={{ fontSize: 24 }} />
+        </div>
+        <div>
+          <Text as="h2" size={700} weight="semibold" block>Redefinir Senha</Text>
+          <Text size={300} className="text-muted mt-1 block">
+            Escolha uma nova senha para sua conta
+          </Text>
+        </div>
+      </div>
 
       {errors.root && (
-        <MessageBar intent="error" className="mb-4">
+        <MessageBar intent="error">
           <MessageBarBody>{errors.root.message}</MessageBarBody>
         </MessageBar>
       )}
 
-      <div className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Controller
           name="newPassword"
           control={control}
@@ -69,7 +83,7 @@ export function ResetPasswordPage() {
               validationState={errors.newPassword ? 'error' : undefined}
               validationMessage={errors.newPassword?.message}
             >
-              <Input {...field} type="password" placeholder="Mínimo 6 caracteres" />
+              <Input {...field} type="password" placeholder="Mínimo 6 caracteres" size="large" />
             </Field>
           )}
         />
@@ -84,29 +98,28 @@ export function ResetPasswordPage() {
               validationState={errors.confirmNewPassword ? 'error' : undefined}
               validationMessage={errors.confirmNewPassword?.message}
             >
-              <Input {...field} type="password" placeholder="Repita a senha" />
+              <Input {...field} type="password" placeholder="Repita a nova senha" size="large" />
             </Field>
           )}
         />
-      </div>
 
-      <Button
-        appearance="primary"
-        className="w-full mt-6"
-        size="large"
-        onClick={handleSubmit(onSubmit)}
-        disabled={resetPassword.isPending}
-      >
-        {resetPassword.isPending ? 'Redefinindo...' : 'Redefinir Senha'}
-      </Button>
+        <Button
+          type="submit"
+          appearance="primary"
+          className="w-full"
+          size="large"
+          disabled={resetPassword.isPending}
+          icon={resetPassword.isPending ? <Spinner size="tiny" /> : undefined}
+        >
+          {resetPassword.isPending ? 'Redefinindo…' : 'Redefinir Senha'}
+        </Button>
+      </form>
 
-      <div className="text-center mt-6">
-        <Text size={200}>
-          <Link to="/login" style={{ color: 'var(--colorBrandForeground1)' }}>
-            Voltar para login
-          </Link>
-        </Text>
-      </div>
+      <Text size={200} className="text-muted text-center block">
+        <Link to="/login" className="text-brand hover:underline font-medium">
+          Voltar para o login
+        </Link>
+      </Text>
     </div>
   )
 }

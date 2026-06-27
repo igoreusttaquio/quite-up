@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,9 +7,23 @@ import {
   Field,
   Input,
   Text,
-  Card,
-  CardHeader,
+  Dialog,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Spinner,
+  Avatar,
+  MessageBar,
+  MessageBarBody,
 } from '@fluentui/react-components'
+import {
+  PersonFilled,
+  MailFilled,
+  LockClosedFilled,
+  DeleteFilled,
+} from '@fluentui/react-icons'
 import {
   useProfile,
   useUpdateProfile,
@@ -18,8 +32,9 @@ import {
   useDeleteAccount,
 } from '../hooks/useProfile'
 import { PageHeader } from '../components/PageHeader'
-import { LoadingScreen } from '../components/LoadingScreen'
-import { ConfirmDialog } from '../components/ConfirmDialog'
+import { SkeletonCard } from '../components/Skeleton'
+import { useAppToast } from '../hooks/useAppToast'
+import { useAuthStore } from '../store/authStore'
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
@@ -51,12 +66,14 @@ export function ProfilePage() {
   const changePassword = useChangePassword()
   const changeEmail = useChangeEmail()
   const deleteAccount = useDeleteAccount()
+  const user = useAuthStore((s) => s.user)
+  const toast = useAppToast()
 
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    values: { name: profile?.name || '' },
+    defaultValues: { name: '' },
   })
 
   const emailForm = useForm<EmailFormData>({
@@ -69,11 +86,16 @@ export function ProfilePage() {
     defaultValues: { currentPassword: '', newPassword: '', confirmNewPassword: '' },
   })
 
+  useEffect(() => {
+    if (profile) profileForm.reset({ name: profile.name })
+  }, [profile, profileForm])
+
   const handleProfileSubmit = async (data: ProfileFormData) => {
     try {
       await updateProfile.mutateAsync(data)
+      toast.success('Perfil atualizado', 'Suas informações foram salvas com sucesso.')
     } catch {
-      // handled by query client
+      toast.error('Erro ao salvar', 'Não foi possível atualizar o perfil.')
     }
   }
 
@@ -81,8 +103,9 @@ export function ProfilePage() {
     try {
       await changeEmail.mutateAsync(data)
       emailForm.reset()
+      toast.success('E-mail alterado', 'Verifique sua caixa de entrada para confirmar.')
     } catch {
-      // handled by query client
+      toast.error('Erro ao alterar e-mail', 'Verifique sua senha e tente novamente.')
     }
   }
 
@@ -90,29 +113,53 @@ export function ProfilePage() {
     try {
       await changePassword.mutateAsync(data)
       passwordForm.reset()
+      toast.success('Senha alterada', 'Sua senha foi atualizada com sucesso.')
     } catch {
-      // handled by query client
+      toast.error('Erro ao alterar senha', 'Verifique sua senha atual e tente novamente.')
     }
   }
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (password: string) => {
     try {
-      await deleteAccount.mutateAsync({ password: '' })
+      await deleteAccount.mutateAsync({ password })
     } catch {
-      // handled by query client
+      toast.error('Erro ao excluir conta', 'Verifique sua senha e tente novamente.')
     }
   }
 
-  if (isLoading) return <LoadingScreen />
+  if (isLoading) {
+    return (
+      <div>
+        <PageHeader title="Perfil" />
+        <div className="max-w-2xl space-y-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
       <PageHeader title="Perfil" />
 
-      <div className="max-w-2xl space-y-6">
-        <Card>
-          <CardHeader header={<Text weight="semibold">Dados Pessoais</Text>} />
-          <div className="space-y-4">
+      <div className="max-w-2xl space-y-5">
+        {/* Avatar section */}
+        <div className="bg-surface rounded-xl border border-subtle shadow-sm p-5 flex items-center gap-4">
+          <Avatar name={profile?.name || user?.name} size={56} />
+          <div>
+            <Text size={500} weight="semibold" block>{profile?.name}</Text>
+            <Text size={300} className="text-muted">{profile?.email}</Text>
+          </div>
+        </div>
+
+        {/* Personal data */}
+        <SectionCard
+          icon={<PersonFilled style={{ fontSize: 18 }} />}
+          title="Dados Pessoais"
+        >
+          <form onSubmit={profileForm.handleSubmit(handleProfileSubmit as () => Promise<void>)} className="space-y-4">
             <Controller
               name="name"
               control={profileForm.control}
@@ -130,18 +177,22 @@ export function ProfilePage() {
               <Input value={profile?.email || ''} disabled />
             </Field>
             <Button
+              type="submit"
               appearance="primary"
-              onClick={profileForm.handleSubmit(handleProfileSubmit as () => Promise<void>)}
               disabled={updateProfile.isPending}
+              icon={updateProfile.isPending ? <Spinner size="tiny" /> : undefined}
             >
-              {updateProfile.isPending ? 'Salvando...' : 'Salvar'}
+              {updateProfile.isPending ? 'Salvando…' : 'Salvar alterações'}
             </Button>
-          </div>
-        </Card>
+          </form>
+        </SectionCard>
 
-        <Card>
-          <CardHeader header={<Text weight="semibold">Alterar E-mail</Text>} />
-          <div className="space-y-4">
+        {/* Change email */}
+        <SectionCard
+          icon={<MailFilled style={{ fontSize: 18 }} />}
+          title="Alterar E-mail"
+        >
+          <form onSubmit={emailForm.handleSubmit(handleEmailSubmit as () => Promise<void>)} className="space-y-4">
             <Controller
               name="newEmail"
               control={emailForm.control}
@@ -169,18 +220,22 @@ export function ProfilePage() {
               )}
             />
             <Button
+              type="submit"
               appearance="primary"
-              onClick={emailForm.handleSubmit(handleEmailSubmit as () => Promise<void>)}
               disabled={changeEmail.isPending}
+              icon={changeEmail.isPending ? <Spinner size="tiny" /> : undefined}
             >
-              {changeEmail.isPending ? 'Alterando...' : 'Alterar E-mail'}
+              {changeEmail.isPending ? 'Alterando…' : 'Alterar E-mail'}
             </Button>
-          </div>
-        </Card>
+          </form>
+        </SectionCard>
 
-        <Card>
-          <CardHeader header={<Text weight="semibold">Alterar Senha</Text>} />
-          <div className="space-y-4">
+        {/* Change password */}
+        <SectionCard
+          icon={<LockClosedFilled style={{ fontSize: 18 }} />}
+          title="Alterar Senha"
+        >
+          <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit as () => Promise<void>)} className="space-y-4">
             <Controller
               name="currentPassword"
               control={passwordForm.control}
@@ -221,42 +276,130 @@ export function ProfilePage() {
               )}
             />
             <Button
+              type="submit"
               appearance="primary"
-              onClick={passwordForm.handleSubmit(handlePasswordSubmit as () => Promise<void>)}
               disabled={changePassword.isPending}
+              icon={changePassword.isPending ? <Spinner size="tiny" /> : undefined}
             >
-              {changePassword.isPending ? 'Alterando...' : 'Alterar Senha'}
+              {changePassword.isPending ? 'Alterando…' : 'Alterar Senha'}
             </Button>
-          </div>
-        </Card>
+          </form>
+        </SectionCard>
 
-        <Card>
-          <CardHeader header={<Text weight="semibold" style={{ color: 'var(--colorPaletteRedForeground1)' }}>Zona de Perigo</Text>} />
-          <div className="space-y-4">
-            <Text size={200} style={{ color: 'var(--colorNeutralForeground3)' }}>
-              Excluir sua conta é uma ação irreversível. Todos os seus dados serão removidos.
-            </Text>
-            <Button
-              appearance="secondary"
-              style={{ borderColor: 'var(--colorPaletteRedBackground3)', color: 'var(--colorPaletteRedForeground1)' }}
-              onClick={() => setDeleteOpen(true)}
-            >
-              Excluir Conta
-            </Button>
+        {/* Danger zone */}
+        <div className="bg-surface rounded-xl border border-subtle shadow-sm p-5 space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-subtle">
+            <DeleteFilled className="text-danger" style={{ fontSize: 18 }} />
+            <Text weight="semibold" className="text-danger">Zona de Perigo</Text>
           </div>
-        </Card>
+          <Text size={300} className="text-muted">
+            Excluir sua conta é uma ação permanente e irreversível. Todos os seus dados serão removidos definitivamente.
+          </Text>
+          <Button
+            appearance="outline"
+            className="border-[var(--colorPaletteRedBorderActive)] text-danger"
+            onClick={() => setDeleteOpen(true)}
+          >
+            Excluir minha conta
+          </Button>
+        </div>
       </div>
 
-      <ConfirmDialog
+      <DeleteAccountDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Excluir Conta"
-        message="Tem certeza que deseja excluir sua conta? Esta ação é irreversível."
-        confirmText="Excluir"
-        destructive
         onConfirm={handleDeleteAccount}
         loading={deleteAccount.isPending}
       />
     </div>
+  )
+}
+
+function SectionCard({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="bg-surface rounded-xl border border-subtle shadow-sm p-5 space-y-4">
+      <div className="flex items-center gap-2 pb-3 border-b border-subtle">
+        <span className="text-brand">{icon}</span>
+        <Text weight="semibold">{title}</Text>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function DeleteAccountDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  loading,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onConfirm: (password: string) => void
+  loading: boolean
+}) {
+  const [password, setPassword] = useState('')
+  const [confirmText, setConfirmText] = useState('')
+
+  const close = () => {
+    setPassword('')
+    setConfirmText('')
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(_, data) => { if (!data.open) close() }}>
+      <DialogSurface>
+        <DialogBody>
+          <DialogTitle>Excluir conta permanentemente</DialogTitle>
+          <DialogContent>
+            <div className="space-y-4">
+              <MessageBar intent="warning">
+                <MessageBarBody>
+                  Esta ação é irreversível. Todos os seus dados serão apagados.
+                </MessageBarBody>
+              </MessageBar>
+
+              <Field label='Digite "excluir" para confirmar'>
+                <Input
+                  value={confirmText}
+                  onChange={(_, d) => setConfirmText(d.value)}
+                  placeholder="excluir"
+                />
+              </Field>
+
+              <Field label="Sua senha atual">
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(_, d) => setPassword(d.value)}
+                  placeholder="Senha atual"
+                />
+              </Field>
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              appearance="primary"
+              onClick={() => onConfirm(password)}
+              disabled={loading || !password || confirmText.toLowerCase() !== 'excluir'}
+              icon={loading ? <Spinner size="tiny" /> : undefined}
+              style={{ backgroundColor: 'var(--colorPaletteRedBackground3)' }}
+            >
+              {loading ? 'Excluindo…' : 'Excluir minha conta'}
+            </Button>
+            <Button onClick={close} disabled={loading}>Cancelar</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
   )
 }

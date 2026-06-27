@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Spinner,
 } from '@fluentui/react-components'
 
 interface ConfirmDialogProps {
@@ -42,6 +43,7 @@ export function ConfirmDialog({
               appearance="primary"
               onClick={onConfirm}
               disabled={loading}
+              icon={loading ? <Spinner size="tiny" /> : undefined}
               style={destructive ? { backgroundColor: 'var(--colorPaletteRedBackground3)' } : undefined}
             >
               {confirmText}

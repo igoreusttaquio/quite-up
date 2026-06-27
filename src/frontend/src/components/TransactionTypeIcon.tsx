@@ -12,10 +12,10 @@ const icons: Record<TransactionType, FluentIcon> = {
   Transfer: ArrowRepeatAllFilled,
 }
 
-const colors: Record<TransactionType, string> = {
-  Income: 'var(--colorPaletteGreenForeground1)',
-  Expense: 'var(--colorPaletteRedForeground1)',
-  Transfer: 'var(--colorNeutralForeground3)',
+const colorClass: Record<TransactionType, string> = {
+  Income: 'text-income',
+  Expense: 'text-expense',
+  Transfer: 'text-muted',
 }
 
 interface TransactionTypeIconProps {
@@ -24,5 +24,5 @@ interface TransactionTypeIconProps {
 
 export function TransactionTypeIcon({ type }: TransactionTypeIconProps) {
   const Icon = icons[type]
-  return <Icon style={{ color: colors[type] }} />
+  return <Icon className={colorClass[type]} />
 }

@@ -1,7 +1,7 @@
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input, Button, Field, Text, MessageBar, MessageBarBody } from '@fluentui/react-components'
+import { Input, Button, Field, Text, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import { useRegister } from '../hooks/useAuth'
 import { useAuthStore } from '../store/authStore'
@@ -45,33 +45,26 @@ export function RegisterPage() {
         for (const [field, messages] of Object.entries(errorData.errors)) {
           setError(field as keyof FormData, { message: messages[0] })
         }
-      } else if (errorData?.message) {
-        setError('root', { message: errorData.message })
       } else {
-        setError('root', { message: 'Erro ao cadastrar. Tente novamente.' })
+        setError('root', { message: errorData?.message || 'Erro ao cadastrar. Tente novamente.' })
       }
     }
   }
 
   return (
-    <div>
-      <Text as="h2" size={600} weight="semibold" block className="mb-6 text-center">
-        Criar Conta
-      </Text>
+    <div className="space-y-6">
+      <div>
+        <Text as="h2" size={700} weight="semibold" block>Criar conta</Text>
+        <Text size={300} className="text-muted">Comece a organizar suas finanças hoje</Text>
+      </div>
 
       {errors.root && (
-        <MessageBar intent="error" className="mb-4">
+        <MessageBar intent="error">
           <MessageBarBody>{errors.root.message}</MessageBarBody>
         </MessageBar>
       )}
 
-      {register.isSuccess && (
-        <MessageBar intent="success" className="mb-4">
-          <MessageBarBody>Conta criada! Verifique seu e-mail para ativar.</MessageBarBody>
-        </MessageBar>
-      )}
-
-      <div className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Controller
           name="name"
           control={control}
@@ -82,7 +75,7 @@ export function RegisterPage() {
               validationState={errors.name ? 'error' : undefined}
               validationMessage={errors.name?.message}
             >
-              <Input {...field} placeholder="Seu nome" />
+              <Input {...field} placeholder="Seu nome completo" size="large" />
             </Field>
           )}
         />
@@ -97,7 +90,7 @@ export function RegisterPage() {
               validationState={errors.email ? 'error' : undefined}
               validationMessage={errors.email?.message}
             >
-              <Input {...field} type="email" placeholder="seu@email.com" />
+              <Input {...field} type="email" placeholder="seu@email.com" size="large" />
             </Field>
           )}
         />
@@ -112,7 +105,7 @@ export function RegisterPage() {
               validationState={errors.password ? 'error' : undefined}
               validationMessage={errors.password?.message}
             >
-              <Input {...field} type="password" placeholder="Mínimo 6 caracteres" />
+              <Input {...field} type="password" placeholder="Mínimo 6 caracteres" size="large" />
             </Field>
           )}
         />
@@ -127,30 +120,29 @@ export function RegisterPage() {
               validationState={errors.confirmPassword ? 'error' : undefined}
               validationMessage={errors.confirmPassword?.message}
             >
-              <Input {...field} type="password" placeholder="Repita a senha" />
+              <Input {...field} type="password" placeholder="Repita a senha" size="large" />
             </Field>
           )}
         />
-      </div>
 
-      <Button
-        appearance="primary"
-        className="w-full mt-6"
-        size="large"
-        onClick={handleSubmit(onSubmit)}
-        disabled={register.isPending || register.isSuccess}
-      >
-        {register.isPending ? 'Cadastrando...' : 'Cadastrar'}
-      </Button>
+        <Button
+          type="submit"
+          appearance="primary"
+          className="w-full"
+          size="large"
+          disabled={register.isPending}
+          icon={register.isPending ? <Spinner size="tiny" /> : undefined}
+        >
+          {register.isPending ? 'Cadastrando…' : 'Criar conta'}
+        </Button>
+      </form>
 
-      <div className="text-center mt-6">
-        <Text size={200}>
-          Já tem conta?{' '}
-          <Link to="/login" style={{ color: 'var(--colorBrandForeground1)' }}>
-            Entrar
-          </Link>
-        </Text>
-      </div>
+      <Text size={200} className="text-muted text-center block">
+        Já tem conta?{' '}
+        <Link to="/login" className="text-brand hover:underline font-medium">
+          Entrar
+        </Link>
+      </Text>
     </div>
   )
 }

@@ -8,21 +8,19 @@ import {
   Input,
   Select,
   Text,
-  Card,
-  CardHeader,
   Dialog,
   DialogSurface,
   DialogBody,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Tag,
+  Spinner,
 } from '@fluentui/react-components'
 import { AddFilled, EditFilled, DeleteFilled, MoneyFilled } from '@fluentui/react-icons'
 import { useAccounts, useCreateAccount, useUpdateAccount, useDeactivateAccount } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
-import { LoadingScreen } from '../components/LoadingScreen'
+import { SkeletonCard } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import type { AccountType, Account } from '../types'
@@ -32,6 +30,13 @@ const accountTypeLabels: Record<AccountType, string> = {
   Savings: 'Poupança',
   Wallet: 'Carteira',
   Other: 'Outro',
+}
+
+const accountTypeEmoji: Record<AccountType, string> = {
+  CheckingAccount: '🏦',
+  Savings: '💰',
+  Wallet: '👛',
+  Other: '📁',
 }
 
 const createSchema = z.object({
@@ -73,9 +78,7 @@ export function AccountsPage() {
       await createAccount.mutateAsync(data)
       setCreateOpen(false)
       createForm.reset()
-    } catch {
-      // handled by query client
-    }
+    } catch { /* handled by query client */ }
   }
 
   const handleEdit = async (data: UpdateFormData) => {
@@ -83,9 +86,7 @@ export function AccountsPage() {
     try {
       await updateAccount.mutateAsync({ id: editTarget.id, data })
       setEditTarget(null)
-    } catch {
-      // handled by query client
-    }
+    } catch { /* handled by query client */ }
   }
 
   const handleDeactivate = async () => {
@@ -93,9 +94,7 @@ export function AccountsPage() {
     try {
       await deactivateAccount.mutateAsync(deleteTarget.id)
       setDeleteTarget(null)
-    } catch {
-      // handled by query client
-    }
+    } catch { /* handled by query client */ }
   }
 
   const openEdit = (account: Account) => {
@@ -103,20 +102,28 @@ export function AccountsPage() {
     editForm.reset({ name: account.name, type: account.type })
   }
 
-  if (isLoading) return <LoadingScreen />
+  const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
 
   return (
     <div>
-      <PageHeader title="Contas" action={
-        <Button appearance="primary" icon={<AddFilled />} onClick={() => setCreateOpen(true)}>
-          Nova Conta
-        </Button>
-      } />
+      <PageHeader
+        title="Contas"
+        action={
+          <Button appearance="primary" icon={<AddFilled />} onClick={() => setCreateOpen(true)}>
+            Nova Conta
+          </Button>
+        }
+      />
 
-      {(!accounts || accounts.length === 0) ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </div>
+      ) : activeAccounts.length === 0 ? (
         <EmptyState
           icon={<MoneyFilled style={{ fontSize: 48 }} />}
-          message="Nenhuma conta cadastrada"
+          title="Nenhuma conta cadastrada"
+          description="Adicione uma conta para começar a registrar suas transações."
           action={
             <Button appearance="primary" icon={<AddFilled />} onClick={() => setCreateOpen(true)}>
               Criar Conta
@@ -125,40 +132,18 @@ export function AccountsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {accounts
-            .filter((a) => a.isActive)
-            .map((account) => (
-              <Card key={account.id} className="w-full">
-                <CardHeader
-                  header={
-                    <div className="flex items-center gap-2">
-                      <Text weight="semibold">{account.name}</Text>
-                      <Tag size="small">{accountTypeLabels[account.type]}</Tag>
-                    </div>
-                  }
-                  action={
-                    <div className="flex gap-1">
-                      <Button
-                        appearance="subtle"
-                        icon={<EditFilled />}
-                        size="small"
-                        onClick={() => openEdit(account)}
-                      />
-                      <Button
-                        appearance="subtle"
-                        icon={<DeleteFilled />}
-                        size="small"
-                        onClick={() => setDeleteTarget(account)}
-                      />
-                    </div>
-                  }
-                />
-                <CurrencyBadge value={account.balance} />
-              </Card>
-            ))}
+          {activeAccounts.map((account) => (
+            <AccountCard
+              key={account.id}
+              account={account}
+              onEdit={() => openEdit(account)}
+              onDeactivate={() => setDeleteTarget(account)}
+            />
+          ))}
         </div>
       )}
 
+      {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={(_, data) => setCreateOpen(data.open)}>
         <DialogSurface>
           <DialogBody>
@@ -169,11 +154,13 @@ export function AccountsPage() {
                   name="name"
                   control={createForm.control}
                   render={({ field }) => (
-                    <Field label="Nome" required
+                    <Field
+                      label="Nome"
+                      required
                       validationState={createForm.formState.errors.name ? 'error' : undefined}
                       validationMessage={createForm.formState.errors.name?.message}
                     >
-                      <Input {...field} placeholder="Nome da conta" />
+                      <Input {...field} placeholder="Ex: Conta Bradesco" />
                     </Field>
                   )}
                 />
@@ -183,11 +170,9 @@ export function AccountsPage() {
                   render={({ field }) => (
                     <Field label="Tipo" required>
                       <Select {...field}>
-                        {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(
-                          ([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          )
-                        )}
+                        {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
                       </Select>
                     </Field>
                   )}
@@ -215,8 +200,9 @@ export function AccountsPage() {
                 appearance="primary"
                 onClick={createForm.handleSubmit(handleCreate as () => Promise<void>)}
                 disabled={createAccount.isPending}
+                icon={createAccount.isPending ? <Spinner size="tiny" /> : undefined}
               >
-                {createAccount.isPending ? 'Salvando...' : 'Salvar'}
+                {createAccount.isPending ? 'Salvando…' : 'Criar Conta'}
               </Button>
               <Button onClick={() => setCreateOpen(false)}>Cancelar</Button>
             </DialogActions>
@@ -224,12 +210,8 @@ export function AccountsPage() {
         </DialogSurface>
       </Dialog>
 
-      <Dialog
-        open={!!editTarget}
-        onOpenChange={(_, data) => {
-          if (!data.open) setEditTarget(null)
-        }}
-      >
+      {/* Edit dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(_, data) => { if (!data.open) setEditTarget(null) }}>
         <DialogSurface>
           <DialogBody>
             <DialogTitle>Editar Conta</DialogTitle>
@@ -239,7 +221,9 @@ export function AccountsPage() {
                   name="name"
                   control={editForm.control}
                   render={({ field }) => (
-                    <Field label="Nome" required
+                    <Field
+                      label="Nome"
+                      required
                       validationState={editForm.formState.errors.name ? 'error' : undefined}
                       validationMessage={editForm.formState.errors.name?.message}
                     >
@@ -253,11 +237,9 @@ export function AccountsPage() {
                   render={({ field }) => (
                     <Field label="Tipo" required>
                       <Select {...field}>
-                        {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(
-                          ([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          )
-                        )}
+                        {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
                       </Select>
                     </Field>
                   )}
@@ -269,8 +251,9 @@ export function AccountsPage() {
                 appearance="primary"
                 onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
                 disabled={updateAccount.isPending}
+                icon={updateAccount.isPending ? <Spinner size="tiny" /> : undefined}
               >
-                {updateAccount.isPending ? 'Salvando...' : 'Salvar'}
+                {updateAccount.isPending ? 'Salvando…' : 'Salvar'}
               </Button>
               <Button onClick={() => setEditTarget(null)}>Cancelar</Button>
             </DialogActions>
@@ -282,12 +265,47 @@ export function AccountsPage() {
         open={!!deleteTarget}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
         title="Desativar Conta"
-        message={`Tem certeza que deseja desativar a conta "${deleteTarget?.name}"?`}
+        message={`Tem certeza que deseja desativar "${deleteTarget?.name}"? Você não poderá registrar transações nela.`}
         confirmText="Desativar"
         destructive
         onConfirm={handleDeactivate}
         loading={deactivateAccount.isPending}
       />
+    </div>
+  )
+}
+
+function AccountCard({
+  account,
+  onEdit,
+  onDeactivate,
+}: {
+  account: Account
+  onEdit: () => void
+  onDeactivate: () => void
+}) {
+  const emoji = accountTypeEmoji[account.type]
+  const label = accountTypeLabels[account.type]
+
+  return (
+    <div className="bg-surface rounded-xl border border-subtle shadow-sm p-5 space-y-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{emoji}</span>
+          <div>
+            <Text weight="semibold" size={400} block>{account.name}</Text>
+            <Text size={200} className="text-muted">{label}</Text>
+          </div>
+        </div>
+        <div className="flex gap-1 flex-shrink-0">
+          <Button appearance="subtle" icon={<EditFilled />} size="small" onClick={onEdit} />
+          <Button appearance="subtle" icon={<DeleteFilled />} size="small" onClick={onDeactivate} />
+        </div>
+      </div>
+      <div className="pt-3 border-t border-subtle">
+        <Text size={200} className="text-muted mb-1 block">Saldo atual</Text>
+        <CurrencyBadge value={account.balance} />
+      </div>
     </div>
   )
 }

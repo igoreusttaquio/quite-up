@@ -3,6 +3,7 @@ import {
   Text,
   Avatar,
   Button,
+  Tooltip,
   mergeClasses,
 } from '@fluentui/react-components'
 import {
@@ -17,9 +18,13 @@ import {
   PersonFilled,
   PersonRegular,
   SignOutFilled,
+  WeatherSunnyRegular,
+  WeatherMoonRegular,
 } from '@fluentui/react-icons'
 import { useAuthStore } from '../store/authStore'
 import { useLogout } from '../hooks/useAuth'
+import { useTheme } from '../context/ThemeContext'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import type { FluentIcon } from '@fluentui/react-icons'
 
 interface NavItem {
@@ -30,31 +35,31 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard', icon: DashboardRegular, activeIcon: DashboardFilled },
-  { label: 'Contas', path: '/accounts', icon: MoneyRegular, activeIcon: MoneyFilled },
-  { label: 'Categorias', path: '/categories', icon: TagRegular, activeIcon: TagFilled },
-  { label: 'Transações', path: '/transactions', icon: ArrowSyncRegular, activeIcon: ArrowSyncFilled },
-  { label: 'Perfil', path: '/profile', icon: PersonRegular, activeIcon: PersonFilled },
+  { label: 'Dashboard',   path: '/dashboard',    icon: DashboardRegular,  activeIcon: DashboardFilled },
+  { label: 'Contas',      path: '/accounts',     icon: MoneyRegular,      activeIcon: MoneyFilled },
+  { label: 'Categorias',  path: '/categories',   icon: TagRegular,        activeIcon: TagFilled },
+  { label: 'Transações',  path: '/transactions', icon: ArrowSyncRegular,  activeIcon: ArrowSyncFilled },
+  { label: 'Perfil',      path: '/profile',      icon: PersonRegular,     activeIcon: PersonFilled },
 ]
 
 export function DashboardLayout() {
   const user = useAuthStore((s) => s.user)
   const logout = useLogout()
   const location = useLocation()
+  const { mode, toggle } = useTheme()
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--colorNeutralBackground2)' }}>
-      {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex flex-col w-60 fixed h-full z-10 border-r" style={{ backgroundColor: 'var(--colorNeutralBackground1)', borderColor: 'var(--colorNeutralStroke1)' }}>
+    <div className="min-h-screen flex bg-canvas">
+      {/* Sidebar — Desktop */}
+      <aside className="hidden md:flex flex-col w-64 fixed h-full z-10 border-r border-subtle bg-surface">
         {/* Logo */}
-        <div className="p-5 border-b" style={{ borderColor: 'var(--colorNeutralStroke1)' }}>
-          <Text size={600} weight="bold" style={{ color: 'var(--colorBrandForeground1)' }}>
-            Quite-Up
-          </Text>
+        <div className="px-5 py-4 border-b border-subtle">
+          <Text size={600} weight="bold" className="text-brand">Quite-Up</Text>
+          <Text size={100} className="text-muted block mt-0.5">Finanças pessoais</Text>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path
             const Icon = isActive ? item.activeIcon : item.icon
@@ -63,61 +68,76 @@ export function DashboardLayout() {
                 key={item.path}
                 to={item.path}
                 className={mergeClasses(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm no-underline transition-colors',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm no-underline transition-colors font-medium',
+                  isActive
+                    ? 'bg-brand-light text-brand'
+                    : 'text-muted hover:bg-surface-3'
                 )}
-                style={{
-                  color: isActive ? 'var(--colorBrandForeground1)' : 'var(--colorNeutralForeground2)',
-                  backgroundColor: isActive ? 'var(--colorBrandBackground2)' : 'transparent',
-                }}
               >
-                <Icon />
+                <Icon className="flex-shrink-0" style={{ fontSize: 18 }} />
                 <span>{item.label}</span>
               </NavLink>
             )
           })}
         </nav>
 
-        {/* User info + logout */}
-        <div className="p-4 border-t flex items-center gap-3" style={{ borderColor: 'var(--colorNeutralStroke1)' }}>
-          <Avatar name={user?.name} size={32} />
-          <div className="flex-1 min-w-0">
-            <Text size={200} weight="semibold" block truncate>
-              {user?.name}
-            </Text>
-            <Text size={100} style={{ color: 'var(--colorNeutralForeground3)' }} block truncate>
-              {user?.email}
-            </Text>
+        {/* Footer: user + dark mode + logout */}
+        <div className="p-3 border-t border-subtle space-y-1">
+          <div className="flex items-center gap-2 px-2 py-2 rounded-lg">
+            <Avatar name={user?.name} size={32} />
+            <div className="flex-1 min-w-0">
+              <Text size={200} weight="semibold" block truncate>{user?.name}</Text>
+              <Text size={100} className="text-subtle" block truncate>{user?.email}</Text>
+            </div>
           </div>
-          <Button
-            appearance="subtle"
-            icon={<SignOutFilled />}
-            onClick={() => logout.mutate()}
-            title="Sair"
-          />
+          <div className="flex items-center gap-1 px-1">
+            <Tooltip content={mode === 'light' ? 'Modo escuro' : 'Modo claro'} relationship="label">
+              <Button
+                appearance="subtle"
+                icon={mode === 'light' ? <WeatherMoonRegular /> : <WeatherSunnyRegular />}
+                onClick={toggle}
+                size="small"
+              />
+            </Tooltip>
+            <Tooltip content="Sair" relationship="label">
+              <Button
+                appearance="subtle"
+                icon={<SignOutFilled />}
+                onClick={() => logout.mutate()}
+                disabled={logout.isPending}
+                size="small"
+              />
+            </Tooltip>
+          </div>
         </div>
       </aside>
 
-      {/* Main content area (desktop with sidebar offset) */}
-      <main className="flex-1 md:ml-60 pb-16 md:pb-0 min-h-screen">
+      {/* Main content */}
+      <main className="flex-1 md:ml-64 pb-16 md:pb-0 min-h-screen">
         {/* Mobile header */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b" style={{ backgroundColor: 'var(--colorNeutralBackground1)', borderColor: 'var(--colorNeutralStroke1)' }}>
-          <Text size={500} weight="bold" style={{ color: 'var(--colorBrandForeground1)' }}>
-            Quite-Up
-          </Text>
-          <Avatar name={user?.name} size={28} />
+        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-subtle bg-surface sticky top-0 z-10">
+          <Text size={500} weight="bold" className="text-brand">Quite-Up</Text>
+          <div className="flex items-center gap-1">
+            <Button
+              appearance="subtle"
+              icon={mode === 'light' ? <WeatherMoonRegular /> : <WeatherSunnyRegular />}
+              onClick={toggle}
+              size="small"
+            />
+            <Avatar name={user?.name} size={28} />
+          </div>
         </div>
 
         {/* Page content */}
-        <div className="p-4 md:p-6 lg:p-8">
-          <Outlet />
+        <div className="p-4 md:p-6 lg:p-8 max-w-[1400px]">
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
 
-      {/* Bottom navigation - Mobile */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex justify-around border-t py-2"
-        style={{ backgroundColor: 'var(--colorNeutralBackground1)', borderColor: 'var(--colorNeutralStroke1)' }}
-      >
+      {/* Bottom nav — Mobile */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex justify-around border-t border-subtle bg-surface pb-safe">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path
           const Icon = isActive ? item.activeIcon : item.icon
@@ -125,10 +145,12 @@ export function DashboardLayout() {
             <NavLink
               key={item.path}
               to={item.path}
-              className="flex flex-col items-center gap-0.5 no-underline text-xs"
-              style={{ color: isActive ? 'var(--colorBrandForeground1)' : 'var(--colorNeutralForeground3)' }}
+              className={mergeClasses(
+                'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-3',
+                isActive ? 'text-brand' : 'text-subtle'
+              )}
             >
-              <Icon />
+              <Icon style={{ fontSize: 20 }} />
               <span>{item.label}</span>
             </NavLink>
           )

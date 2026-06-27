@@ -1,1 +1,28 @@
 @import "tailwindcss";
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+}
+
+@layer utilities {
+  /* Fluent UI design token shortcuts — change automatically with dark theme */
+  .text-brand     { color: var(--colorBrandForeground1); }
+  .text-brand-2   { color: var(--colorBrandForeground2); }
+  .text-muted     { color: var(--colorNeutralForeground2); }
+  .text-subtle    { color: var(--colorNeutralForeground3); }
+  .bg-surface     { background-color: var(--colorNeutralBackground1); }
+  .bg-canvas      { background-color: var(--colorNeutralBackground2); }
+  .bg-surface-3   { background-color: var(--colorNeutralBackground3); }
+  .bg-brand-light { background-color: var(--colorBrandBackground2); }
+  .border-subtle  { border-color: var(--colorNeutralStroke1); }
+  .text-income    { color: var(--colorPaletteGreenForeground1); }
+  .text-expense   { color: var(--colorPaletteRedForeground1); }
+  .text-danger    { color: var(--colorPaletteRedForeground1); }
+  .bg-danger-subtle { background-color: var(--colorPaletteRedBackground2); }
+
+  /* Safe-area insets for notched phones */
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+}
