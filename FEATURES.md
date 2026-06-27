@@ -443,3 +443,49 @@ Objetivo de economia com valor alvo e prazo.
 - IDs expostos na API: string curta via **Hashids.net** (decodifica para ID interno `long`)
 - Estratégia de quitação: apenas **Snowball** (menor saldo primeiro)
 - Transações futuras não afetam saldo atual, apenas projetado
+
+---
+
+## Mensageria — RabbitMQ
+
+A aplicação usa RabbitMQ para desacoplar operações assíncronas do fluxo principal das requisições HTTP. A comunicação ocorre via uma exchange `Direct` chamada `quite-up`.
+
+### Publisher — `RabbitMqEventBus`
+
+Implementação de `IEventBus` injetada nos handlers de comando. Publica eventos serializados em JSON com a fila de destino definida pelo nome do tipo do evento (`typeof(T).Name` como routing key). Se o RabbitMQ estiver indisponível, o evento é descartado com log de aviso — a operação principal não é afetada.
+
+---
+
+### Consumer 1 — `NotificationConsumer` (BackgroundService)
+
+**Fila:** `notifications`  
+**Evento consumido:** `DebtPaidOffEvent`
+
+**Fluxo:**
+1. `RegisterDebtPaymentCommandHandler` registra um pagamento que zera o saldo da dívida
+2. Publica `DebtPaidOffEvent` no RabbitMQ
+3. `NotificationConsumer` recebe o evento e cria uma `Notification` no banco para o usuário
+
+**Mensagem gerada:** *"Dívida quitada! 🎉 Parabéns! Você quitou a dívida [nome] no valor de R$ X."*
+
+---
+
+### Consumer 2 — `EmailNotificationConsumer` (BackgroundService)
+
+**Fila:** `email-notifications`  
+**Eventos consumidos:**
+
+| Evento | Origem | Ação |
+|---|---|---|
+| `UserRegisteredEvent` | `RegisterUserCommandHandler` | Envia e-mail de verificação de conta |
+| `ForgotPasswordRequestedEvent` | `ForgotPasswordCommandHandler` | Envia e-mail de redefinição de senha |
+
+---
+
+### Resiliência
+
+Ambos os consumers implementam reconexão automática com retry:
+- `BrokerUnreachableException`: aguarda 10 segundos e tenta reconectar
+- `OperationInterruptedException`: aguarda 10 segundos e tenta reconectar
+- Erros inesperados: aguarda 30 segundos antes de reiniciar
+- Mensagens com falha de processamento são devolvidas à fila (`BasicNack` com `requeue: true`)
