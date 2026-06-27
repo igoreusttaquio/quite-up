@@ -100,6 +100,12 @@ const transactionTypeMap: Record<number, string> = {
   2: 'Transfer',
 }
 
+const debtTypeMap: Record<number, string> = {
+  0: 'Loan',
+  1: 'Financing',
+  2: 'CreditCard',
+}
+
 function mapResponseEnums(obj: Record<string, unknown>) {
   if (!obj || typeof obj !== 'object') return
 
@@ -108,6 +114,7 @@ function mapResponseEnums(obj: Record<string, unknown>) {
     if (numType in accountTypeMap) obj.type = accountTypeMap[numType]
     else if (numType in categoryTypeMap) obj.type = categoryTypeMap[numType]
     else if (numType in transactionTypeMap) obj.type = transactionTypeMap[numType]
+    else if (numType in debtTypeMap) obj.type = debtTypeMap[numType]
   }
 
   if ('currentBalance' in obj && typeof obj.currentBalance === 'number') {

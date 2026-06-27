@@ -4,6 +4,8 @@ export type CategoryType = 'Income' | 'Expense'
 
 export type TransactionType = 'Income' | 'Expense' | 'Transfer'
 
+export type DebtType = 'Loan' | 'Financing' | 'CreditCard'
+
 export interface Account {
   id: string
   name: string
@@ -162,4 +164,182 @@ export interface ApiError {
 
 export interface ValidationErrors {
   errors: Record<string, string[]>
+}
+
+// === Debts ===
+
+export interface Debt {
+  id: string
+  name: string
+  type: DebtType
+  totalAmount: number
+  paidAmount: number
+  remainingAmount: number
+  interestRate?: number
+  dueDate: string
+  isPaid: boolean
+  notes?: string
+  createdAt: string
+}
+
+export interface CreateDebtRequest {
+  name: string
+  type: DebtType
+  totalAmount: number
+  interestRate?: number
+  dueDate: string
+  notes?: string
+}
+
+export interface UpdateDebtRequest {
+  name: string
+  type: DebtType
+  totalAmount: number
+  interestRate?: number
+  dueDate: string
+  notes?: string
+}
+
+export interface DebtPayment {
+  id: string
+  debtId: string
+  debtName: string
+  amount: number
+  paymentDate: string
+  isEarlyPayment: boolean
+  discount: number
+  notes?: string
+  createdAt: string
+}
+
+export interface RegisterDebtPaymentRequest {
+  amount: number
+  paymentDate: string
+  isEarlyPayment: boolean
+  discount: number
+  notes?: string
+}
+
+export interface SnowballStrategyItem {
+  debtId: string
+  name: string
+  type: DebtType
+  totalAmount: number
+  remainingAmount: number
+  dueDate: string
+  order: number
+}
+
+export interface SnowballStrategy {
+  debts: SnowballStrategyItem[]
+  totalRemaining: number
+  estimatedMonthsToPayOff: number
+}
+
+// === Budgets ===
+
+export interface Budget {
+  id: string
+  categoryId: string
+  categoryName?: string
+  amount: number
+  spent: number
+  remaining: number
+  month: number
+  year: number
+  createdAt: string
+}
+
+export interface CreateBudgetRequest {
+  categoryId: string
+  amount: number
+  month: number
+  year: number
+}
+
+export interface UpdateBudgetRequest {
+  categoryId: string
+  amount: number
+  month: number
+  year: number
+}
+
+// === Financial Goals ===
+
+export interface FinancialGoal {
+  id: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+  progressPercent: number
+  targetDate?: string
+  isCompleted: boolean
+  createdAt: string
+}
+
+export interface CreateFinancialGoalRequest {
+  name: string
+  targetAmount: number
+  targetDate?: string
+}
+
+export interface UpdateFinancialGoalRequest {
+  name: string
+  targetAmount: number
+  targetDate?: string
+}
+
+export interface GoalContribution {
+  id: string
+  financialGoalId: string
+  amount: number
+  date: string
+  notes?: string
+  createdAt: string
+}
+
+export interface AddGoalContributionRequest {
+  amount: number
+  date: string
+  notes?: string
+}
+
+// === Notifications ===
+
+export interface Notification {
+  id: string
+  title: string
+  message: string
+  type: string
+  isRead: boolean
+  referenceType?: string
+  referenceId?: string
+  createdAt: string
+}
+
+// === Reports ===
+
+export interface PeriodReport {
+  startDate: string
+  endDate: string
+  totalIncome: number
+  totalExpenses: number
+  netBalance: number
+  expensesByCategory: CategoryReportItem[]
+}
+
+export interface CategoryReportItem {
+  categoryId: string
+  categoryName: string
+  totalAmount: number
+  transactionCount: number
+  percentage: number
+}
+
+export interface EvolutionReportItem {
+  year: number
+  month: number
+  income: number
+  expenses: number
+  netBalance: number
 }

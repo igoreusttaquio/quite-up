@@ -12,6 +12,11 @@ import { AccountsPage } from './pages/AccountsPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { TransactionsPage } from './pages/TransactionsPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { DebtsPage } from './pages/DebtsPage'
+import { BudgetsPage } from './pages/BudgetsPage'
+import { FinancialGoalsPage } from './pages/FinancialGoalsPage'
+import { NotificationsPage } from './pages/NotificationsPage'
+import { ReportsPage } from './pages/ReportsPage'
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +44,11 @@ export const router = createBrowserRouter([
           { path: '/categories', element: <CategoriesPage /> },
           { path: '/transactions', element: <TransactionsPage /> },
           { path: '/profile', element: <ProfilePage /> },
+          { path: '/debts', element: <DebtsPage /> },
+          { path: '/budgets', element: <BudgetsPage /> },
+          { path: '/financial-goals', element: <FinancialGoalsPage /> },
+          { path: '/notifications', element: <NotificationsPage /> },
+          { path: '/reports', element: <ReportsPage /> },
         ],
       },
     ],

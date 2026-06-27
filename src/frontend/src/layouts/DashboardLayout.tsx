@@ -11,6 +11,11 @@ import {
   Moon,
   Menu,
   X,
+  HandCoins,
+  PiggyBank,
+  Target,
+  Bell,
+  BarChart3,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useLogout } from '../hooks/useAuth'
@@ -26,6 +31,11 @@ const navItems = [
   { label: 'Contas', path: '/accounts', Icon: Wallet },
   { label: 'Categorias', path: '/categories', Icon: Tag },
   { label: 'Transações', path: '/transactions', Icon: ArrowRightLeft },
+  { label: 'Dívidas', path: '/debts', Icon: HandCoins },
+  { label: 'Orçamento', path: '/budgets', Icon: PiggyBank },
+  { label: 'Metas', path: '/financial-goals', Icon: Target },
+  { label: 'Notificações', path: '/notifications', Icon: Bell },
+  { label: 'Relatórios', path: '/reports', Icon: BarChart3 },
   { label: 'Perfil', path: '/profile', Icon: User },
 ]
 

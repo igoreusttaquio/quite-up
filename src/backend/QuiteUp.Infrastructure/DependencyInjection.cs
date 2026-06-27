@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         services.AddHostedService<EmailNotificationConsumer>();
+        services.AddHostedService<NotificationConsumer>();
 
         return services;
     }

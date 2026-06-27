@@ -136,17 +136,14 @@
   - Relatórios: `GetPeriodReport` (income/expense/net + categorias), `GetEvolutionReport` (12 meses)
 - **Infrastructure:** `NotificationConfiguration`
 - **Api:** `NotificationEndpoints`, `ReportEndpoints`
-- **TODO:** Consumer RabbitMQ para notificações (`Infrastructure/Messaging/NotificationConsumer`)
+- **Infrastructure:** `NotificationConsumer` RabbitMQ, `NotificationConfiguration`
+- **Api:** `NotificationEndpoints`, `ReportEndpoints`
 
 ---
 
-### 🔲 Pendente
+### ✅ Concluído
 
-#### Frontend (Fases 4–6)
-
-Páginas e hooks para Dívidas, Orçamento, Metas, Notificações e Relatórios.
-
-#### Frontend (Fases 1–3) ✅
+#### Frontend (Fases 1–6) ✅
 
 Stack: React 19 + Vite 8 + **shadcn/ui** + Tailwind CSS v4 + lucide-react + sonner + vaul + framer-motion.
 
@@ -156,7 +153,7 @@ Stack: React 19 + Vite 8 + **shadcn/ui** + Tailwind CSS v4 + lucide-react + sonn
 - Drawers de create/edit: vaul (`Sheet`)
 - Dark mode: classe `.dark` no `<html>`, toggle persistido em localStorage
 - Design tokens oklch no `index.css` com `@theme inline` (Tailwind v4)
-- Páginas implementadas: Login, Register, ForgotPassword, ResetPassword, VerifyEmail, Dashboard, Contas, Categorias, Transações, Perfil
+- Páginas implementadas: Login, Register, ForgotPassword, ResetPassword, VerifyEmail, Dashboard, Contas, Categorias, Transações, Perfil, Dívidas, Orçamento, Metas, Notificações, Relatórios
 - Filtros de URL em Transações: `useSearchParams` com keys `account`, `type`, `from`, `to`, `page`
 - Skeleton loading + ErrorBoundary em todas as páginas
 - **Atenção:** nunca instalar `tailwindcss-animate` — incompatível com Tailwind v4
@@ -183,11 +180,13 @@ Stack: React 19 + Vite 8 + **shadcn/ui** + Tailwind CSS v4 + lucide-react + sonn
 | `17dbecf` | docs: atualiza README e PROGRESS com stack shadcn/ui                           |
 | `30bc698` | feat: Fase 3 — Dashboard (backend)                                             |
 | `eacbe7c` | feat: Fases 4, 5 e 6 — Dívidas, Orçamento/Metas e Relatórios/Notificações      |
+| `2216984` | feat: Fases 4, 5 e 6 — backend completo                                           |
+| `7e5b3f1` | feat: frontend Fases 4–6 — páginas, hooks, API modules e NotificationConsumer      |
 
 ---
 
 ## Como retomar
 
 1. Abrir este arquivo para ver o que está pendente
-2. Fazer migrations no banco: `dotnet ef migrations add Phase3to6 --project src/backend/QuiteUp.Infrastructure --startup-project src/backend/QuiteUp.Api`
-3. Implementar frontend para Fases 4–6
+2. Rodar `make up` para iniciar o ambiente
+3. A migração `Phase3to6` já foi gerada e será aplicada automaticamente no startup
