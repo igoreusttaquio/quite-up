@@ -153,7 +153,7 @@ export function CategoriesPage() {
 
       {/* Create / Edit drawer — shared form */}
       <Drawer
-        type="overlay"
+        type="inline"
         position="end"
         size="medium"
         open={dialogOpen}

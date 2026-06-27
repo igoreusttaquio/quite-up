@@ -610,7 +610,7 @@ function TransactionFormDialog({
 }) {
   return (
     <Drawer
-      type="overlay"
+      type="inline"
       position="end"
       size="medium"
       open={open}
