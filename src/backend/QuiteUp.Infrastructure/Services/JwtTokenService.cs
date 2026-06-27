@@ -10,6 +10,9 @@ namespace QuiteUp.Infrastructure.Services;
 
 public class JwtTokenService(IConfiguration configuration) : ITokenService
 {
+    public int AccessTokenExpiryMinutes => int.Parse(configuration["Jwt:AccessTokenExpiryMinutes"] ?? "15");
+    public int RefreshTokenExpiryDays => int.Parse(configuration["Jwt:RefreshTokenExpiryDays"] ?? "7");
+
     public string GenerateAccessToken(long userId, string email, string name)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!));
