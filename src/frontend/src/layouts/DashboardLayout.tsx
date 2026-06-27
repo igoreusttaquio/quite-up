@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, Link } from 'react-router-dom'
 import {
   Text,
   Avatar,
@@ -49,17 +49,40 @@ export function DashboardLayout() {
   const { mode, toggle } = useTheme()
 
   return (
-    <div className="min-h-screen flex bg-canvas">
-      {/* Sidebar — Desktop */}
-      <aside className="hidden md:flex flex-col w-64 fixed h-full z-20 border-r border-subtle bg-surface">
-        {/* Logo */}
-        <div className="px-5 py-5 border-b border-subtle">
-          <Text size={600} weight="bold" className="text-brand tracking-tight">Quite-Up</Text>
-          <Text size={100} className="text-muted block mt-0.5">Finanças pessoais</Text>
-        </div>
+    <div className="min-h-screen bg-canvas">
+      {/* Top navbar — Desktop */}
+      <header className="hidden md:flex fixed top-0 left-0 right-0 z-30 h-14 items-center justify-between px-5 border-b border-subtle bg-surface/80 backdrop-blur-md">
+        <Link to="/dashboard" className="no-underline flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center">
+            <Text size={200} weight="bold" className="text-brand">Q</Text>
+          </div>
+          <div>
+            <Text size={400} weight="bold" className="text-brand tracking-tight leading-none block">Quite-Up</Text>
+            <Text size={100} className="text-muted leading-none block mt-0.5">Finanças pessoais</Text>
+          </div>
+        </Link>
 
+        <div className="flex items-center gap-2">
+          <Tooltip content={mode === 'light' ? 'Modo escuro' : 'Modo claro'} relationship="label">
+            <Button
+              appearance="subtle"
+              icon={mode === 'light' ? <WeatherMoonRegular style={{ fontSize: 18 }} /> : <WeatherSunnyRegular style={{ fontSize: 18 }} />}
+              onClick={toggle}
+              size="small"
+              className="w-9 h-9"
+            />
+          </Tooltip>
+          <Link to="/profile" className="no-underline flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-surface-3 transition-colors">
+            <Avatar name={user?.name} size={28} color="colorful" />
+            <Text size={200} weight="semibold" className="text-muted hidden lg:block">{user?.name}</Text>
+          </Link>
+        </div>
+      </header>
+
+      {/* Sidebar — Desktop */}
+      <aside className="hidden md:flex flex-col fixed top-14 left-0 w-64 h-[calc(100vh-3.5rem)] z-20 border-r border-subtle bg-surface">
         {/* Navigation */}
-        <nav className="flex-1 p-2.5 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto pt-4">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path
             const Icon = isActive ? item.activeIcon : item.icon
@@ -81,24 +104,16 @@ export function DashboardLayout() {
           })}
         </nav>
 
-        {/* Footer: user + dark mode + logout */}
-        <div className="p-2.5 border-t border-subtle space-y-1">
-          <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg">
-            <Avatar name={user?.name} size={32} color="colorful" />
-            <div className="flex-1 min-w-0">
-              <Text size={200} weight="semibold" block truncate>{user?.name}</Text>
-              <Text size={100} className="text-subtle" block truncate>{user?.email}</Text>
+        {/* Footer: user + logout */}
+        <div className="p-3 border-t border-subtle">
+          <div className="flex items-center justify-between px-2.5 py-2 rounded-lg">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Avatar name={user?.name} size={28} color="colorful" />
+              <div className="flex-1 min-w-0">
+                <Text size={200} weight="semibold" block truncate>{user?.name}</Text>
+                <Text size={100} className="text-subtle" block truncate>{user?.email}</Text>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1 px-1">
-            <Tooltip content={mode === 'light' ? 'Modo escuro' : 'Modo claro'} relationship="label">
-              <Button
-                appearance="subtle"
-                icon={mode === 'light' ? <WeatherMoonRegular /> : <WeatherSunnyRegular />}
-                onClick={toggle}
-                size="small"
-              />
-            </Tooltip>
             <Tooltip content="Sair" relationship="label">
               <Button
                 appearance="subtle"
@@ -113,7 +128,7 @@ export function DashboardLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-64 pb-16 md:pb-0 min-h-screen">
+      <main className="flex-1 md:ml-64 pt-0 md:pt-14 pb-16 md:pb-0 min-h-screen">
         {/* Mobile header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-subtle bg-surface sticky top-0 z-10">
           <Text size={500} weight="bold" className="text-brand tracking-tight">Quite-Up</Text>
