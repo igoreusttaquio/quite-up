@@ -79,14 +79,6 @@ _ = Task.Run(async () =>
 {
     await Task.Delay(TimeSpan.FromSeconds(5));
 
-    var infraAssembly = typeof(QuiteUp.Infrastructure.Persistence.ApplicationDbContext).Assembly;
-    var migrationTypes = infraAssembly.GetTypes()
-        .Where(t => t.IsSubclassOf(typeof(Microsoft.EntityFrameworkCore.Migrations.Migration)) && !t.IsAbstract)
-        .ToList();
-    Log.Information("[DIAG] Assembly: {Assembly}", infraAssembly.FullName);
-    Log.Information("[DIAG] Migration classes found by reflection ({Count}): {Names}",
-        migrationTypes.Count, string.Join(", ", migrationTypes.Select(t => t.Name)));
-
     for (var attempt = 1; attempt <= 10; attempt++)
     {
         try
