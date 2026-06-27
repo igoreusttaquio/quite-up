@@ -386,7 +386,7 @@ export function DebtsPage() {
                   <div className="flex items-center justify-between">
                     <CurrencyBadge value={payment.amount} />
                     <span className="text-xs text-muted-foreground">
-                      {new Date(payment.paymentDate).toLocaleDateString('pt-BR')}
+                      {new Date(payment.paymentDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -483,7 +483,7 @@ function DebtCard({
   const emoji = debtTypeEmoji[debt.type]
   const label = debtTypeLabels[debt.type]
   const progress = debt.totalAmount > 0 ? (debt.paidAmount / debt.totalAmount) * 100 : 0
-  const dueDate = new Date(debt.dueDate).toLocaleDateString('pt-BR')
+  const dueDate = new Date(debt.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')
 
   return (
     <div className="card p-5 space-y-4 cursor-pointer" onClick={onViewPayments}>

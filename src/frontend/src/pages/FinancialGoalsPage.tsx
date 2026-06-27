@@ -405,7 +405,7 @@ export function FinancialGoalsPage() {
                         <CurrencyBadge value={c.amount} size="sm" />
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(c.date).toLocaleDateString('pt-BR')}
+                        {new Date(c.date + 'T12:00:00').toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                     {c.notes && (
@@ -457,7 +457,7 @@ function GoalCard({
           <div className="min-w-0">
             <p className="font-semibold text-base truncate">{goal.name}</p>
             <p className="text-xs text-muted-foreground">
-              {goal.targetDate ? `Até ${new Date(goal.targetDate).toLocaleDateString('pt-BR')}` : 'Sem data alvo'}
+              {goal.targetDate ? `Até ${new Date(goal.targetDate + 'T12:00:00').toLocaleDateString('pt-BR')}` : 'Sem data alvo'}
             </p>
           </div>
         </div>

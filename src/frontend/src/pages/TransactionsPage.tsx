@@ -429,7 +429,7 @@ function TransactionTable({
                   {tx.description || transactionTypeLabels[tx.type]}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {dateFormatter.format(new Date(tx.date))}
+                  {dateFormatter.format(new Date(tx.date + 'T12:00:00'))}
                   {tx.accountName && <span className="md:hidden"> · {tx.accountName}</span>}
                 </p>
               </div>
