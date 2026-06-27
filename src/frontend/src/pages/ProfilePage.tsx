@@ -13,7 +13,6 @@ import { useProfile, useUpdateProfile, useChangePassword, useChangeEmail, useDel
 import { PageHeader } from '../components/PageHeader'
 import { SkeletonCard } from '../components/Skeleton'
 import { useAppToast } from '../hooks/useAppToast'
-import { useAuthStore } from '../store/authStore'
 
 const profileSchema = z.object({ name: z.string().min(2, 'Mínimo 2 caracteres') })
 const emailSchema = z.object({ newEmail: z.string().email('E-mail inválido'), currentPassword: z.string().min(1, 'Senha é obrigatória') })
@@ -33,7 +32,6 @@ export function ProfilePage() {
   const changePassword = useChangePassword()
   const changeEmail = useChangeEmail()
   const deleteAccount = useDeleteAccount()
-  const user = useAuthStore((s) => s.user)
   const toast = useAppToast()
   const [deleteOpen, setDeleteOpen] = useState(false)
 

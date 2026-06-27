@@ -7,7 +7,6 @@ import { Plus, Pencil, Trash2, ArrowLeftRight, ChevronLeft, ChevronRight, Filter
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Badge } from '../components/ui/badge'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../components/ui/select'
@@ -230,13 +229,9 @@ function getPaginationPages(current: number, total: number): (number | '…')[] 
   return pages
 }
 
-function getFieldError(errors: Record<string, unknown>, field: string): string | undefined {
-  const err = errors[field] as { message?: string } | undefined
-  return err?.message
-}
-
 function TransactionFormDialog({ open, title, form, accounts, categories, watchType, isPending, onSubmit, onClose }: {
-  open: boolean; title: string; form: UseFormReturn<Record<string, unknown>>; accounts: Account[]; categories: Category[]; watchType: TransactionType; isPending: boolean; onSubmit: () => void; onClose: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  open: boolean; title: string; form: UseFormReturn<any>; accounts: Account[]; categories: Category[]; watchType: TransactionType; isPending: boolean; onSubmit: () => void; onClose: () => void
 }) {
   return (
     <Sheet open={open} onOpenChange={(open) => { if (!open) onClose() }}>
