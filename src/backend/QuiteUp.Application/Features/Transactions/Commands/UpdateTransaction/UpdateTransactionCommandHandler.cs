@@ -18,10 +18,14 @@ public class UpdateTransactionCommandHandler(
             .Include(t => t.Account)
             .Include(t => t.DestinationAccount)
             .Include(t => t.Category)
+            .Include(t => t.Debt)
             .FirstOrDefaultAsync(t => t.Id == request.Id && t.UserId == currentUser.UserId, cancellationToken);
 
         if (transaction is null)
             return Result<TransactionDto>.Failure(Error.NotFound);
+
+        if (transaction.DebtId.HasValue && transaction.Type == Domain.Enums.TransactionType.Expense && transaction.Amount != request.Amount)
+            transaction.Debt!.TotalAmount += request.Amount - transaction.Amount;
 
         transaction.Amount = request.Amount;
         transaction.Date = request.Date;

@@ -22,6 +22,7 @@ public class DebtPaymentConfiguration : IEntityTypeConfiguration<DebtPayment>
         builder.Property(dp => dp.IsEarlyPayment).HasColumnName("is_early_payment");
         builder.Property(dp => dp.Discount).HasColumnName("discount").HasPrecision(18, 2);
         builder.Property(dp => dp.Notes).HasColumnName("notes").HasMaxLength(500);
+        builder.Property(dp => dp.AccountId).HasColumnName("account_id");
 
         builder.HasOne(dp => dp.Debt)
             .WithMany(d => d.Payments)
@@ -33,7 +34,13 @@ public class DebtPaymentConfiguration : IEntityTypeConfiguration<DebtPayment>
             .HasForeignKey(dp => dp.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasOne(dp => dp.Account)
+            .WithMany()
+            .HasForeignKey(dp => dp.AccountId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(dp => dp.DebtId).HasDatabaseName("ix_debt_payments_debt_id");
         builder.HasIndex(dp => dp.UserId).HasDatabaseName("ix_debt_payments_user_id");
+        builder.HasIndex(dp => dp.AccountId).HasDatabaseName("ix_debt_payments_account_id");
     }
 }

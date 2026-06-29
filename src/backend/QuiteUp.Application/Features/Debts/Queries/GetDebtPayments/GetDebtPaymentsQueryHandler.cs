@@ -17,6 +17,7 @@ public class GetDebtPaymentsQueryHandler(
 
         var payments = await context.DebtPayments
             .Include(dp => dp.Debt)
+            .Include(dp => dp.Account)
             .Where(dp => dp.DebtId == request.DebtId && dp.UserId == userId)
             .OrderByDescending(dp => dp.PaymentDate)
             .ThenByDescending(dp => dp.Id)
@@ -31,6 +32,8 @@ public class GetDebtPaymentsQueryHandler(
             dp.IsEarlyPayment,
             dp.Discount,
             dp.Notes,
+            dp.AccountId.HasValue ? idEncoder.Encode(dp.AccountId.Value) : null,
+            dp.Account?.Name,
             dp.CreatedAt
         )).ToList();
 

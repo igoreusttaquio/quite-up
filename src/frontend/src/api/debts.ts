@@ -15,6 +15,7 @@ export const debtsApi = {
       isEarlyPayment: data.isEarlyPayment,
       discount: data.discount,
       notes: data.notes,
+      accountId: data.accountId ?? null,
     }),
   getSnowball: () => api.get<SnowballStrategy>('/debts/snowball'),
 }

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Pencil, Trash2, DollarSign, Snowflake, CalendarDays } from 'lucide-react'
 import { useDebts, useCreateDebt, useUpdateDebt, useDeleteDebt, useDebtPayments, useRegisterDebtPayment, useSnowballStrategy } from '../hooks/useDebts'
+import { useAccounts } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
@@ -49,6 +50,7 @@ const paymentSchema = z.object({
   isEarlyPayment: z.boolean(),
   discount: z.number().optional(),
   notes: z.string().optional(),
+  accountId: z.string().optional(),
 })
 
 type DebtFormData = z.infer<typeof debtSchema>
@@ -56,10 +58,12 @@ type PaymentFormData = z.infer<typeof paymentSchema>
 
 export function DebtsPage() {
   const { data: debts, isLoading } = useDebts()
+  const { data: accounts } = useAccounts()
   const createDebt = useCreateDebt()
   const updateDebt = useUpdateDebt()
   const deleteDebt = useDeleteDebt()
   const registerPayment = useRegisterDebtPayment()
+  const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
   const { data: snowball, isLoading: snowballLoading } = useSnowballStrategy()
 
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'paid'>('all')
@@ -114,7 +118,10 @@ export function DebtsPage() {
   const handlePayment = async (data: PaymentFormData) => {
     if (!paymentDebtTarget) return
     try {
-      await registerPayment.mutateAsync({ debtId: paymentDebtTarget.id, data })
+      await registerPayment.mutateAsync({
+        debtId: paymentDebtTarget.id,
+        data: { ...data, accountId: data.accountId || undefined },
+      })
       setPaymentDebtTarget(null)
       paymentForm.reset()
     } catch { /* handled by query client */ }
@@ -144,6 +151,7 @@ export function DebtsPage() {
       isEarlyPayment: false,
       discount: 0,
       notes: '',
+      accountId: '',
     })
   }
 
@@ -287,6 +295,22 @@ export function DebtsPage() {
                 <span className="font-semibold">{paymentDebtTarget.name}</span>
               </div>
             )}
+            {activeAccounts.length > 0 && (
+              <Controller
+                name="accountId"
+                control={paymentForm.control}
+                render={({ field }) => (
+                  <Field label="Pagar com a conta">
+                    <NativeSelect {...field} value={field.value || ''}>
+                      <option value="">Não vincular conta</option>
+                      {activeAccounts.map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                )}
+              />
+            )}
             <Controller
               name="amount"
               control={paymentForm.control}
@@ -395,6 +419,9 @@ export function DebtsPage() {
                     )}
                     {payment.discount > 0 && (
                       <Badge variant="secondary">Desconto: {payment.discount.toFixed(2)}</Badge>
+                    )}
+                    {payment.accountName && (
+                      <Badge variant="secondary">{payment.accountName}</Badge>
                     )}
                   </div>
                   {payment.notes && (

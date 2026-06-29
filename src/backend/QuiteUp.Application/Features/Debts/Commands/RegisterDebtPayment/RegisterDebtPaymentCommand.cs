@@ -10,5 +10,6 @@ public record RegisterDebtPaymentCommand(
     DateOnly PaymentDate,
     bool IsEarlyPayment,
     decimal Discount,
-    string? Notes
+    string? Notes,
+    long? AccountId = null
 ) : IRequest<Result<DebtPaymentDto>>;

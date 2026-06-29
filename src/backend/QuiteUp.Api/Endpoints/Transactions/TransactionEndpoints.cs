@@ -46,9 +46,10 @@ public class TransactionEndpoints : IEndpoint
 
             long? destId = req.DestinationAccountId is not null ? encoder.Decode(req.DestinationAccountId) : null;
             long? catId = req.CategoryId is not null ? encoder.Decode(req.CategoryId) : null;
+            long? debtId = req.DebtId is not null ? encoder.Decode(req.DebtId) : null;
 
             var result = await sender.Send(new CreateTransactionCommand(
-                req.Type, req.Amount, req.Date, accountId.Value, catId, destId, req.Description));
+                req.Type, req.Amount, req.Date, accountId.Value, catId, destId, req.Description, debtId));
 
             return result.IsSuccess
                 ? Results.Created($"/api/transactions/{result.Value!.Id}", result.Value)
@@ -89,7 +90,8 @@ public class TransactionEndpoints : IEndpoint
         string AccountId,
         string? CategoryId,
         string? DestinationAccountId,
-        string? Description);
+        string? Description,
+        string? DebtId = null);
 
     private record UpdateTransactionRequest(
         decimal Amount,

@@ -23,6 +23,7 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.Property(t => t.Amount).HasColumnName("amount").HasPrecision(18, 2);
         builder.Property(t => t.Date).HasColumnName("date");
         builder.Property(t => t.Description).HasColumnName("description").HasMaxLength(255);
+        builder.Property(t => t.DebtId).HasColumnName("debt_id");
 
         builder.HasOne(t => t.Account)
             .WithMany(a => a.Transactions)
@@ -39,8 +40,14 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
             .HasForeignKey(t => t.CategoryId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(t => t.Debt)
+            .WithMany()
+            .HasForeignKey(t => t.DebtId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(t => t.UserId).HasDatabaseName("ix_transactions_user_id");
         builder.HasIndex(t => new { t.AccountId, t.Date }).HasDatabaseName("ix_transactions_account_id_date");
         builder.HasIndex(t => t.DestinationAccountId).HasDatabaseName("ix_transactions_destination_account_id");
+        builder.HasIndex(t => t.DebtId).HasDatabaseName("ix_transactions_debt_id");
     }
 }

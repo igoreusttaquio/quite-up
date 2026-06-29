@@ -14,7 +14,10 @@ public class Transaction : BaseEntity
     public DateOnly Date { get; set; }
     public string? Description { get; set; }
 
+    public long? DebtId { get; set; }
+
     public Account Account { get; set; } = null!;
     public Account? DestinationAccount { get; set; }
     public Category? Category { get; set; }
+    public Debt? Debt { get; set; }
 }

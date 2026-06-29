@@ -14,5 +14,7 @@ public record TransactionDto(
     string? CategoryName,
     string? DestinationAccountId,
     string? DestinationAccountName,
+    string? DebtId,
+    string? DebtName,
     DateTime CreatedAt
 );

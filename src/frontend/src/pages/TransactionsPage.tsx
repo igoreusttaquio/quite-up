@@ -12,6 +12,7 @@ import {
 } from '../hooks/useTransactions'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
+import { useDebts } from '../hooks/useDebts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonTable } from '../components/Skeleton'
@@ -27,7 +28,7 @@ import { CurrencyInput } from '../components/ui/currency-input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
-import type { TransactionType, Transaction, Account, Category } from '../types'
+import type { TransactionType, Transaction, Account, Category, Debt } from '../types'
 
 const transactionTypeLabels: Record<TransactionType, string> = {
   Income: 'Receita',
@@ -45,6 +46,7 @@ const createSchema = z.object({
   description: z.string().optional(),
   date: z.string().min(1, 'Data é obrigatória'),
   destinationAccountId: z.string().optional(),
+  debtId: z.string().optional(),
 })
 
 const updateSchema = z.object({
@@ -113,6 +115,7 @@ export function TransactionsPage() {
 
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
+  const { data: debts } = useDebts()
   const createTransaction = useCreateTransaction()
   const updateTransaction = useUpdateTransaction()
   const deleteTransaction = useDeleteTransaction()
@@ -131,6 +134,7 @@ export function TransactionsPage() {
       description: '',
       date: new Date().toISOString().split('T')[0],
       destinationAccountId: '',
+      debtId: '',
     },
   })
 
@@ -142,6 +146,7 @@ export function TransactionsPage() {
   const watchType = createForm.watch('type')
   const filteredCategories = categories?.filter((c) => watchType === 'Transfer' || c.type === watchType) ?? []
   const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
+  const pendingDebts = debts?.filter((d) => !d.isPaid) ?? []
   const totalPages = result ? Math.ceil(result.totalCount / result.pageSize) : 0
 
   const handleCreate = async (data: CreateFormData) => {
@@ -151,6 +156,7 @@ export function TransactionsPage() {
         categoryId: data.categoryId || undefined,
         destinationAccountId: data.destinationAccountId || undefined,
         description: data.description || undefined,
+        debtId: data.debtId || undefined,
       })
       setCreateOpen(false)
       createForm.reset()
@@ -199,6 +205,7 @@ export function TransactionsPage() {
       description: '',
       date: new Date().toISOString().split('T')[0],
       destinationAccountId: '',
+      debtId: '',
     })
     setCreateOpen(true)
   }
@@ -294,6 +301,7 @@ export function TransactionsPage() {
         form={createForm}
         accounts={activeAccounts}
         categories={filteredCategories}
+        debts={pendingDebts}
         watchType={watchType}
         isPending={createTransaction.isPending}
         onSubmit={createForm.handleSubmit(handleCreate as () => Promise<void>)}
@@ -509,6 +517,7 @@ function TransactionFormSheet({
   form,
   accounts,
   categories,
+  debts,
   watchType,
   isPending,
   onSubmit,
@@ -520,6 +529,7 @@ function TransactionFormSheet({
   form: UseFormReturn<any>
   accounts: Account[]
   categories: Category[]
+  debts: Debt[]
   watchType: TransactionType
   isPending: boolean
   onSubmit: () => void
@@ -600,6 +610,23 @@ function TransactionFormSheet({
                 </Field>
               )}
             />
+
+            {watchType === 'Expense' && debts.length > 0 && (
+              <Controller
+                name="debtId"
+                control={form.control}
+                render={({ field }) => (
+                  <Field label="Lançar na dívida">
+                    <NativeSelect {...field} value={field.value || ''}>
+                      <option value="">Nenhuma</option>
+                      {debts.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                )}
+              />
+            )}
 
             <Controller
               name="amount"

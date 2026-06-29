@@ -54,6 +54,7 @@ public class GetDashboardSummaryQueryHandler(
             .Include(t => t.Account)
             .Include(t => t.Category)
             .Include(t => t.DestinationAccount)
+            .Include(t => t.Debt)
             .ToListAsync(cancellationToken);
 
         var recentDtos = recentTransactions.Select(t => new TransactionDto(
@@ -68,6 +69,8 @@ public class GetDashboardSummaryQueryHandler(
             t.Category?.Name,
             t.DestinationAccountId != null ? idEncoder.Encode(t.DestinationAccountId.Value) : null,
             t.DestinationAccount?.Name,
+            t.DebtId != null ? idEncoder.Encode(t.DebtId.Value) : null,
+            t.Debt?.Name,
             t.CreatedAt
         )).ToList();
 

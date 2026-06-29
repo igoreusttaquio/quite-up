@@ -38,6 +38,18 @@ public class CreateTransactionCommandHandler(
                 return Result<TransactionDto>.Failure(Error.NotFound);
         }
 
+        Debt? linkedDebt = null;
+        if (request.DebtId.HasValue && request.Type == TransactionType.Expense)
+        {
+            linkedDebt = await context.Debts
+                .FirstOrDefaultAsync(d => d.Id == request.DebtId.Value && d.UserId == userId, cancellationToken);
+
+            if (linkedDebt is null)
+                return Result<TransactionDto>.Failure(Error.NotFound);
+
+            linkedDebt.TotalAmount += request.Amount;
+        }
+
         var transaction = new Transaction
         {
             UserId = userId,
@@ -47,7 +59,8 @@ public class CreateTransactionCommandHandler(
             Type = request.Type,
             Amount = request.Amount,
             Date = request.Date,
-            Description = request.Description
+            Description = request.Description,
+            DebtId = request.DebtId.HasValue && request.Type == TransactionType.Expense ? request.DebtId : null
         };
 
         context.Transactions.Add(transaction);
@@ -64,6 +77,9 @@ public class CreateTransactionCommandHandler(
             await context.Transactions.Entry(transaction)
                 .Reference(t => t.Category).LoadAsync(cancellationToken);
 
+        if (transaction.DebtId.HasValue)
+            transaction.Debt = linkedDebt;
+
         return Result<TransactionDto>.Success(ToDto(transaction, idEncoder));
     }
 
@@ -79,5 +95,7 @@ public class CreateTransactionCommandHandler(
         t.Category?.Name,
         t.DestinationAccountId.HasValue ? encoder.Encode(t.DestinationAccountId.Value) : null,
         t.DestinationAccount?.Name,
+        t.DebtId.HasValue ? encoder.Encode(t.DebtId.Value) : null,
+        t.Debt?.Name,
         t.CreatedAt);
 }

@@ -12,10 +12,14 @@ public class DeleteTransactionCommandHandler(
     public async Task<Result> Handle(DeleteTransactionCommand request, CancellationToken cancellationToken)
     {
         var transaction = await context.Transactions
+            .Include(t => t.Debt)
             .FirstOrDefaultAsync(t => t.Id == request.Id && t.UserId == currentUser.UserId, cancellationToken);
 
         if (transaction is null)
             return Result.Failure(Error.NotFound);
+
+        if (transaction.DebtId.HasValue && transaction.Type == Domain.Enums.TransactionType.Expense && transaction.Debt is not null)
+            transaction.Debt.TotalAmount -= transaction.Amount;
 
         context.Transactions.Remove(transaction);
         await context.SaveChangesAsync(cancellationToken);

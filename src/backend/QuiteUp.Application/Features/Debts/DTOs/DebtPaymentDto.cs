@@ -9,5 +9,7 @@ public record DebtPaymentDto(
     bool IsEarlyPayment,
     decimal Discount,
     string? Notes,
+    string? AccountId,
+    string? AccountName,
     DateTime CreatedAt
 );

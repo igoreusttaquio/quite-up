@@ -86,8 +86,10 @@ public class DebtEndpoints : IEndpoint
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
 
+            long? accountId = req.AccountId is not null ? encoder.Decode(req.AccountId) : null;
+
             var result = await sender.Send(new RegisterDebtPaymentCommand(
-                id.Value, req.Amount, req.PaymentDate, req.IsEarlyPayment, req.Discount, req.Notes));
+                id.Value, req.Amount, req.PaymentDate, req.IsEarlyPayment, req.Discount, req.Notes, accountId));
 
             return result.IsSuccess
                 ? Results.Created($"/api/debts/{externalId}/payments/{result.Value!.Id}", result.Value)
@@ -116,5 +118,6 @@ public class DebtEndpoints : IEndpoint
         DateOnly PaymentDate,
         bool IsEarlyPayment,
         decimal Discount,
-        string? Notes);
+        string? Notes,
+        string? AccountId = null);
 }

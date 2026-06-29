@@ -60,6 +60,8 @@ export interface Transaction {
   categoryName?: string
   destinationAccountId?: string
   destinationAccountName?: string
+  debtId?: string
+  debtName?: string
   createdAt: string
 }
 
@@ -71,6 +73,7 @@ export interface CreateTransactionRequest {
   categoryId?: string
   destinationAccountId?: string
   description?: string
+  debtId?: string
 }
 
 export interface UpdateTransactionRequest {
@@ -209,6 +212,8 @@ export interface DebtPayment {
   isEarlyPayment: boolean
   discount: number
   notes?: string
+  accountId?: string
+  accountName?: string
   createdAt: string
 }
 
@@ -218,6 +223,7 @@ export interface RegisterDebtPaymentRequest {
   isEarlyPayment: boolean
   discount?: number
   notes?: string
+  accountId?: string
 }
 
 export interface SnowballStrategyItem {

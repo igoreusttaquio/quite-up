@@ -19,6 +19,7 @@ export const transactionsApi = {
       categoryId: data.categoryId ?? null,
       destinationAccountId: data.destinationAccountId ?? null,
       description: data.description ?? null,
+      debtId: data.debtId ?? null,
     }),
   update: (id: string, data: UpdateTransactionRequest) =>
     api.put<Transaction>(`/transactions/${id}`, {

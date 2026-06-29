@@ -12,6 +12,9 @@ public class DebtPayment : BaseEntity
     public decimal Discount { get; set; }
     public string? Notes { get; set; }
 
+    public long? AccountId { get; set; }
+
     public User User { get; set; } = null!;
     public Debt Debt { get; set; } = null!;
+    public Account? Account { get; set; }
 }

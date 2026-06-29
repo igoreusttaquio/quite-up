@@ -59,6 +59,9 @@ export function useRegisterDebtPayment() {
       debtsApi.registerPayment(debtId, data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DEBTS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 }
