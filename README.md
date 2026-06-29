@@ -27,11 +27,14 @@ Edite o `.env` e preencha os valores obrigatórios:
 
 | Variável | Descrição |
 |---|---|
+| `DOMAIN` | Domínio público (ex: `app.meusite.com`) |
 | `DB_PASSWORD` | Senha do PostgreSQL |
 | `JWT_SECRET` | Chave secreta JWT (mínimo 32 caracteres) |
 | `HASHIDS_SALT` | Salt para ofuscação de IDs |
 | `SMTP_*` | Credenciais do servidor de e-mail |
-| `APP_URL` | URL pública do frontend |
+| `APP_URL` | URL pública do frontend (ex: `https://app.meusite.com`) |
+
+> O domínio precisa estar apontado para o IP da VPS antes de subir os serviços. O Caddy emite o certificado Let's Encrypt automaticamente na primeira inicialização.
 
 ### 2. Build e execução
 
@@ -40,7 +43,7 @@ make build   # constrói as imagens Docker
 make up      # sobe todos os serviços em background
 ```
 
-A aplicação estará disponível em `http://localhost:3000`.
+A aplicação estará disponível em `https://seu-dominio`.
 
 ### Outros comandos
 

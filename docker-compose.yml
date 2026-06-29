@@ -33,13 +33,25 @@ services:
       timeout: 5s
       retries: 5
 
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - api
+
   api:
     build:
       context: ./src/backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "5000:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=${DB_HOST};Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
@@ -72,11 +84,11 @@ services:
       context: ./src/frontend
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "3000:80"
     depends_on:
       - api
 
 volumes:
   postgres_data:
   rabbitmq_data:
+  caddy_data:
+  caddy_config:
