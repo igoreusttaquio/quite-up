@@ -17,4 +17,5 @@ public record Error(string Code, string Message)
     public static readonly Error SameAccount = new("Transaction.SameAccount", "Conta de origem e destino não podem ser iguais.");
     public static readonly Error TransferRequiresDestination = new("Transaction.TransferRequiresDestination", "Transferência requer conta de destino.");
     public static readonly Error PasswordMismatch = new("Auth.PasswordMismatch", "Confirmação de senha não confere.");
+    public static readonly Error TooManyRequests = new("Auth.TooManyRequests", "Muitas tentativas. Tente novamente mais tarde.");
 }

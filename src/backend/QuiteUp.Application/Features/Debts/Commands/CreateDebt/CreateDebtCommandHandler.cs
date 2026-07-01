@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Common.Results;
 using QuiteUp.Application.Features.Debts.DTOs;

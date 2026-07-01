@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Features.Dashboard.Queries.GetDashboardSummary;
 
@@ -12,7 +12,7 @@ public class DashboardEndpoints : IEndpoint
             .WithTags("Dashboard")
             .RequireAuthorization();
 
-        group.MapGet("/", async (ISender sender) =>
+        group.MapGet("/", async (IMediator sender) =>
         {
             var result = await sender.Send(new GetDashboardSummaryQuery());
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);

@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Features.Debts.Commands.CreateDebt;
@@ -21,19 +21,19 @@ public class DebtEndpoints : IEndpoint
             .WithTags("Debts")
             .RequireAuthorization();
 
-        group.MapGet("/", async (ISender sender, bool? isPaid = null) =>
+        group.MapGet("/", async (IMediator sender, bool? isPaid = null) =>
         {
             var result = await sender.Send(new GetDebtsQuery(isPaid));
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapGet("/snowball", async (ISender sender) =>
+        group.MapGet("/snowball", async (IMediator sender) =>
         {
             var result = await sender.Send(new GetSnowballStrategyQuery());
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapGet("/{externalId}", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapGet("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -42,7 +42,7 @@ public class DebtEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapPost("/", async (CreateDebtRequest req, ISender sender) =>
+        group.MapPost("/", async (CreateDebtRequest req, IMediator sender) =>
         {
             var result = await sender.Send(new CreateDebtCommand(
                 req.Name, req.Type, req.TotalAmount, req.InterestRate, req.DueDate, req.Notes));
@@ -52,7 +52,7 @@ public class DebtEndpoints : IEndpoint
                 : Results.BadRequest(result.Error);
         });
 
-        group.MapPut("/{externalId}", async (string externalId, UpdateDebtRequest req, ISender sender, IIdEncoder encoder) =>
+        group.MapPut("/{externalId}", async (string externalId, UpdateDebtRequest req, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -63,7 +63,7 @@ public class DebtEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapDelete("/{externalId}", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapDelete("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -72,7 +72,7 @@ public class DebtEndpoints : IEndpoint
             return result.IsSuccess ? Results.NoContent() : Results.NotFound(result.Error);
         });
 
-        group.MapGet("/{externalId}/payments", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapGet("/{externalId}/payments", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -81,7 +81,7 @@ public class DebtEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapPost("/{externalId}/payments", async (string externalId, RegisterPaymentRequest req, ISender sender, IIdEncoder encoder) =>
+        group.MapPost("/{externalId}/payments", async (string externalId, RegisterPaymentRequest req, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();

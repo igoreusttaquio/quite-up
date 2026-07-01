@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Features.Auth.Commands.ForgotPassword;
 using QuiteUp.Application.Features.Auth.Commands.Login;
@@ -17,7 +17,7 @@ public class AuthEndpoints : IEndpoint
     {
         var group = app.MapGroup("/api/auth").WithTags("Auth");
 
-        group.MapPost("/register", async (RegisterUserCommand command, ISender sender) =>
+        group.MapPost("/register", async (RegisterUserCommand command, IMediator sender) =>
         {
             var result = await sender.Send(command);
             return result.IsSuccess
@@ -25,7 +25,7 @@ public class AuthEndpoints : IEndpoint
                 : Results.BadRequest(result.Error);
         }).AllowAnonymous();
 
-        group.MapPost("/login", async (LoginCommand command, ISender sender, HttpContext ctx, IConfiguration config) =>
+        group.MapPost("/login", async (LoginCommand command, IMediator sender, HttpContext ctx, IConfiguration config) =>
         {
             var result = await sender.Send(command);
             if (result.IsFailure)
@@ -36,7 +36,7 @@ public class AuthEndpoints : IEndpoint
             return Results.Ok(new { result.Value.AccessToken, result.Value.ExpiresAt });
         }).AllowAnonymous();
 
-        group.MapPost("/refresh", async (ISender sender, HttpContext ctx, IConfiguration config) =>
+        group.MapPost("/refresh", async (IMediator sender, HttpContext ctx, IConfiguration config) =>
         {
             var refreshToken = ctx.Request.Cookies["refresh_token"];
             if (string.IsNullOrEmpty(refreshToken))
@@ -51,7 +51,7 @@ public class AuthEndpoints : IEndpoint
             return Results.Ok(new { result.Value.AccessToken, result.Value.ExpiresAt });
         }).AllowAnonymous();
 
-        group.MapPost("/logout", async (ISender sender, HttpContext ctx) =>
+        group.MapPost("/logout", async (IMediator sender, HttpContext ctx) =>
         {
             var refreshToken = ctx.Request.Cookies["refresh_token"];
             if (!string.IsNullOrEmpty(refreshToken))
@@ -61,25 +61,25 @@ public class AuthEndpoints : IEndpoint
             return Results.NoContent();
         }).RequireAuthorization();
 
-        group.MapPost("/verify-email", async (VerifyEmailCommand command, ISender sender) =>
+        group.MapPost("/verify-email", async (VerifyEmailCommand command, IMediator sender) =>
         {
             var result = await sender.Send(command);
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);
         }).AllowAnonymous();
 
-        group.MapPost("/resend-verification", async (ResendVerificationEmailCommand command, ISender sender) =>
+        group.MapPost("/resend-verification", async (ResendVerificationEmailCommand command, IMediator sender) =>
         {
             await sender.Send(command);
             return Results.NoContent();
         }).AllowAnonymous();
 
-        group.MapPost("/forgot-password", async (ForgotPasswordCommand command, ISender sender) =>
+        group.MapPost("/forgot-password", async (ForgotPasswordCommand command, IMediator sender) =>
         {
             await sender.Send(command);
             return Results.NoContent();
         }).AllowAnonymous();
 
-        group.MapPost("/reset-password", async (ResetPasswordCommand command, ISender sender) =>
+        group.MapPost("/reset-password", async (ResetPasswordCommand command, IMediator sender) =>
         {
             var result = await sender.Send(command);
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);

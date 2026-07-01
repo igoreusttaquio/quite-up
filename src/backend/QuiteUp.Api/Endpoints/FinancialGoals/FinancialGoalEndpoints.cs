@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Features.FinancialGoals.Commands.AddGoalContribution;
@@ -19,13 +19,13 @@ public class FinancialGoalEndpoints : IEndpoint
             .WithTags("Financial Goals")
             .RequireAuthorization();
 
-        group.MapGet("/", async (bool? isCompleted, ISender sender) =>
+        group.MapGet("/", async (bool? isCompleted, IMediator sender) =>
         {
             var result = await sender.Send(new GetFinancialGoalsQuery(isCompleted));
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapGet("/{externalId}", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapGet("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -36,7 +36,7 @@ public class FinancialGoalEndpoints : IEndpoint
 
         group.MapPost("/", async (
             CreateFinancialGoalRequest req,
-            ISender sender) =>
+            IMediator sender) =>
         {
             var result = await sender.Send(new CreateFinancialGoalCommand(
                 req.Name, req.TargetAmount, req.TargetDate));
@@ -49,7 +49,7 @@ public class FinancialGoalEndpoints : IEndpoint
         group.MapPut("/{externalId}", async (
             string externalId,
             UpdateFinancialGoalRequest req,
-            ISender sender,
+            IMediator sender,
             IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
@@ -61,7 +61,7 @@ public class FinancialGoalEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapDelete("/{externalId}", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapDelete("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -72,7 +72,7 @@ public class FinancialGoalEndpoints : IEndpoint
 
         group.MapGet("/{externalId}/contributions", async (
             string externalId,
-            ISender sender,
+            IMediator sender,
             IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
@@ -85,7 +85,7 @@ public class FinancialGoalEndpoints : IEndpoint
         group.MapPost("/{externalId}/contributions", async (
             string externalId,
             AddGoalContributionRequest req,
-            ISender sender,
+            IMediator sender,
             IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);

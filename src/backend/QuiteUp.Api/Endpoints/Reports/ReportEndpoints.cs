@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Features.Reports.Queries.GetEvolutionReport;
 using QuiteUp.Application.Features.Reports.Queries.GetPeriodReport;
@@ -13,7 +13,7 @@ public class ReportEndpoints : IEndpoint
             .WithTags("Reports")
             .RequireAuthorization();
 
-        group.MapGet("/period", async (ISender sender, DateOnly? startDate, DateOnly? endDate) =>
+        group.MapGet("/period", async (IMediator sender, DateOnly? startDate, DateOnly? endDate) =>
         {
             if (startDate is null || endDate is null)
                 return Results.BadRequest(new { message = "startDate and endDate are required." });
@@ -22,7 +22,7 @@ public class ReportEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapGet("/evolution", async (ISender sender, int? year) =>
+        group.MapGet("/evolution", async (IMediator sender, int? year) =>
         {
             if (year is null)
                 return Results.BadRequest(new { message = "year is required." });

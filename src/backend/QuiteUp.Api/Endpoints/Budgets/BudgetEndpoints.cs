@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Features.Budgets.Commands.CreateBudget;
@@ -19,7 +19,7 @@ public class BudgetEndpoints : IEndpoint
         group.MapGet("/", async (
             int? month,
             int? year,
-            ISender sender) =>
+            IMediator sender) =>
         {
             var result = await sender.Send(new GetBudgetsQuery(month, year));
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
@@ -27,7 +27,7 @@ public class BudgetEndpoints : IEndpoint
 
         group.MapPost("/", async (
             CreateBudgetRequest req,
-            ISender sender,
+            IMediator sender,
             IIdEncoder encoder) =>
         {
             var categoryId = encoder.Decode(req.CategoryId);
@@ -44,7 +44,7 @@ public class BudgetEndpoints : IEndpoint
         group.MapPut("/{externalId}", async (
             string externalId,
             UpdateBudgetRequest req,
-            ISender sender,
+            IMediator sender,
             IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
@@ -59,7 +59,7 @@ public class BudgetEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapDelete("/{externalId}", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapDelete("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();

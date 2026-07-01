@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using Microsoft.EntityFrameworkCore;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Common.Results;

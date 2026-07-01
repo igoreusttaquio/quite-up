@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using NetDevPack.SimpleMediator;
 
 namespace QuiteUp.Application.Common.Behaviors;
 
@@ -7,7 +7,7 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
     {
         if (!validators.Any())
             return await next(cancellationToken);

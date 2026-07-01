@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Features.Categories.Commands.CreateCategory;
@@ -17,13 +17,13 @@ public class CategoryEndpoints : IEndpoint
             .WithTags("Categories")
             .RequireAuthorization();
 
-        group.MapGet("/", async (ISender sender, CategoryType? type = null) =>
+        group.MapGet("/", async (IMediator sender, CategoryType? type = null) =>
         {
             var result = await sender.Send(new GetCategoriesQuery(type));
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapPost("/", async (CreateCategoryRequest req, ISender sender) =>
+        group.MapPost("/", async (CreateCategoryRequest req, IMediator sender) =>
         {
             var result = await sender.Send(new CreateCategoryCommand(req.Name, req.Type, req.Icon, req.Color));
             return result.IsSuccess
@@ -31,7 +31,7 @@ public class CategoryEndpoints : IEndpoint
                 : Results.BadRequest(result.Error);
         });
 
-        group.MapPut("/{externalId}", async (string externalId, UpdateCategoryRequest req, ISender sender, IIdEncoder encoder) =>
+        group.MapPut("/{externalId}", async (string externalId, UpdateCategoryRequest req, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -40,7 +40,7 @@ public class CategoryEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapDelete("/{externalId}", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapDelete("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();

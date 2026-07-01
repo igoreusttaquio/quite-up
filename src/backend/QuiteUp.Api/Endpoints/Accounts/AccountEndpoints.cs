@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Features.Accounts.Commands.CreateAccount;
@@ -18,13 +18,13 @@ public class AccountEndpoints : IEndpoint
             .WithTags("Accounts")
             .RequireAuthorization();
 
-        group.MapGet("/", async (ISender sender, bool includeInactive = false) =>
+        group.MapGet("/", async (IMediator sender, bool includeInactive = false) =>
         {
             var result = await sender.Send(new GetAccountsQuery(includeInactive));
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapGet("/{externalId}", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapGet("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -33,7 +33,7 @@ public class AccountEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapPost("/", async (CreateAccountRequest req, ISender sender) =>
+        group.MapPost("/", async (CreateAccountRequest req, IMediator sender) =>
         {
             var result = await sender.Send(new CreateAccountCommand(req.Name, req.Type, req.InitialBalance));
             return result.IsSuccess
@@ -41,7 +41,7 @@ public class AccountEndpoints : IEndpoint
                 : Results.BadRequest(result.Error);
         });
 
-        group.MapPut("/{externalId}", async (string externalId, UpdateAccountRequest req, ISender sender, IIdEncoder encoder) =>
+        group.MapPut("/{externalId}", async (string externalId, UpdateAccountRequest req, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -50,7 +50,7 @@ public class AccountEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapPut("/{externalId}/deactivate", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapPut("/{externalId}/deactivate", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();

@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Features.Notifications.Commands.MarkAllNotificationsRead;
@@ -16,19 +16,19 @@ public class NotificationEndpoints : IEndpoint
             .WithTags("Notifications")
             .RequireAuthorization();
 
-        group.MapGet("/", async (ISender sender, bool? unreadOnly = null) =>
+        group.MapGet("/", async (IMediator sender, bool? unreadOnly = null) =>
         {
             var result = await sender.Send(new GetNotificationsQuery(unreadOnly));
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapGet("/unread-count", async (ISender sender) =>
+        group.MapGet("/unread-count", async (IMediator sender) =>
         {
             var result = await sender.Send(new GetUnreadCountQuery());
             return result.IsSuccess ? Results.Ok(new { count = result.Value }) : Results.BadRequest(result.Error);
         });
 
-        group.MapPut("/{externalId}/read", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapPut("/{externalId}/read", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
@@ -37,7 +37,7 @@ public class NotificationEndpoints : IEndpoint
             return result.IsSuccess ? Results.NoContent() : Results.NotFound(result.Error);
         });
 
-        group.MapPut("/read-all", async (ISender sender) =>
+        group.MapPut("/read-all", async (IMediator sender) =>
         {
             var result = await sender.Send(new MarkAllNotificationsReadCommand());
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);

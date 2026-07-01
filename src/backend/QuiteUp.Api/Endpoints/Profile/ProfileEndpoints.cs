@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using Microsoft.AspNetCore.Mvc;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Features.Profile.Commands.ChangeEmail;
@@ -17,32 +17,32 @@ public class ProfileEndpoints : IEndpoint
             .WithTags("Profile")
             .RequireAuthorization();
 
-        group.MapGet("/", async (ISender sender) =>
+        group.MapGet("/", async (IMediator sender) =>
         {
             var result = await sender.Send(new GetProfileQuery());
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapPut("/", async (UpdateProfileRequest req, ISender sender) =>
+        group.MapPut("/", async (UpdateProfileRequest req, IMediator sender) =>
         {
             var result = await sender.Send(new UpdateProfileCommand(req.Name));
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapPost("/change-password", async (ChangePasswordRequest req, ISender sender) =>
+        group.MapPost("/change-password", async (ChangePasswordRequest req, IMediator sender) =>
         {
             var result = await sender.Send(
                 new ChangePasswordCommand(req.CurrentPassword, req.NewPassword, req.ConfirmNewPassword));
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);
         });
 
-        group.MapPost("/change-email", async (ChangeEmailRequest req, ISender sender) =>
+        group.MapPost("/change-email", async (ChangeEmailRequest req, IMediator sender) =>
         {
             var result = await sender.Send(new ChangeEmailCommand(req.NewEmail, req.CurrentPassword));
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);
         });
 
-        group.MapDelete("/", async ([FromBody] DeleteAccountRequest req, ISender sender) =>
+        group.MapDelete("/", async ([FromBody] DeleteAccountRequest req, IMediator sender) =>
         {
             var result = await sender.Send(new DeleteUserAccountCommand(req.Password));
             return result.IsSuccess ? Results.NoContent() : Results.BadRequest(result.Error);

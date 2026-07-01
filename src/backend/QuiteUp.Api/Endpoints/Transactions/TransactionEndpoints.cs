@@ -1,4 +1,4 @@
-using MediatR;
+using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Features.Transactions.Commands.CreateTransaction;
@@ -18,7 +18,7 @@ public class TransactionEndpoints : IEndpoint
             .RequireAuthorization();
 
         group.MapGet("/", async (
-            ISender sender,
+            IMediator sender,
             IIdEncoder encoder,
             string? accountId = null,
             TransactionType? type = null,
@@ -39,7 +39,7 @@ public class TransactionEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });
 
-        group.MapPost("/", async (CreateTransactionRequest req, ISender sender, IIdEncoder encoder) =>
+        group.MapPost("/", async (CreateTransactionRequest req, IMediator sender, IIdEncoder encoder) =>
         {
             var accountId = encoder.Decode(req.AccountId);
             if (accountId is null) return Results.BadRequest(new { message = "Conta inválida." });
@@ -59,7 +59,7 @@ public class TransactionEndpoints : IEndpoint
         group.MapPut("/{externalId}", async (
             string externalId,
             UpdateTransactionRequest req,
-            ISender sender,
+            IMediator sender,
             IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
@@ -73,7 +73,7 @@ public class TransactionEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapDelete("/{externalId}", async (string externalId, ISender sender, IIdEncoder encoder) =>
+        group.MapDelete("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
