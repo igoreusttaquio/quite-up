@@ -61,7 +61,7 @@ public class RegisterDebtPaymentCommandHandler(
             Discount = request.Discount,
             Notes = request.Notes,
             AccountId = request.AccountId,
-            TransactionId = autoTransaction?.Id
+            Transaction = autoTransaction
         };
 
         context.DebtPayments.Add(payment);
@@ -79,12 +79,12 @@ public class RegisterDebtPaymentCommandHandler(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        if (payment.TransactionId.HasValue)
-            await context.DebtPayments.Entry(payment)
-                .Reference(dp => dp.Transaction)
-                .Query()
-                .Include(t => t!.Attachment)
+        if (autoTransaction is not null)
+        {
+            await context.Transactions.Entry(autoTransaction)
+                .Reference(t => t.Attachment)
                 .LoadAsync(cancellationToken);
+        }
 
         var dto = new DebtPaymentDto(
             idEncoder.Encode(payment.Id),
@@ -97,11 +97,11 @@ public class RegisterDebtPaymentCommandHandler(
             payment.Notes,
             payment.AccountId.HasValue ? idEncoder.Encode(payment.AccountId.Value) : null,
             sourceAccount?.Name,
-            payment.TransactionId.HasValue ? idEncoder.Encode(payment.TransactionId.Value) : null,
-            payment.Transaction?.Attachment is not null ? idEncoder.Encode(payment.Transaction.Attachment.Id) : null,
-            payment.Transaction?.Attachment?.FileName,
-            payment.Transaction?.Attachment?.ContentType,
-            payment.Transaction?.Attachment?.FileSize,
+            autoTransaction is not null ? idEncoder.Encode(autoTransaction.Id) : null,
+            autoTransaction?.Attachment is not null ? idEncoder.Encode(autoTransaction.Attachment.Id) : null,
+            autoTransaction?.Attachment?.FileName,
+            autoTransaction?.Attachment?.ContentType,
+            autoTransaction?.Attachment?.FileSize,
             payment.CreatedAt);
 
         return Result<DebtPaymentDto>.Success(dto);
