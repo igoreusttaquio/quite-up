@@ -46,7 +46,7 @@ export function ReceiptViewer({ open, onClose, attachmentId, fileName, contentTy
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); if (blobUrl) URL.revokeObjectURL(blobUrl) } }}>
-      <DialogContent className="max-w-4xl w-[95vw] h-[90vh] max-h-[90vh]">
+      <DialogContent className="max-w-4xl w-[95vw] h-[90vh] max-h-[90vh]" showClose={false}>
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="flex items-center gap-2">
             <FileText size={18} />
