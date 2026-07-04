@@ -127,6 +127,7 @@ export function TransactionsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
   const [viewReceipt, setViewReceipt] = useState<{ transactionId: string; attachmentId: string; fileName: string; contentType: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const createFileRef = useRef<HTMLInputElement>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
 
   const uploadAttachment = useUploadAttachment()
@@ -159,15 +160,20 @@ export function TransactionsPage() {
 
   const handleCreate = async (data: CreateFormData) => {
     try {
-      await createTransaction.mutateAsync({
+      const result = await createTransaction.mutateAsync({
         ...data,
         categoryId: data.categoryId || undefined,
         destinationAccountId: data.destinationAccountId || undefined,
         description: data.description || undefined,
         debtId: data.debtId || undefined,
       })
+      const file = createFileRef.current?.files?.[0]
+      if (file) {
+        await uploadAttachment.mutateAsync({ transactionId: result.id, file })
+      }
       setCreateOpen(false)
       createForm.reset()
+      if (createFileRef.current) createFileRef.current.value = ''
     } catch { /* handled by query client */ }
   }
 
@@ -339,6 +345,7 @@ export function TransactionsPage() {
         isPending={createTransaction.isPending}
         onSubmit={createForm.handleSubmit(handleCreate as () => Promise<void>)}
         onClose={() => setCreateOpen(false)}
+        fileInputRef={createFileRef}
       />
 
       {/* Edit dialog */}
@@ -620,6 +627,7 @@ function TransactionFormSheet({
   isPending,
   onSubmit,
   onClose,
+  fileInputRef,
 }: {
   open: boolean
   title: string
@@ -632,6 +640,7 @@ function TransactionFormSheet({
   isPending: boolean
   onSubmit: () => void
   onClose: () => void
+  fileInputRef?: React.RefObject<HTMLInputElement | null>
 }) {
   return (
     <Sheet open={open} onOpenChange={(o) => { if (!o) onClose() }}>
@@ -765,6 +774,16 @@ function TransactionFormSheet({
                 </Field>
               )}
             />
+
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+              />
+            </div>
           </div>
 
           <div className="flex gap-2 pt-5">
