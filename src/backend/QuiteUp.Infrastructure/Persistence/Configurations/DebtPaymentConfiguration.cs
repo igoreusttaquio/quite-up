@@ -23,6 +23,12 @@ public class DebtPaymentConfiguration : IEntityTypeConfiguration<DebtPayment>
         builder.Property(dp => dp.Discount).HasColumnName("discount").HasPrecision(18, 2);
         builder.Property(dp => dp.Notes).HasColumnName("notes").HasMaxLength(500);
         builder.Property(dp => dp.AccountId).HasColumnName("account_id");
+        builder.Property(dp => dp.TransactionId).HasColumnName("transaction_id");
+
+        builder.HasOne(dp => dp.Transaction)
+            .WithMany()
+            .HasForeignKey(dp => dp.TransactionId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasOne(dp => dp.Debt)
             .WithMany(d => d.Payments)
@@ -42,5 +48,6 @@ public class DebtPaymentConfiguration : IEntityTypeConfiguration<DebtPayment>
         builder.HasIndex(dp => dp.DebtId).HasDatabaseName("ix_debt_payments_debt_id");
         builder.HasIndex(dp => dp.UserId).HasDatabaseName("ix_debt_payments_user_id");
         builder.HasIndex(dp => dp.AccountId).HasDatabaseName("ix_debt_payments_account_id");
+        builder.HasIndex(dp => dp.TransactionId).HasDatabaseName("ix_debt_payments_transaction_id");
     }
 }

@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useForm, Controller, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Trash2, DollarSign, Snowflake, CalendarDays } from 'lucide-react'
+import { Plus, Pencil, Trash2, DollarSign, Snowflake, CalendarDays, Paperclip } from 'lucide-react'
 import { useDebts, useCreateDebt, useUpdateDebt, useDeleteDebt, useDebtPayments, useRegisterDebtPayment, useSnowballStrategy } from '../hooks/useDebts'
 import { useAccounts } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
@@ -21,6 +21,8 @@ import { Badge } from '../components/ui/badge'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
+import { ReceiptViewer } from '../components/ReceiptViewer'
+import { useUploadAttachment } from '../hooks/useAttachment'
 import type { DebtType, Debt, DebtPayment } from '../types'
 
 const debtTypeLabels: Record<DebtType, string> = {
@@ -73,6 +75,10 @@ export function DebtsPage() {
   const [paymentDebtTarget, setPaymentDebtTarget] = useState<Debt | null>(null)
   const [paymentsDebtId, setPaymentsDebtId] = useState<string | null>(null)
   const [snowballOpen, setSnowballOpen] = useState(false)
+  const [viewReceipt, setViewReceipt] = useState<{ attachmentId: string; fileName: string; contentType: string } | null>(null)
+  const paymentFileInputRef = useRef<HTMLInputElement>(null)
+
+  const uploadAttachment = useUploadAttachment()
 
   const { data: paymentsData, isLoading: paymentsLoading } = useDebtPayments(paymentsDebtId ?? '')
 
@@ -118,12 +124,17 @@ export function DebtsPage() {
   const handlePayment = async (data: PaymentFormData) => {
     if (!paymentDebtTarget) return
     try {
-      await registerPayment.mutateAsync({
+      const result = await registerPayment.mutateAsync({
         debtId: paymentDebtTarget.id,
         data: { ...data, accountId: data.accountId || undefined },
       })
+      const file = paymentFileInputRef.current?.files?.[0]
+      if (file && result.transactionId) {
+        await uploadAttachment.mutateAsync({ transactionId: result.transactionId, file })
+      }
       setPaymentDebtTarget(null)
       paymentForm.reset()
+      if (paymentFileInputRef.current) paymentFileInputRef.current.value = ''
     } catch { /* handled by query client */ }
   }
 
@@ -295,6 +306,15 @@ export function DebtsPage() {
                 <span className="font-semibold">{paymentDebtTarget.name}</span>
               </div>
             )}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
+              <input
+                ref={paymentFileInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+              />
+            </div>
             {activeAccounts.length > 0 && (
               <Controller
                 name="accountId"
@@ -424,6 +444,23 @@ export function DebtsPage() {
                       <Badge variant="secondary">{payment.accountName}</Badge>
                     )}
                   </div>
+                  {payment.attachmentId && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setViewReceipt({
+                          attachmentId: payment.attachmentId!,
+                          fileName: payment.attachmentFileName || 'Comprovante',
+                          contentType: payment.attachmentContentType || 'application/octet-stream',
+                        })
+                      }}
+                    >
+                      <Paperclip size={12} />
+                      {payment.attachmentFileName || 'Ver comprovante'}
+                    </button>
+                  )}
                   {payment.notes && (
                     <p className="text-xs text-muted-foreground">{payment.notes}</p>
                   )}
@@ -438,6 +475,17 @@ export function DebtsPage() {
       </Dialog>
 
       {/* Snowball strategy dialog */}
+      {viewReceipt && (
+        <ReceiptViewer
+          open={!!viewReceipt}
+          onClose={() => setViewReceipt(null)}
+          attachmentId={viewReceipt.attachmentId}
+          fileName={viewReceipt.fileName}
+          contentType={viewReceipt.contentType}
+          title={`Comprovante - ${viewReceipt.fileName}`}
+        />
+      )}
+
       <Dialog open={snowballOpen} onOpenChange={setSnowballOpen}>
         <DialogContent>
           <DialogHeader>

@@ -16,5 +16,9 @@ public record TransactionDto(
     string? DestinationAccountName,
     string? DebtId,
     string? DebtName,
+    string? AttachmentId,
+    string? AttachmentFileName,
+    string? AttachmentContentType,
+    long? AttachmentFileSize,
     DateTime CreatedAt
 );

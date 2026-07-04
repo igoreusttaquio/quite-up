@@ -1,6 +1,8 @@
 using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
+using QuiteUp.Application.Features.Attachments.Commands.DeleteAttachment;
+using QuiteUp.Application.Features.Attachments.Commands.UploadAttachment;
 using QuiteUp.Application.Features.Transactions.Commands.CreateTransaction;
 using QuiteUp.Application.Features.Transactions.Commands.DeleteTransaction;
 using QuiteUp.Application.Features.Transactions.Commands.UpdateTransaction;
@@ -79,6 +81,33 @@ public class TransactionEndpoints : IEndpoint
             if (id is null) return Results.NotFound();
 
             var result = await sender.Send(new DeleteTransactionCommand(id.Value));
+            return result.IsSuccess ? Results.NoContent() : Results.NotFound(result.Error);
+        });
+
+        group.MapPost("/{externalId}/attachment", async (string externalId, IFormFile file, IMediator sender, IIdEncoder encoder) =>
+        {
+            var id = encoder.Decode(externalId);
+            if (id is null) return Results.NotFound();
+
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+
+            var result = await sender.Send(new UploadAttachmentCommand(
+                id.Value, file.FileName, file.ContentType, file.Length, memoryStream.ToArray()));
+
+            return result.IsSuccess
+                ? Results.Created($"/api/attachments/{result.Value!.Id}", result.Value)
+                : result.Error.Code == "Attachment.AlreadyExists"
+                    ? Results.Conflict(result.Error)
+                    : Results.BadRequest(result.Error);
+        });
+
+        group.MapDelete("/{externalId}/attachment", async (string externalId, IMediator sender, IIdEncoder encoder) =>
+        {
+            var transactionId = encoder.Decode(externalId);
+            if (transactionId is null) return Results.NotFound();
+
+            var result = await sender.Send(new DeleteAttachmentByTransactionCommand(transactionId.Value));
             return result.IsSuccess ? Results.NoContent() : Results.NotFound(result.Error);
         });
     }

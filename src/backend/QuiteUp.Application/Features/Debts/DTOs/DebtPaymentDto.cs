@@ -11,5 +11,10 @@ public record DebtPaymentDto(
     string? Notes,
     string? AccountId,
     string? AccountName,
+    string? TransactionId,
+    string? AttachmentId,
+    string? AttachmentFileName,
+    string? AttachmentContentType,
+    long? AttachmentFileSize,
     DateTime CreatedAt
 );

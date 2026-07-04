@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useForm, Controller, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Trash2, ArrowRightLeft, Filter, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, ArrowRightLeft, Filter, X, ChevronLeft, ChevronRight, Loader2, Paperclip, Upload } from 'lucide-react'
 import {
   useTransactions,
   useCreateTransaction,
   useUpdateTransaction,
   useDeleteTransaction,
 } from '../hooks/useTransactions'
+import { useUploadAttachment, useDeleteAttachment } from '../hooks/useAttachment'
+import { ReceiptViewer } from '../components/ReceiptViewer'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { useDebts } from '../hooks/useDebts'
@@ -123,6 +125,12 @@ export function TransactionsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Transaction | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
+  const [viewReceipt, setViewReceipt] = useState<{ transactionId: string; attachmentId: string; fileName: string; contentType: string } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
+
+  const uploadAttachment = useUploadAttachment()
+  const deleteAttachment = useDeleteAttachment()
 
   const createForm = useForm<CreateFormData>({
     resolver: zodResolver(createSchema),
@@ -184,6 +192,19 @@ export function TransactionsPage() {
       await deleteTransaction.mutateAsync(deleteTarget.id)
       setDeleteTarget(null)
     } catch { /* handled by query client */ }
+  }
+
+  const handleUploadAttachment = async (transactionId: string, file: File) => {
+    setUploadingId(transactionId)
+    try {
+      await uploadAttachment.mutateAsync({ transactionId, file })
+    } catch { /* handled by hook */ }
+    setUploadingId(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleDeleteAttachment = async (transactionId: string) => {
+    await deleteAttachment.mutateAsync(transactionId)
   }
 
   const openEdit = (transaction: Transaction) => {
@@ -291,6 +312,18 @@ export function TransactionsPage() {
           onEdit={openEdit}
           onDelete={(t) => setDeleteTarget(t)}
           onPageChange={setPage}
+          onViewReceipt={(t) => t.attachmentId && t.attachmentFileName && t.attachmentContentType && setViewReceipt({
+            transactionId: t.id,
+            attachmentId: t.attachmentId,
+            fileName: t.attachmentFileName,
+            contentType: t.attachmentContentType,
+          })}
+          onUploadAttachment={(id) => {
+            setUploadingId(id)
+            fileInputRef.current?.click()
+          }}
+          onDeleteAttachment={handleDeleteAttachment}
+          uploadingId={uploadingId}
         />
       )}
 
@@ -390,6 +423,28 @@ export function TransactionsPage() {
         onConfirm={handleDelete}
         loading={deleteTransaction.isPending}
       />
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,.pdf"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file && uploadingId) handleUploadAttachment(uploadingId, file)
+        }}
+      />
+
+      {viewReceipt && (
+        <ReceiptViewer
+          open={!!viewReceipt}
+          onClose={() => setViewReceipt(null)}
+          attachmentId={viewReceipt.attachmentId}
+          fileName={viewReceipt.fileName}
+          contentType={viewReceipt.contentType}
+          title={`Comprovante - ${viewReceipt.fileName}`}
+        />
+      )}
     </div>
   )
 }
@@ -404,6 +459,10 @@ function TransactionTable({
   onEdit,
   onDelete,
   onPageChange,
+  onViewReceipt,
+  onUploadAttachment,
+  onDeleteAttachment,
+  uploadingId,
 }: {
   transactions: Transaction[]
   isFetching: boolean
@@ -412,12 +471,16 @@ function TransactionTable({
   onEdit: (t: Transaction) => void
   onDelete: (t: Transaction) => void
   onPageChange: (p: number) => void
+  onViewReceipt: (t: Transaction) => void
+  onUploadAttachment: (transactionId: string) => void
+  onDeleteAttachment: (transactionId: string) => void
+  uploadingId: string | null
 }) {
   return (
     <div>
       <div className={`card overflow-hidden transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
-        <div className="hidden md:grid grid-cols-[44px_1fr_140px_140px_130px_72px] gap-3 px-4 py-2.5 border-b border-border bg-muted/50">
-          {['', 'Descrição / Data', 'Categoria', 'Conta', 'Valor', ''].map((h, i) => (
+        <div className="hidden md:grid grid-cols-[44px_1fr_140px_140px_130px_44px_72px] gap-3 px-4 py-2.5 border-b border-border bg-muted/50">
+          {['', 'Descrição / Data', 'Categoria', 'Conta', 'Valor', '', ''].map((h, i) => (
             <span key={i} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</span>
           ))}
         </div>
@@ -425,7 +488,7 @@ function TransactionTable({
           {transactions.map((tx) => (
             <li
               key={tx.id}
-              className="grid grid-cols-[44px_1fr_auto] md:grid-cols-[44px_1fr_140px_140px_130px_72px] gap-3 px-4 py-3.5 items-center hover:bg-muted/50 transition-colors"
+              className="grid grid-cols-[44px_1fr_auto] md:grid-cols-[44px_1fr_140px_140px_130px_44px_72px] gap-3 px-4 py-3.5 items-center hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center justify-center">
                 <TransactionTypeIcon type={tx.type} />
@@ -443,6 +506,41 @@ function TransactionTable({
               <span className="text-sm text-muted-foreground truncate hidden md:block">{tx.accountName || '—'}</span>
               <div>
                 <CurrencyBadge value={tx.type === 'Expense' ? -tx.amount : tx.amount} />
+              </div>
+              <div className="flex items-center justify-center gap-0.5">
+                {tx.attachmentId ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => onViewReceipt(tx)}
+                      title="Ver comprovante"
+                      className="text-primary"
+                    >
+                      <Paperclip size={13} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => onDeleteAttachment(tx.id)}
+                      title="Remover comprovante"
+                      className="text-destructive/70 hover:text-destructive"
+                    >
+                      <Trash2 size={11} />
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => onUploadAttachment(tx.id)}
+                    disabled={uploadingId === tx.id}
+                    title="Anexar comprovante"
+                    className="text-muted-foreground"
+                  >
+                    <Upload size={13} />
+                  </Button>
+                )}
               </div>
               <div className="flex gap-1 justify-end">
                 <Button variant="ghost" size="icon-sm" onClick={() => onEdit(tx)}>

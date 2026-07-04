@@ -80,6 +80,9 @@ public class CreateTransactionCommandHandler(
         if (transaction.DebtId.HasValue)
             transaction.Debt = linkedDebt;
 
+        await context.Transactions.Entry(transaction)
+            .Reference(t => t.Attachment).LoadAsync(cancellationToken);
+
         return Result<TransactionDto>.Success(ToDto(transaction, idEncoder));
     }
 
@@ -97,5 +100,9 @@ public class CreateTransactionCommandHandler(
         t.DestinationAccount?.Name,
         t.DebtId.HasValue ? encoder.Encode(t.DebtId.Value) : null,
         t.Debt?.Name,
+        t.Attachment is not null ? encoder.Encode(t.Attachment.Id) : null,
+        t.Attachment?.FileName,
+        t.Attachment?.ContentType,
+        t.Attachment?.FileSize,
         t.CreatedAt);
 }

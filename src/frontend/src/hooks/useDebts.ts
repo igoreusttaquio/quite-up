@@ -57,11 +57,12 @@ export function useRegisterDebtPayment() {
   return useMutation({
     mutationFn: ({ debtId, data }: { debtId: string; data: RegisterDebtPaymentRequest }) =>
       debtsApi.registerPayment(debtId, data).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: DEBTS_KEY })
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      return data
     },
   })
 }

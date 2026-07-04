@@ -62,6 +62,10 @@ export interface Transaction {
   destinationAccountName?: string
   debtId?: string
   debtName?: string
+  attachmentId?: string
+  attachmentFileName?: string
+  attachmentContentType?: string
+  attachmentFileSize?: number
   createdAt: string
 }
 
@@ -81,6 +85,14 @@ export interface UpdateTransactionRequest {
   date: string
   categoryId?: string
   description?: string
+}
+
+export interface Attachment {
+  id: string
+  fileName: string
+  contentType: string
+  fileSize: number
+  createdAt: string
 }
 
 export interface PaginatedResult<T> {
@@ -214,6 +226,11 @@ export interface DebtPayment {
   notes?: string
   accountId?: string
   accountName?: string
+  transactionId?: string
+  attachmentId?: string
+  attachmentFileName?: string
+  attachmentContentType?: string
+  attachmentFileSize?: number
   createdAt: string
 }
 

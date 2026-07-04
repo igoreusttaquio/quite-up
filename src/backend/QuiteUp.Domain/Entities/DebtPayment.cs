@@ -13,8 +13,10 @@ public class DebtPayment : BaseEntity
     public string? Notes { get; set; }
 
     public long? AccountId { get; set; }
+    public long? TransactionId { get; set; }
 
     public User User { get; set; } = null!;
     public Debt Debt { get; set; } = null!;
     public Account? Account { get; set; }
+    public Transaction? Transaction { get; set; }
 }

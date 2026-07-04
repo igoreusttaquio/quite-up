@@ -21,6 +21,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<FinancialGoal> FinancialGoals => Set<FinancialGoal>();
     public DbSet<GoalContribution> GoalContributions => Set<GoalContribution>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Attachment> Attachments => Set<Attachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -19,6 +19,7 @@ public class UpdateTransactionCommandHandler(
             .Include(t => t.DestinationAccount)
             .Include(t => t.Category)
             .Include(t => t.Debt)
+            .Include(t => t.Attachment)
             .FirstOrDefaultAsync(t => t.Id == request.Id && t.UserId == currentUser.UserId, cancellationToken);
 
         if (transaction is null)

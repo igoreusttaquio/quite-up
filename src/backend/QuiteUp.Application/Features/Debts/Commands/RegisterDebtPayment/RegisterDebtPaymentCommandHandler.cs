@@ -26,6 +26,7 @@ public class RegisterDebtPaymentCommandHandler(
             return Result<DebtPaymentDto>.Failure(Error.NotFound);
 
         Account? sourceAccount = null;
+        Transaction? autoTransaction = null;
         if (request.AccountId.HasValue)
         {
             sourceAccount = await context.Accounts
@@ -35,19 +36,19 @@ public class RegisterDebtPaymentCommandHandler(
                 return Result<DebtPaymentDto>.Failure(Error.NotFound);
 
             var netAmount = request.Amount - request.Discount;
-            if (netAmount > 0)
-            {
-                var autoTransaction = new Transaction
+                if (netAmount > 0)
                 {
-                    UserId = userId,
-                    AccountId = request.AccountId.Value,
-                    Type = TransactionType.Expense,
-                    Amount = netAmount,
-                    Date = request.PaymentDate,
-                    Description = $"Pagamento: {debt.Name}"
-                };
-                context.Transactions.Add(autoTransaction);
-            }
+                    autoTransaction = new Transaction
+                    {
+                        UserId = userId,
+                        AccountId = request.AccountId.Value,
+                        Type = TransactionType.Expense,
+                        Amount = netAmount,
+                        Date = request.PaymentDate,
+                        Description = $"Pagamento: {debt.Name}"
+                    };
+                    context.Transactions.Add(autoTransaction);
+                }
         }
 
         var payment = new DebtPayment
@@ -59,7 +60,8 @@ public class RegisterDebtPaymentCommandHandler(
             IsEarlyPayment = request.IsEarlyPayment,
             Discount = request.Discount,
             Notes = request.Notes,
-            AccountId = request.AccountId
+            AccountId = request.AccountId,
+            TransactionId = autoTransaction?.Id
         };
 
         context.DebtPayments.Add(payment);
@@ -77,6 +79,13 @@ public class RegisterDebtPaymentCommandHandler(
 
         await context.SaveChangesAsync(cancellationToken);
 
+        if (payment.TransactionId.HasValue)
+            await context.DebtPayments.Entry(payment)
+                .Reference(dp => dp.Transaction)
+                .Query()
+                .Include(t => t!.Attachment)
+                .LoadAsync(cancellationToken);
+
         var dto = new DebtPaymentDto(
             idEncoder.Encode(payment.Id),
             idEncoder.Encode(debt.Id),
@@ -88,6 +97,11 @@ public class RegisterDebtPaymentCommandHandler(
             payment.Notes,
             payment.AccountId.HasValue ? idEncoder.Encode(payment.AccountId.Value) : null,
             sourceAccount?.Name,
+            payment.TransactionId.HasValue ? idEncoder.Encode(payment.TransactionId.Value) : null,
+            payment.Transaction?.Attachment is not null ? idEncoder.Encode(payment.Transaction.Attachment.Id) : null,
+            payment.Transaction?.Attachment?.FileName,
+            payment.Transaction?.Attachment?.ContentType,
+            payment.Transaction?.Attachment?.FileSize,
             payment.CreatedAt);
 
         return Result<DebtPaymentDto>.Success(dto);

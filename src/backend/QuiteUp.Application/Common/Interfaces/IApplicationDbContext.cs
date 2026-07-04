@@ -18,6 +18,7 @@ public interface IApplicationDbContext
     DbSet<FinancialGoal> FinancialGoals { get; }
     DbSet<GoalContribution> GoalContributions { get; }
     DbSet<Notification> Notifications { get; }
+    DbSet<Attachment> Attachments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

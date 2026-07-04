@@ -46,6 +46,7 @@ public class GetTransactionsQueryHandler(
             .Include(t => t.DestinationAccount)
             .Include(t => t.Category)
             .Include(t => t.Debt)
+            .Include(t => t.Attachment)
             .OrderByDescending(t => t.Date)
             .ThenByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)

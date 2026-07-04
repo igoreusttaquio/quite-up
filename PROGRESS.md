@@ -160,6 +160,33 @@ Stack: React 19 + Vite 8 + **shadcn/ui** + Tailwind CSS v4 + lucide-react + sonn
 
 ---
 
+### ✅ Concluído
+
+#### Anexo de comprovantes a transações
+
+- **Domain:** `Attachment` (UserId, TransactionId, FileName, ContentType, FileSize, Data) — tabela separada
+- **Application:**
+  - Commands: `UploadAttachment`, `DeleteAttachment`, `DeleteAttachmentByTransaction`
+  - Queries: `GetAttachment` (retorna bytes para visualização inline)
+  - DTOs `TransactionDto` e `DebtPaymentDto` atualizados com campos de anexo
+  - `DebtPayment` vincula `TransactionId` da transação gerada automaticamente
+  - Handlers de listagem incluem `.Include(t => t.Attachment)` para evitar N+1
+- **Infrastructure:** `AttachmentConfiguration` (1:1 com Transaction, cascade delete)
+- **Migration:** `AddAttachments` — criada via `dotnet ef migrations add`
+- **Api:**
+  - `POST /api/transactions/{id}/attachment` — upload
+  - `DELETE /api/transactions/{id}/attachment` — remover por transação
+  - `GET /api/attachments/{id}` — visualizar inline
+  - `DELETE /api/attachments/{id}` — remover por ID
+- **Frontend:**
+  - `ReceiptViewer` — modal que exibe imagens inline e PDF via iframe
+  - `useUploadAttachment` / `useDeleteAttachment` hooks
+  - Botões na tabela de transações: anexar (upload), visualizar (paperclip), remover (trash)
+  - Input de arquivo no diálogo de pagamento de dívida
+  - Anexo é enviado à transação gerada automaticamente no pagamento
+
+---
+
 ## Commits realizados
 
 | Hash      | Descrição                                                                     |

@@ -16,6 +16,8 @@ public class Transaction : BaseEntity
 
     public long? DebtId { get; set; }
 
+    public Attachment? Attachment { get; set; }
+
     public Account Account { get; set; } = null!;
     public Account? DestinationAccount { get; set; }
     public Category? Category { get; set; }
