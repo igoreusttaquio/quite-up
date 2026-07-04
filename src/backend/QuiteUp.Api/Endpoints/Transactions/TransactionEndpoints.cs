@@ -84,10 +84,18 @@ public class TransactionEndpoints : IEndpoint
             return result.IsSuccess ? Results.NoContent() : Results.NotFound(result.Error);
         });
 
-        group.MapPost("/{externalId}/attachment", async (string externalId, IFormFile file, IMediator sender, IIdEncoder encoder) =>
+        group.MapPost("/{externalId}/attachment", async (string externalId, HttpRequest request, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
+
+            if (!request.HasFormContentType)
+                return Results.BadRequest(new { message = "Multipart form data required." });
+
+            var form = await request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null)
+                return Results.BadRequest(new { message = "File is required." });
 
             using var memoryStream = new MemoryStream();
             await file.CopyToAsync(memoryStream);
