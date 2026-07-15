@@ -18,7 +18,7 @@
 ### 1. Clonar e configurar
 
 ```bash
-git clone https://github.com/seu-usuario/quite-up.git
+git clone https://github.com/igoreusttaquio/quite-up.git
 cd quite-up
 cp .env.example .env
 ```
