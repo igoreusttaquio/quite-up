@@ -1,3 +1,12 @@
+name: quite-up
+
+# Nota de arquitetura:
+#   - Este compose NÃO publica 80/443 nem roda Caddy. O reverse proxy público é o Caddy do
+#     ExactLab (mesma VPS), que fala com api/frontend pela rede Docker externa "proxy"
+#     (criada com `docker network create proxy`).
+#   - db e rabbitmq ficam SOMENTE na rede interna deste projeto (nada é publicado no host).
+#   - Os aliases quite-up-api / quite-up-frontend são os upstreams usados no Caddyfile do ExactLab.
+
 services:
   db:
     image: postgres:16-alpine
@@ -6,8 +15,6 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${DB_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,9 +29,6 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
-      - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -32,22 +36,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      - DOMAIN=${DOMAIN}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - frontend
-      - api
 
   api:
     build:
@@ -80,6 +68,11 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    networks:
+      default:
+      proxy:
+        aliases:
+          - quite-up-api
 
   frontend:
     build:
@@ -88,9 +81,16 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    networks:
+      default:
+      proxy:
+        aliases:
+          - quite-up-frontend
 
 volumes:
   postgres_data:
   rabbitmq_data:
-  caddy_data:
-  caddy_config:
+
+networks:
+  proxy:
+    external: true

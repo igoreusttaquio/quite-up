@@ -27,14 +27,17 @@ Edite o `.env` e preencha os valores obrigatórios:
 
 | Variável | Descrição |
 |---|---|
-| `DOMAIN` | Domínio público (ex: `app.meusite.com`) |
 | `DB_PASSWORD` | Senha do PostgreSQL |
 | `JWT_SECRET` | Chave secreta JWT (mínimo 32 caracteres) |
 | `HASHIDS_SALT` | Salt para ofuscação de IDs |
 | `SMTP_*` | Credenciais do servidor de e-mail |
-| `APP_URL` | URL pública do frontend (ex: `https://app.meusite.com`) |
+| `APP_URL` | URL pública do frontend (ex: `https://app.meusite.com`) — mesma origem usada pelo navegador |
 
-> O domínio precisa estar apontado para o IP da VPS antes de subir os serviços. O Caddy emite o certificado Let's Encrypt automaticamente na primeira inicialização.
+> **Reverse proxy compartilhado:** este projeto não sobe mais o próprio Caddy. Na VPS que
+> compartilha com o ExactLab, quem publica `80`/`443` e emite o certificado Let's Encrypt é o
+> Caddy do ExactLab, roteando o domínio do Quite-Up (configurado como `DOMAIN_QUITE_UP` no
+> `.env` de produção do ExactLab). O domínio precisa apontar (registro A) para o IP dessa VPS.
+> `db` e `rabbitmq` ficam acessíveis apenas pela rede interna do Docker (nenhuma porta exposta).
 
 ### 2. Build e execução
 

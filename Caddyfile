@@ -1,3 +1,18 @@
+# ============================================================================
+# ATENÇÃO: ESTE Caddyfile NÃO É MAIS USADO.
+#
+# O Caddy deste projeto foi desativado para não disputar as portas 80/443 com o
+# Caddy do ExactLab na mesma VPS. O roteamento do Quite-Up agora vive no
+# Caddyfile.prod do ExactLab (rede Docker externa "proxy"):
+#
+#   {$DOMAIN_QUITE_UP} {
+#       handle /api/* { reverse_proxy quite-up-api:8080 }
+#       handle        { reverse_proxy quite-up-frontend:80 }
+#   }
+#
+# Mantido apenas como referência do roteamento original.
+# ============================================================================
+
 {$DOMAIN} {
     reverse_proxy /api/* api:8080
     reverse_proxy * frontend:80
