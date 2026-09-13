@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { SkeletonCard } from '../components/Skeleton'
 import { TransactionTypeIcon } from '../components/TransactionTypeIcon'
+import { IncomeExpenseChart } from '../components/charts/IncomeExpenseChart'
 import type { TransactionType } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
@@ -26,10 +27,6 @@ export function DashboardPage() {
   const monthlyIncome = dashboard?.monthlyIncome ?? 0
   const monthlyExpenses = dashboard?.monthlyExpenses ?? 0
   const recentTransactions = dashboard?.recentTransactions ?? []
-
-  const savingsRate = monthlyIncome > 0
-    ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100
-    : 0
 
   return (
     <div className="space-y-6">
@@ -74,18 +71,8 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Income vs Expense bar */}
-      {!isLoading && (monthlyIncome > 0 || monthlyExpenses > 0) && (
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-base font-semibold">Receitas vs Despesas</span>
-            <span className={`text-sm font-medium ${savingsRate >= 0 ? 'text-income' : 'text-expense'}`}>
-              {savingsRate >= 0 ? '↑' : '↓'} {Math.abs(savingsRate).toFixed(1)}% de economia
-            </span>
-          </div>
-          <MonthProgressBar income={monthlyIncome} expenses={monthlyExpenses} />
-        </div>
-      )}
+      {/* Charts */}
+      <IncomeExpenseChart />
 
       {/* Recent transactions */}
       <div className="card">
@@ -193,35 +180,5 @@ function QuickLink({ to, icon, label }: { to: string; icon: React.ReactNode; lab
       <span className="text-primary">{icon}</span>
       <span className="text-xs font-semibold text-muted-foreground">{label}</span>
     </Link>
-  )
-}
-
-function MonthProgressBar({ income, expenses }: { income: number; expenses: number }) {
-  const total = income + expenses
-  const incomeWidth = total > 0 ? Math.round((income / total) * 100) : 50
-  const expenseWidth = 100 - incomeWidth
-  const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-
-  return (
-    <div className="space-y-2.5">
-      <div className="flex rounded-full overflow-hidden h-3 bg-muted">
-        <div
-          className="bg-income transition-all duration-500"
-          style={{ width: `${incomeWidth}%` }}
-        />
-        <div
-          className="bg-expense transition-all duration-500"
-          style={{ width: `${expenseWidth}%` }}
-        />
-      </div>
-      <div className="flex justify-between text-xs">
-        <span className="flex items-center gap-1 text-income font-medium">
-          <ArrowUp size={12} /> {fmt.format(income)}
-        </span>
-        <span className="flex items-center gap-1 text-expense font-medium">
-          <ArrowDown size={12} /> {fmt.format(expenses)}
-        </span>
-      </div>
-    </div>
   )
 }
