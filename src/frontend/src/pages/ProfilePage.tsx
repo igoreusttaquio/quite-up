@@ -199,24 +199,38 @@ export function ProfilePage() {
         {/* Tab layout */}
         <div className="card w-full min-w-0 overflow-hidden">
           {/* Tab bar */}
-          <div className="flex w-full max-w-full min-w-0 border-b border-border overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex flex-shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
-                  tab.id === 'danger' && activeTab === tab.id && 'text-destructive border-destructive',
-                  tab.id === 'danger' && activeTab !== tab.id && 'hover:text-destructive',
-                )}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
+          <div
+            className="grid grid-cols-2 gap-2 border-b border-border p-3 sm:flex sm:max-w-full sm:min-w-0 sm:gap-0 sm:overflow-x-auto sm:p-0 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id
+              const isDanger = tab.id === 'danger'
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-2 text-xs font-medium transition-colors',
+                    'sm:flex-shrink-0 sm:justify-start sm:gap-2 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b-2 sm:px-4 sm:py-3 sm:text-sm sm:-mb-px',
+                    isActive
+                      ? isDanger
+                        ? 'border-destructive bg-destructive/10 text-destructive sm:bg-transparent'
+                        : 'border-primary bg-primary/10 text-primary sm:bg-transparent'
+                      : cn(
+                          'border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                          'sm:border-transparent sm:hover:bg-transparent',
+                          isDanger
+                            ? 'sm:hover:text-destructive'
+                            : 'sm:hover:border-border sm:hover:text-foreground'
+                        )
+                  )}
+                >
+                  <span className="flex-shrink-0">{tab.icon}</span>
+                  <span className="truncate">{tab.label}</span>
+                </button>
+              )
+            })}
           </div>
 
           {/* Tab content */}
