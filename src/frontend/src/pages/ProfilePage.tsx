@@ -126,9 +126,9 @@ export function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div>
+      <div className="w-full min-w-0">
         <PageHeader title="Perfil" />
-        <div className="max-w-2xl space-y-4">
+        <div className="w-full min-w-0 max-w-2xl space-y-4">
           <SkeletonCard />
           <SkeletonCard />
         </div>
@@ -137,12 +137,12 @@ export function ProfilePage() {
   }
 
   return (
-    <div>
+    <div className="w-full min-w-0">
       <PageHeader title="Perfil" />
 
-      <div className="max-w-2xl">
+      <div className="w-full min-w-0 max-w-2xl">
         {/* Avatar section */}
-        <div className="card p-5 flex items-center gap-4 mb-5">
+        <div className="card w-full min-w-0 p-5 flex items-center gap-4 mb-5">
           <AvatarUser name={profile?.name || user?.name} size={52} />
           <div className="min-w-0 flex-1">
             <p className="text-base font-semibold truncate">{profile?.name}</p>
@@ -151,15 +151,15 @@ export function ProfilePage() {
         </div>
 
         {/* Tab layout */}
-        <div className="card overflow-hidden">
+        <div className="card w-full min-w-0 overflow-hidden">
           {/* Tab bar */}
-          <div className="flex border-b border-border overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex w-full max-w-full min-w-0 border-b border-border overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
+                  'flex flex-shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
                   activeTab === tab.id
                     ? 'border-primary text-primary'
                     : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',

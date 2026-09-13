@@ -80,12 +80,24 @@
     box-sizing: border-box;
   }
   html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   body {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
     background-color: var(--background);
     color: var(--foreground);
+  }
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   a {
     text-decoration: none;
@@ -151,4 +163,11 @@
   /* Safe-area insets */
   .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
   .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+}
+
+/* Toasts nunca devem ultrapassar a viewport em telas pequenas */
+@media (max-width: 420px) {
+  [data-sonner-toaster] {
+    --width: calc(100vw - 2rem) !important;
+  }
 }

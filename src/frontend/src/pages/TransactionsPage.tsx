@@ -238,7 +238,7 @@ export function TransactionsPage() {
   }
 
   return (
-    <div>
+    <div className="w-full min-w-0">
       <PageHeader
         title="Transações"
         action={

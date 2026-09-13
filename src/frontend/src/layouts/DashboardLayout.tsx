@@ -57,7 +57,7 @@ export function DashboardLayout() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="min-h-screen bg-background flex">
+      <div className="min-h-screen w-full bg-background flex">
         {/* Sidebar — Desktop */}
         <aside className="hidden md:flex flex-col fixed top-0 left-0 w-60 h-screen z-20 border-r border-border bg-card">
           {/* Logo */}
@@ -137,9 +137,9 @@ export function DashboardLayout() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 md:ml-60 flex flex-col min-h-screen">
+        <main className="flex-1 min-w-0 w-full md:ml-60 flex flex-col min-h-screen">
           {/* Mobile header */}
-          <header className="md:hidden flex items-center justify-between px-4 h-14 border-b border-border bg-card sticky top-0 z-10 flex-shrink-0">
+          <header className="md:hidden w-full flex items-center justify-between px-4 h-14 border-b border-border bg-card sticky top-0 z-10 flex-shrink-0">
             <Link to="/dashboard" className="flex items-center gap-2 font-bold text-primary text-lg tracking-tight">
               <img src="/favicon.svg" alt="Quite-Up" className="h-7 w-7" />
               Quite-Up
@@ -161,14 +161,14 @@ export function DashboardLayout() {
 
           {/* Mobile slide-down menu — fixed overlay */}
           {mobileOpen && (
-            <div className="md:hidden fixed inset-0 top-14 z-20 flex flex-col">
+            <div className="md:hidden w-full fixed inset-0 top-14 z-20 flex flex-col">
               {/* Backdrop */}
               <div
                 className="absolute inset-0 bg-black/40"
                 onClick={() => setMobileOpen(false)}
               />
               {/* Menu panel */}
-              <div className="relative bg-card border-b border-border overflow-y-auto max-h-[calc(100vh-3.5rem-4rem)]">
+              <div className="relative w-full bg-card border-b border-border overflow-y-auto max-h-[calc(100vh-3.5rem-4rem)]">
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
                   <AvatarUser name={user?.name} size={36} />
                   <div className="min-w-0">
@@ -213,8 +213,8 @@ export function DashboardLayout() {
           )}
 
           {/* Page content */}
-          <div className="flex-1 p-4 pb-24 md:p-6 lg:p-8">
-            <div className="max-w-[1400px] mx-auto">
+          <div className="flex-1 min-w-0 w-full p-4 pb-24 md:p-6 lg:p-8">
+            <div className="w-full min-w-0 max-w-[1400px] mx-auto">
               <ErrorBoundary>
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
@@ -233,32 +233,32 @@ export function DashboardLayout() {
         </main>
 
         {/* Bottom nav — Mobile */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex justify-around border-t border-border bg-card pb-safe">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-10 w-full max-w-full flex justify-around border-t border-border bg-card pb-safe">
           {bottomNavItems.map(({ label, path, Icon }) => (
             <NavLink
               key={path}
               to={path}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-4 min-w-0 flex-1 transition-colors',
+                  'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-1.5 min-w-0 flex-1 overflow-hidden transition-colors',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )
               }
             >
-              <Icon size={20} />
-              <span>{label}</span>
+              <Icon size={20} className="flex-shrink-0" />
+              <span className="w-full truncate text-center">{label}</span>
             </NavLink>
           ))}
           <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
             className={cn(
-              'flex flex-col items-center gap-0.5 text-xs py-2 px-4 flex-1 transition-colors',
+              'flex flex-col items-center gap-0.5 text-xs py-2 px-1.5 min-w-0 flex-1 overflow-hidden transition-colors',
               mobileOpen ? 'text-primary' : 'text-muted-foreground'
             )}
           >
-            <MoreHorizontal size={20} />
-            <span>Mais</span>
+            <MoreHorizontal size={20} className="flex-shrink-0" />
+            <span className="w-full truncate text-center">Mais</span>
           </button>
         </nav>
       </div>
