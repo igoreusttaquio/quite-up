@@ -5,6 +5,7 @@ interface TooltipEntry {
   name?: string | number
   value?: number | string
   color?: string
+  payload?: { fill?: string }
 }
 
 interface CurrencyTooltipProps {
@@ -27,7 +28,7 @@ export function CurrencyTooltip({ active, payload, label }: CurrencyTooltipProps
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <span
                 className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
-                style={{ backgroundColor: entry.color }}
+                style={{ backgroundColor: entry.color ?? entry.payload?.fill }}
               />
               {entry.name}
             </span>

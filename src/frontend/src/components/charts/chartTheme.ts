@@ -8,6 +8,20 @@ export const CHART_PALETTE = {
   orange: '#FF7917',
 } as const
 
+// Variações dentro da paleta da logo para séries categóricas (donut/barras).
+export const CATEGORY_COLORS = [
+  CHART_PALETTE.purple,
+  CHART_PALETTE.orange,
+  CHART_PALETTE.lilac,
+  CHART_PALETTE.purpleDark,
+  '#8E6FC7',
+  '#FF9E4A',
+  '#C4B0E8',
+  '#2E1A5C',
+  '#B35A00',
+  '#6E5AA8',
+] as const
+
 export function useChartTheme() {
   const { mode } = useTheme()
   const dark = mode === 'dark'

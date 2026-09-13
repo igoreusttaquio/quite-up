@@ -6,6 +6,7 @@ import { CurrencyBadge } from '../components/CurrencyBadge'
 import { SkeletonCard } from '../components/Skeleton'
 import { TransactionTypeIcon } from '../components/TransactionTypeIcon'
 import { IncomeExpenseChart } from '../components/charts/IncomeExpenseChart'
+import { ExpensesByCategoryChart } from '../components/charts/ExpensesByCategoryChart'
 import type { TransactionType } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
@@ -73,6 +74,7 @@ export function DashboardPage() {
 
       {/* Charts */}
       <IncomeExpenseChart />
+      <ExpensesByCategoryChart />
 
       {/* Recent transactions */}
       <div className="card">
