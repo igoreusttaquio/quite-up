@@ -14,7 +14,7 @@ export default defineConfig({
         name: 'Quite-Up',
         short_name: 'Quite-Up',
         description: 'Controle suas finanças pessoais',
-        theme_color: '#863bff',
+        theme_color: '#61459C',
         background_color: '#09090b',
         display: 'standalone',
         start_url: '/',

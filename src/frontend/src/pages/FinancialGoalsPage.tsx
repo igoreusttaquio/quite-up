@@ -481,7 +481,7 @@ function GoalCard({
             className="h-full rounded-full transition-all"
             style={{
               width: `${Math.min(goal.progressPercent, 100)}%`,
-              backgroundColor: goal.isCompleted ? '#22c55e' : '#3b82f6',
+              backgroundColor: goal.isCompleted ? 'var(--income)' : 'var(--primary)',
             }}
           />
         </div>
