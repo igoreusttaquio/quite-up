@@ -144,9 +144,9 @@ export function ProfilePage() {
         {/* Avatar section */}
         <div className="card p-5 flex items-center gap-4 mb-5">
           <AvatarUser name={profile?.name || user?.name} size={52} />
-          <div>
-            <p className="text-base font-semibold">{profile?.name}</p>
-            <p className="text-sm text-muted-foreground">{profile?.email}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-semibold truncate">{profile?.name}</p>
+            <p className="text-sm text-muted-foreground truncate">{profile?.email}</p>
           </div>
         </div>
 

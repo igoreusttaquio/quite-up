@@ -65,9 +65,7 @@ export function DashboardLayout() {
             to="/dashboard"
             className="flex items-center gap-2.5 px-4 h-14 border-b border-border flex-shrink-0"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">Q</span>
-            </div>
+            <img src="/favicon.svg" alt="Quite-Up" className="w-8 h-8 flex-shrink-0" />
             <div>
               <span className="font-bold text-primary tracking-tight block leading-none">Quite-Up</span>
               <span className="text-[10px] text-muted-foreground leading-none mt-0.5 block">Finanças pessoais</span>
@@ -142,7 +140,8 @@ export function DashboardLayout() {
         <main className="flex-1 md:ml-60 flex flex-col min-h-screen">
           {/* Mobile header */}
           <header className="md:hidden flex items-center justify-between px-4 h-14 border-b border-border bg-card sticky top-0 z-10 flex-shrink-0">
-            <Link to="/dashboard" className="font-bold text-primary text-lg tracking-tight">
+            <Link to="/dashboard" className="flex items-center gap-2 font-bold text-primary text-lg tracking-tight">
+              <img src="/favicon.svg" alt="Quite-Up" className="h-7 w-7" />
               Quite-Up
             </Link>
             <div className="flex items-center gap-1">
@@ -214,7 +213,7 @@ export function DashboardLayout() {
           )}
 
           {/* Page content */}
-          <div className="flex-1 p-4 md:p-6 lg:p-8">
+          <div className="flex-1 p-4 pb-24 md:p-6 lg:p-8">
             <div className="max-w-[1400px] mx-auto">
               <ErrorBoundary>
                 <AnimatePresence mode="wait" initial={false}>

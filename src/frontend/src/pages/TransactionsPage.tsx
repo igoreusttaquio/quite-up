@@ -250,44 +250,46 @@ export function TransactionsPage() {
 
       {/* Filter bar */}
       <div className="mb-5 card px-4 py-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <Filter size={14} className="text-muted-foreground flex-shrink-0" />
-          <NativeSelect
-            className="w-auto min-w-[140px]"
-            value={filterAccountId}
-            onChange={(e) => updateFilter('account', e.target.value)}
-          >
-            <option value="">Todas as contas</option>
-            {activeAccounts.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </NativeSelect>
-          <NativeSelect
-            className="w-auto min-w-[130px]"
-            value={filterType}
-            onChange={(e) => updateFilter('type', e.target.value)}
-          >
-            <option value="">Todos os tipos</option>
-            {(Object.entries(transactionTypeLabels) as [TransactionType, string][]).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </NativeSelect>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2">
+          <div className="flex flex-col gap-2 sm:contents">
+            <Filter size={14} className="hidden text-muted-foreground flex-shrink-0 sm:block" />
+            <NativeSelect
+              className="w-full sm:w-auto sm:min-w-[140px]"
+              value={filterAccountId}
+              onChange={(e) => updateFilter('account', e.target.value)}
+            >
+              <option value="">Todas as contas</option>
+              {activeAccounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              className="w-full sm:w-auto sm:min-w-[130px]"
+              value={filterType}
+              onChange={(e) => updateFilter('type', e.target.value)}
+            >
+              <option value="">Todos os tipos</option>
+              {(Object.entries(transactionTypeLabels) as [TransactionType, string][]).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </NativeSelect>
+          </div>
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground">De</span>
             <DateInput
               value={filterStartDate}
               onChange={(e) => updateFilter('from', e.target.value)}
-              className="w-[130px]"
+              className="min-w-0 flex-1 sm:w-[130px] sm:flex-none"
             />
             <span className="text-xs text-muted-foreground">até</span>
             <DateInput
               value={filterEndDate}
               onChange={(e) => updateFilter('to', e.target.value)}
-              className="w-[130px]"
+              className="min-w-0 flex-1 sm:w-[130px] sm:flex-none"
             />
           </div>
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 px-2 ml-auto" icon={<X size={12} />}>
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 self-start px-2 sm:ml-auto sm:self-auto" icon={<X size={12} />}>
               Limpar
             </Button>
           )}
