@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { User, Mail, Lock, Trash2, Loader2 } from 'lucide-react'
+import { User, Mail, Lock, Trash2, Loader2, Camera } from 'lucide-react'
 import {
   useProfile,
   useUpdateProfile,
+  useUploadProfilePhoto,
+  useDeleteProfilePhoto,
   useChangePassword,
   useChangeEmail,
   useDeleteAccount,
@@ -14,7 +16,8 @@ import { PageHeader } from '../components/PageHeader'
 import { SkeletonCard } from '../components/Skeleton'
 import { useAppToast } from '../hooks/useAppToast'
 import { useAuthStore } from '../store/authStore'
-import { AvatarUser } from '../components/ui/avatar'
+import { UserAvatar } from '../components/UserAvatar'
+import { ProfilePhotoEditor } from '../components/ProfilePhotoEditor'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
@@ -59,6 +62,8 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
 export function ProfilePage() {
   const { data: profile, isLoading } = useProfile()
   const updateProfile = useUpdateProfile()
+  const uploadPhoto = useUploadProfilePhoto()
+  const deletePhoto = useDeleteProfilePhoto()
   const changePassword = useChangePassword()
   const changeEmail = useChangeEmail()
   const deleteAccount = useDeleteAccount()
@@ -67,6 +72,9 @@ export function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -124,6 +132,24 @@ export function ProfilePage() {
     }
   }
 
+  const handlePhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Formato inválido', 'Use uma imagem JPG, PNG ou WEBP.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem muito grande', 'O tamanho máximo é 5 MB.')
+      return
+    }
+
+    setPhotoFile(file)
+    setEditorOpen(true)
+  }
+
   if (isLoading) {
     return (
       <div className="w-full min-w-0">
@@ -143,10 +169,30 @@ export function ProfilePage() {
       <div className="w-full min-w-0 max-w-2xl">
         {/* Avatar section */}
         <div className="card w-full min-w-0 p-5 flex items-center gap-4 mb-5">
-          <AvatarUser name={profile?.name || user?.name} size={52} />
+          <button
+            type="button"
+            onClick={() => photoInputRef.current?.click()}
+            className="relative flex-shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label="Alterar foto de perfil"
+          >
+            <UserAvatar name={profile?.name || user?.name} size={52} />
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+              <Camera size={11} />
+            </span>
+          </button>
           <div className="min-w-0 flex-1">
             <p className="text-base font-semibold truncate">{profile?.name}</p>
             <p className="text-sm text-muted-foreground truncate">{profile?.email}</p>
+            {profile?.photoUpdatedAt && (
+              <button
+                type="button"
+                onClick={() => deletePhoto.mutate()}
+                disabled={deletePhoto.isPending}
+                className="mt-1 text-xs text-destructive hover:underline disabled:opacity-50"
+              >
+                {deletePhoto.isPending ? 'Removendo…' : 'Remover foto'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -310,6 +356,32 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handlePhotoSelected}
+      />
+
+      <ProfilePhotoEditor
+        open={editorOpen}
+        file={photoFile}
+        uploading={uploadPhoto.isPending}
+        onOpenChange={(open) => {
+          setEditorOpen(open)
+          if (!open) setPhotoFile(null)
+        }}
+        onConfirm={(cropped) => {
+          uploadPhoto.mutate(cropped, {
+            onSuccess: () => {
+              setEditorOpen(false)
+              setPhotoFile(null)
+            },
+          })
+        }}
+      />
 
       <DeleteAccountDialog
         open={deleteOpen}

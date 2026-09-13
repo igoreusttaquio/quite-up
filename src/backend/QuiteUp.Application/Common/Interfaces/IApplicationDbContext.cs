@@ -19,6 +19,7 @@ public interface IApplicationDbContext
     DbSet<GoalContribution> GoalContributions { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<Attachment> Attachments { get; }
+    DbSet<UserProfilePhoto> UserProfilePhotos { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

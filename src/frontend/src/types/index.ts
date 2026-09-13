@@ -116,6 +116,7 @@ export interface User {
   id: string
   name: string
   email: string
+  photoUpdatedAt?: string | null
 }
 
 export interface LoginRequest {

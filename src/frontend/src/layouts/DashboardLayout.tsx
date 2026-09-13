@@ -23,7 +23,7 @@ import { useAuthStore } from '../store/authStore'
 import { useLogout } from '../hooks/useAuth'
 import { useTheme } from '../context/ThemeContext'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { AvatarUser } from '../components/ui/avatar'
+import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/ui/button'
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip'
 import { cn } from '../lib/utils'
@@ -96,7 +96,7 @@ export function DashboardLayout() {
           {/* Sidebar footer */}
           <div className="p-3 border-t border-border space-y-1">
             <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg">
-              <AvatarUser name={user?.name} size={30} />
+              <UserAvatar name={user?.name} size={30} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate leading-none">{user?.name}</p>
                 <p className="text-xs text-subtle truncate mt-0.5">{user?.email}</p>
@@ -170,7 +170,7 @@ export function DashboardLayout() {
               {/* Menu panel */}
               <div className="relative w-full bg-card border-b border-border overflow-y-auto max-h-[calc(100vh-3.5rem-4rem)]">
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-                  <AvatarUser name={user?.name} size={36} />
+                  <UserAvatar name={user?.name} size={36} />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate">{user?.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>

@@ -54,16 +54,18 @@ function getInitials(name?: string | null): string {
 
 interface AvatarUserProps {
   name?: string | null
+  src?: string | null
   size?: number
   className?: string
 }
 
-function AvatarUser({ name, size = 32, className }: AvatarUserProps) {
+function AvatarUser({ name, src, size = 32, className }: AvatarUserProps) {
   return (
     <Avatar
       className={className}
       style={{ width: size, height: size, minWidth: size }}
     >
+      {src ? <AvatarImage src={src} alt={name ?? 'Avatar'} /> : null}
       <AvatarFallback style={{ fontSize: Math.max(10, Math.round(size * 0.38)) }}>
         {getInitials(name)}
       </AvatarFallback>

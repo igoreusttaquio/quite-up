@@ -19,11 +19,17 @@ public class GetProfileQueryHandler(
         if (user is null)
             return Result<ProfileDto>.Failure(Error.NotFound);
 
+        var photoUpdatedAt = await context.UserProfilePhotos
+            .Where(p => p.UserId == user.Id)
+            .Select(p => (DateTime?)(p.UpdatedAt ?? p.CreatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+
         return Result<ProfileDto>.Success(new ProfileDto(
             idEncoder.Encode(user.Id),
             user.Name,
             user.Email,
             user.PendingEmail,
-            user.CreatedAt));
+            user.CreatedAt,
+            photoUpdatedAt));
     }
 }

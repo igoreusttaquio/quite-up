@@ -22,11 +22,17 @@ public class UpdateProfileCommandHandler(
         user.Name = request.Name;
         await context.SaveChangesAsync(cancellationToken);
 
+        var photoUpdatedAt = await context.UserProfilePhotos
+            .Where(p => p.UserId == user.Id)
+            .Select(p => (DateTime?)(p.UpdatedAt ?? p.CreatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+
         return Result<ProfileDto>.Success(new ProfileDto(
             idEncoder.Encode(user.Id),
             user.Name,
             user.Email,
             user.PendingEmail,
-            user.CreatedAt));
+            user.CreatedAt,
+            photoUpdatedAt));
     }
 }

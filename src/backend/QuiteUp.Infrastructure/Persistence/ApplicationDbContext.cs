@@ -22,6 +22,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<GoalContribution> GoalContributions => Set<GoalContribution>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<UserProfilePhoto> UserProfilePhotos => Set<UserProfilePhoto>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
