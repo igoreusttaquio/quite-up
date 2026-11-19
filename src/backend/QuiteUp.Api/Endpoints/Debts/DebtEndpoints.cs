@@ -3,6 +3,8 @@ using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
 using QuiteUp.Application.Features.Debts.Commands.CreateDebt;
 using QuiteUp.Application.Features.Debts.Commands.DeleteDebt;
+using QuiteUp.Application.Features.Debts.Commands.DeleteDebtPayment;
+using QuiteUp.Application.Features.Debts.Commands.UpdateDebtPayment;
 using QuiteUp.Application.Features.Debts.Commands.RegisterDebtPayment;
 using QuiteUp.Application.Features.Debts.Commands.UpdateDebt;
 using QuiteUp.Application.Features.Debts.Queries.GetDebtById;
@@ -95,7 +97,48 @@ public class DebtEndpoints : IEndpoint
                 ? Results.Created($"/api/debts/{externalId}/payments/{result.Value!.Id}", result.Value)
                 : Results.BadRequest(result.Error);
         });
+
+        group.MapPut("/{externalId}/payments/{paymentExternalId}", async (
+            string externalId,
+            string paymentExternalId,
+            UpdatePaymentRequest req,
+            IMediator sender,
+            IIdEncoder encoder) =>
+        {
+            var id = encoder.Decode(externalId);
+            var paymentId = encoder.Decode(paymentExternalId);
+            if (id is null || paymentId is null) return Results.NotFound();
+
+            long? accountId = req.AccountId is not null ? encoder.Decode(req.AccountId) : null;
+
+            var result = await sender.Send(new UpdateDebtPaymentCommand(
+                id.Value, paymentId.Value, req.Amount, req.PaymentDate, req.IsEarlyPayment, req.Discount, req.Notes, accountId));
+
+            return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
+        });
+
+        group.MapDelete("/{externalId}/payments/{paymentExternalId}", async (
+            string externalId,
+            string paymentExternalId,
+            IMediator sender,
+            IIdEncoder encoder) =>
+        {
+            var id = encoder.Decode(externalId);
+            var paymentId = encoder.Decode(paymentExternalId);
+            if (id is null || paymentId is null) return Results.NotFound();
+
+            var result = await sender.Send(new DeleteDebtPaymentCommand(id.Value, paymentId.Value));
+            return result.IsSuccess ? Results.NoContent() : Results.NotFound(result.Error);
+        });
     }
+
+    private record UpdatePaymentRequest(
+        decimal Amount,
+        DateOnly PaymentDate,
+        bool IsEarlyPayment,
+        decimal Discount,
+        string? Notes,
+        string? AccountId = null);
 
     private record CreateDebtRequest(
         string Name,

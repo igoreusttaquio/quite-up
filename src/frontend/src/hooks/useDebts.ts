@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { debtsApi } from '../api/debts'
-import type { CreateDebtRequest, UpdateDebtRequest, RegisterDebtPaymentRequest } from '../types'
+import type { CreateDebtRequest, UpdateDebtRequest, RegisterDebtPaymentRequest, UpdateDebtPaymentRequest } from '../types'
 
 const DEBTS_KEY = ['debts'] as const
 
@@ -52,18 +52,38 @@ export function useDebtPayments(debtId: string) {
   })
 }
 
+function invalidatePaymentRelated(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: DEBTS_KEY })
+  queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  queryClient.invalidateQueries({ queryKey: ['accounts'] })
+  queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+  queryClient.invalidateQueries({ queryKey: ['reports'] })
+}
+
 export function useRegisterDebtPayment() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ debtId, data }: { debtId: string; data: RegisterDebtPaymentRequest }) =>
       debtsApi.registerPayment(debtId, data).then((r) => r.data),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: DEBTS_KEY })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-      return data
-    },
+    onSuccess: () => invalidatePaymentRelated(queryClient),
+  })
+}
+
+export function useUpdateDebtPayment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ debtId, paymentId, data }: { debtId: string; paymentId: string; data: UpdateDebtPaymentRequest }) =>
+      debtsApi.updatePayment(debtId, paymentId, data).then((r) => r.data),
+    onSuccess: () => invalidatePaymentRelated(queryClient),
+  })
+}
+
+export function useDeleteDebtPayment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ debtId, paymentId }: { debtId: string; paymentId: string }) =>
+      debtsApi.deletePayment(debtId, paymentId),
+    onSuccess: () => invalidatePaymentRelated(queryClient),
   })
 }
 

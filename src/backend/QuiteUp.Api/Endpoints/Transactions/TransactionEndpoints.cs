@@ -1,6 +1,7 @@
 using NetDevPack.SimpleMediator;
 using QuiteUp.Api.Common;
 using QuiteUp.Application.Common.Interfaces;
+using QuiteUp.Application.Common.Results;
 using QuiteUp.Application.Features.Attachments.Commands.DeleteAttachment;
 using QuiteUp.Application.Features.Attachments.Commands.UploadAttachment;
 using QuiteUp.Application.Features.Transactions.Commands.CreateTransaction;
@@ -68,11 +69,14 @@ public class TransactionEndpoints : IEndpoint
             if (id is null) return Results.NotFound();
 
             long? catId = req.CategoryId is not null ? encoder.Decode(req.CategoryId) : null;
+            long? accountId = req.AccountId is not null ? encoder.Decode(req.AccountId) : null;
+            long? destId = req.DestinationAccountId is not null ? encoder.Decode(req.DestinationAccountId) : null;
 
             var result = await sender.Send(new UpdateTransactionCommand(
-                id.Value, req.Amount, req.Date, catId, req.Description));
+                id.Value, req.Amount, req.Date, catId, req.Description, accountId, destId));
 
-            return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
+            if (result.IsSuccess) return Results.Ok(result.Value);
+            return result.Error == Error.NotFound ? Results.NotFound(result.Error) : Results.BadRequest(result.Error);
         });
 
         group.MapDelete("/{externalId}", async (string externalId, IMediator sender, IIdEncoder encoder) =>
@@ -134,5 +138,7 @@ public class TransactionEndpoints : IEndpoint
         decimal Amount,
         DateOnly Date,
         string? CategoryId,
-        string? Description);
+        string? Description,
+        string? AccountId = null,
+        string? DestinationAccountId = null);
 }

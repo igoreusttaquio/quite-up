@@ -1,15 +1,22 @@
-import { Link } from 'react-router-dom'
-import { Wallet, ArrowUp, ArrowDown, ArrowRightLeft, Building2, Tag, User } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Wallet, ArrowUp, ArrowDown, ArrowRightLeft, Building2, Tag, User, Filter, X } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
+import { useCategories } from '../hooks/useCategories'
 import { useAuthStore } from '../store/authStore'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { SkeletonCard } from '../components/Skeleton'
 import { TransactionTypeIcon } from '../components/TransactionTypeIcon'
 import { IncomeExpenseChart } from '../components/charts/IncomeExpenseChart'
-import { ExpensesByCategoryChart } from '../components/charts/ExpensesByCategoryChart'
-import type { TransactionType } from '../types'
+import { CategoryBreakdownChart } from '../components/charts/CategoryBreakdownChart'
+import { NativeSelect } from '../components/ui/native-select'
+import { DateInput } from '../components/ui/date-input'
+import { Button } from '../components/ui/button'
+import { cn, toDateParam } from '../lib/utils'
+import type { DashboardFilters, TransactionType } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
+const fullDateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
 
 const typeLabels: Record<TransactionType, string> = {
   Income: 'Receita',
@@ -17,17 +24,118 @@ const typeLabels: Record<TransactionType, string> = {
   Transfer: 'Transferência',
 }
 
+type PeriodPreset = 'this-month' | 'last-month' | 'last-3-months' | 'last-6-months' | 'this-year' | 'last-12-months' | 'custom'
+
+const periodLabels: Record<PeriodPreset, string> = {
+  'this-month': 'Este mês',
+  'last-month': 'Mês passado',
+  'last-3-months': 'Últimos 3 meses',
+  'last-6-months': 'Últimos 6 meses',
+  'this-year': 'Este ano',
+  'last-12-months': 'Últimos 12 meses',
+  custom: 'Personalizado',
+}
+
+const DEFAULT_PERIOD: PeriodPreset = 'this-month'
+
+function presetRange(preset: Exclude<PeriodPreset, 'custom'>): { start: Date; end: Date } {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth()
+  switch (preset) {
+    case 'this-month':
+      return { start: new Date(y, m, 1), end: new Date(y, m + 1, 0) }
+    case 'last-month':
+      return { start: new Date(y, m - 1, 1), end: new Date(y, m, 0) }
+    case 'last-3-months':
+      return { start: new Date(y, m - 2, 1), end: new Date(y, m + 1, 0) }
+    case 'last-6-months':
+      return { start: new Date(y, m - 5, 1), end: new Date(y, m + 1, 0) }
+    case 'this-year':
+      return { start: new Date(y, 0, 1), end: new Date(y, 11, 31) }
+    case 'last-12-months':
+      return { start: new Date(y, m - 11, 1), end: new Date(y, m + 1, 0) }
+  }
+}
+
+function describePeriod(preset: PeriodPreset, startDate: string, endDate: string) {
+  if (preset === 'this-month' || preset === 'last-month') {
+    return monthFormatter.format(new Date(startDate + 'T12:00:00'))
+  }
+  const start = fullDateFormatter.format(new Date(startDate + 'T12:00:00'))
+  const end = fullDateFormatter.format(new Date(endDate + 'T12:00:00'))
+  return `${start} – ${end}`
+}
+
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user)
-  const { data: dashboard, isLoading } = useDashboard()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { data: categories } = useCategories()
 
-  const now = new Date()
-  const monthName = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(now)
+  const rawPeriod = searchParams.get('period')
+  const period: PeriodPreset = rawPeriod && rawPeriod in periodLabels ? (rawPeriod as PeriodPreset) : DEFAULT_PERIOD
+  const filterType = (searchParams.get('type') as 'Income' | 'Expense' | null) ?? undefined
+  const filterCategoryId = searchParams.get('category') ?? undefined
+
+  let startDate: string
+  let endDate: string
+  if (period === 'custom') {
+    const fallback = presetRange('this-month')
+    startDate = searchParams.get('from') || toDateParam(fallback.start)
+    endDate = searchParams.get('to') || toDateParam(fallback.end)
+  } else {
+    const range = presetRange(period)
+    startDate = toDateParam(range.start)
+    endDate = toDateParam(range.end)
+  }
+
+  const filters: DashboardFilters = { startDate, endDate, type: filterType, categoryId: filterCategoryId }
+  const { data: dashboard, isLoading, isFetching } = useDashboard(filters)
+
+  const updateParams = (changes: Record<string, string | undefined>) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        for (const [key, value] of Object.entries(changes)) {
+          if (value) next.set(key, value)
+          else next.delete(key)
+        }
+        return next
+      },
+      { replace: true }
+    )
+  }
+
+  const handlePeriodChange = (value: PeriodPreset) => {
+    if (value === 'custom') {
+      updateParams({ period: 'custom', from: startDate, to: endDate })
+    } else {
+      updateParams({ period: value === DEFAULT_PERIOD ? undefined : value, from: undefined, to: undefined })
+    }
+  }
+
+  const handleTypeChange = (value: 'Income' | 'Expense' | undefined) => {
+    const category = categories?.find((c) => c.id === filterCategoryId)
+    const keepCategory = !value || !category || category.type === value
+    updateParams({ type: value, category: keepCategory ? filterCategoryId : undefined })
+  }
+
+  const hasActiveFilters = period !== DEFAULT_PERIOD || !!filterType || !!filterCategoryId
+  const clearFilters = () => setSearchParams({}, { replace: true })
+
+  const availableCategories = (categories ?? []).filter((c) => !filterType || c.type === filterType)
+  const selectedCategory = categories?.find((c) => c.id === filterCategoryId)
 
   const totalBalance = dashboard?.totalBalance ?? 0
-  const monthlyIncome = dashboard?.monthlyIncome ?? 0
-  const monthlyExpenses = dashboard?.monthlyExpenses ?? 0
+  const periodIncome = dashboard?.periodIncome ?? 0
+  const periodExpenses = dashboard?.periodExpenses ?? 0
   const recentTransactions = dashboard?.recentTransactions ?? []
+  const periodDescription = describePeriod(period, startDate, endDate)
+  const periodSuffix = period === 'this-month' ? 'do Mês' : 'no Período'
+
+  const showCategoryIncome = filterType === 'Income'
+  const categoryItems = showCategoryIncome ? dashboard?.incomeByCategory ?? [] : dashboard?.expensesByCategory ?? []
+  const filterKey = `${startDate}|${endDate}|${filterType ?? ''}|${filterCategoryId ?? ''}`
 
   return (
     <div className="space-y-6">
@@ -36,7 +144,88 @@ export function DashboardPage() {
         <h1 className="text-3xl font-semibold tracking-tight">
           Olá, {user?.name?.split(' ')[0]}
         </h1>
-        <p className="text-sm text-muted-foreground capitalize mt-0.5">{monthName}</p>
+        <p className="text-sm text-muted-foreground capitalize mt-0.5">{periodDescription}</p>
+      </div>
+
+      {/* Filters */}
+      <div className="card px-4 py-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2">
+          <Filter size={14} className="hidden text-muted-foreground flex-shrink-0 sm:block" />
+          <NativeSelect
+            aria-label="Período"
+            className="w-full sm:w-auto sm:min-w-[160px]"
+            value={period}
+            onChange={(e) => handlePeriodChange(e.target.value as PeriodPreset)}
+          >
+            {(Object.entries(periodLabels) as [PeriodPreset, string][]).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </NativeSelect>
+
+          {period === 'custom' && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">De</span>
+              <DateInput
+                value={startDate}
+                onChange={(e) => e.target.value && updateParams({ from: e.target.value })}
+                className="min-w-0 flex-1 sm:w-[130px] sm:flex-none"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <DateInput
+                value={endDate}
+                onChange={(e) => e.target.value && updateParams({ to: e.target.value })}
+                className="min-w-0 flex-1 sm:w-[130px] sm:flex-none"
+              />
+            </div>
+          )}
+
+          <div className="flex gap-1 rounded-lg bg-muted/50 p-1" role="group" aria-label="Tipo">
+            {([
+              [undefined, 'Todos'],
+              ['Income', 'Receitas'],
+              ['Expense', 'Despesas'],
+            ] as const).map(([value, label]) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => handleTypeChange(value)}
+                aria-pressed={filterType === value}
+                className={cn(
+                  'flex-1 rounded-md px-3 py-1 text-sm font-medium transition-colors cursor-pointer sm:flex-none',
+                  filterType === value
+                    ? 'bg-card shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <NativeSelect
+            aria-label="Categoria"
+            className="w-full sm:w-auto sm:min-w-[160px]"
+            value={filterCategoryId ?? ''}
+            onChange={(e) => updateParams({ category: e.target.value || undefined })}
+          >
+            <option value="">Todas as categorias</option>
+            {availableCategories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </NativeSelect>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-7 self-start px-2 sm:ml-auto sm:self-auto"
+              icon={<X size={12} />}
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -47,7 +236,7 @@ export function DashboardPage() {
           <SkeletonCard />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className={cn('grid grid-cols-1 md:grid-cols-3 gap-4 transition-opacity', isFetching && 'opacity-70')}>
           <StatCard
             label="Saldo Total"
             value={totalBalance}
@@ -56,15 +245,19 @@ export function DashboardPage() {
             iconColor="text-primary"
           />
           <StatCard
-            label="Receitas do Mês"
-            value={monthlyIncome}
+            label={`Receitas ${periodSuffix}`}
+            value={periodIncome}
+            hint={selectedCategory && filterType !== 'Expense' ? selectedCategory.name : undefined}
+            muted={filterType === 'Expense'}
             icon={<ArrowUp size={22} />}
             iconBg="bg-income-subtle"
             iconColor="text-income"
           />
           <StatCard
-            label="Despesas do Mês"
-            value={monthlyExpenses}
+            label={`Despesas ${periodSuffix}`}
+            value={periodExpenses}
+            hint={selectedCategory && filterType !== 'Income' ? selectedCategory.name : undefined}
+            muted={filterType === 'Income'}
             icon={<ArrowDown size={22} />}
             iconBg="bg-expense-subtle"
             iconColor="text-expense"
@@ -73,14 +266,43 @@ export function DashboardPage() {
       )}
 
       {/* Charts */}
-      <IncomeExpenseChart />
-      <ExpensesByCategoryChart />
+      <IncomeExpenseChart
+        series={dashboard?.series ?? []}
+        granularity={dashboard?.seriesGranularity ?? 'day'}
+        subtitle={selectedCategory ? `${periodDescription} · ${selectedCategory.name}` : periodDescription}
+        loading={isLoading}
+        type={filterType}
+      />
+      {!filterCategoryId && (
+        <CategoryBreakdownChart
+          key={filterKey}
+          title={showCategoryIncome ? 'Receitas por categoria' : 'Despesas por categoria'}
+          subtitle={periodDescription}
+          items={categoryItems}
+          loading={isLoading}
+          emptyMessage={showCategoryIncome ? 'Sem receitas neste período' : 'Sem despesas neste período'}
+          onSelectCategory={(id) => updateParams({ category: id })}
+        />
+      )}
 
       {/* Recent transactions */}
       <div className="card">
         <div className="flex items-center justify-between px-5 py-4 border-b border-subtle">
-          <span className="text-base font-semibold">Transações Recentes</span>
-          <Link to="/transactions" className="text-sm text-primary hover:underline font-medium transition-colors">
+          <span className="text-base font-semibold">
+            {hasActiveFilters ? 'Transações do Filtro' : 'Transações Recentes'}
+          </span>
+          <Link
+            to={{
+              pathname: '/transactions',
+              search: new URLSearchParams({
+                from: startDate,
+                to: endDate,
+                ...(filterType ? { type: filterType } : {}),
+                ...(filterCategoryId ? { category: filterCategoryId } : {}),
+              }).toString(),
+            }}
+            className="text-sm text-primary hover:underline font-medium transition-colors"
+          >
             Ver todas →
           </Link>
         </div>
@@ -103,7 +325,9 @@ export function DashboardPage() {
             <ArrowRightLeft size={44} className="text-muted-foreground opacity-40" />
             <div className="space-y-1">
               <p className="text-base font-semibold">Nenhuma transação</p>
-              <p className="text-sm text-muted-foreground">Registre sua primeira transação para começar</p>
+              <p className="text-sm text-muted-foreground">
+                {hasActiveFilters ? 'Nada encontrado para os filtros selecionados' : 'Registre sua primeira transação para começar'}
+              </p>
             </div>
             <Link to="/transactions" className="text-sm text-primary hover:underline font-medium">
               Registrar transação →
@@ -118,12 +342,18 @@ export function DashboardPage() {
                   <p className="text-sm font-semibold truncate">
                     {tx.description || typeLabels[tx.type]}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {tx.categoryName && `${tx.categoryName} · `}
+                  <p className="text-xs text-muted-foreground truncate">
+                    {tx.type === 'Transfer'
+                      ? `${tx.accountName} → ${tx.destinationAccountName ?? '—'} · `
+                      : tx.categoryName && `${tx.categoryName} · `}
                     {dateFormatter.format(new Date(tx.date + 'T12:00:00'))}
                   </p>
                 </div>
-                <CurrencyBadge value={tx.type === 'Expense' ? -tx.amount : tx.amount} />
+                {tx.type === 'Transfer' ? (
+                  <CurrencyBadge value={tx.amount} className="text-muted-foreground" />
+                ) : (
+                  <CurrencyBadge value={tx.type === 'Expense' ? -tx.amount : tx.amount} />
+                )}
               </li>
             ))}
           </ul>
@@ -146,24 +376,29 @@ export function DashboardPage() {
 function StatCard({
   label,
   value,
+  hint,
+  muted,
   icon,
   iconBg,
   iconColor,
 }: {
   label: string
   value: number
+  hint?: string
+  muted?: boolean
   icon: React.ReactNode
   iconBg: string
   iconColor: string
 }) {
   return (
-    <div className="card p-5">
+    <div className={cn('card p-5 transition-opacity', muted && 'opacity-50')}>
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{label}</p>
           <div className="mt-1.5">
             <CurrencyBadge value={value} size={600} />
           </div>
+          {hint && <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>}
         </div>
         <div className={`w-10 h-10 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center flex-shrink-0`}>
           {icon}

@@ -4,7 +4,9 @@ import { useForm, Controller, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Pencil, Trash2, DollarSign, Snowflake, CalendarDays, Paperclip } from 'lucide-react'
-import { useDebts, useCreateDebt, useUpdateDebt, useDeleteDebt, useDebtPayments, useRegisterDebtPayment, useSnowballStrategy } from '../hooks/useDebts'
+import { useDebts, useCreateDebt, useUpdateDebt, useDeleteDebt, useDebtPayments, useRegisterDebtPayment, useUpdateDebtPayment, useDeleteDebtPayment, useSnowballStrategy } from '../hooks/useDebts'
+import { useAppToast } from '../hooks/useAppToast'
+import { getApiErrorMessage, toDateParam } from '../lib/utils'
 import { useAccounts } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
@@ -65,6 +67,9 @@ export function DebtsPage() {
   const updateDebt = useUpdateDebt()
   const deleteDebt = useDeleteDebt()
   const registerPayment = useRegisterDebtPayment()
+  const updatePayment = useUpdateDebtPayment()
+  const deletePayment = useDeleteDebtPayment()
+  const toast = useAppToast()
   const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
   const { data: snowball, isLoading: snowballLoading } = useSnowballStrategy()
 
@@ -73,6 +78,8 @@ export function DebtsPage() {
   const [editTarget, setEditTarget] = useState<Debt | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Debt | null>(null)
   const [paymentDebtTarget, setPaymentDebtTarget] = useState<Debt | null>(null)
+  const [editingPayment, setEditingPayment] = useState<DebtPayment | null>(null)
+  const [deletePaymentTarget, setDeletePaymentTarget] = useState<DebtPayment | null>(null)
   const [paymentsDebtId, setPaymentsDebtId] = useState<string | null>(null)
   const [snowballOpen, setSnowballOpen] = useState(false)
   const [viewReceipt, setViewReceipt] = useState<{ attachmentId: string; fileName: string; contentType: string } | null>(null)
@@ -121,21 +128,60 @@ export function DebtsPage() {
     } catch { /* handled by query client */ }
   }
 
+  const closePaymentDialog = () => {
+    setPaymentDebtTarget(null)
+    setEditingPayment(null)
+    paymentForm.reset()
+  }
+
   const handlePayment = async (data: PaymentFormData) => {
     if (!paymentDebtTarget) return
+    const payload = {
+      ...data,
+      discount: data.isEarlyPayment ? data.discount ?? 0 : 0,
+      notes: data.notes || undefined,
+      accountId: data.accountId || undefined,
+    }
     try {
-      const result = await registerPayment.mutateAsync({
-        debtId: paymentDebtTarget.id,
-        data: { ...data, accountId: data.accountId || undefined },
-      })
+      const result = editingPayment
+        ? await updatePayment.mutateAsync({ debtId: paymentDebtTarget.id, paymentId: editingPayment.id, data: payload })
+        : await registerPayment.mutateAsync({ debtId: paymentDebtTarget.id, data: payload })
       const file = paymentFileInputRef.current?.files?.[0]
-      if (file && result.transactionId) {
+      if (file && result.transactionId && !result.attachmentId) {
         await uploadAttachment.mutateAsync({ transactionId: result.transactionId, file })
       }
-      setPaymentDebtTarget(null)
-      paymentForm.reset()
+      toast.success(editingPayment ? 'Pagamento atualizado!' : 'Pagamento registrado!')
+      closePaymentDialog()
       if (paymentFileInputRef.current) paymentFileInputRef.current.value = ''
-    } catch { /* handled by query client */ }
+    } catch (error) {
+      toast.error('Erro ao salvar pagamento', getApiErrorMessage(error))
+    }
+  }
+
+  const handleDeletePayment = async () => {
+    if (!deletePaymentTarget) return
+    try {
+      await deletePayment.mutateAsync({ debtId: deletePaymentTarget.debtId, paymentId: deletePaymentTarget.id })
+      setDeletePaymentTarget(null)
+      toast.success('Pagamento excluído!')
+    } catch (error) {
+      toast.error('Erro ao excluir pagamento', getApiErrorMessage(error))
+    }
+  }
+
+  const openEditPayment = (payment: DebtPayment) => {
+    const debt = debts?.find((d) => d.id === payment.debtId)
+    if (!debt) return
+    setEditingPayment(payment)
+    setPaymentDebtTarget(debt)
+    paymentForm.reset({
+      amount: payment.amount,
+      paymentDate: payment.paymentDate,
+      isEarlyPayment: payment.isEarlyPayment,
+      discount: payment.discount,
+      notes: payment.notes ?? '',
+      accountId: payment.accountId ?? '',
+    })
   }
 
   const openEdit = (debt: Debt) => {
@@ -155,10 +201,11 @@ export function DebtsPage() {
   }
 
   const openPaymentDialog = (debt: Debt) => {
+    setEditingPayment(null)
     setPaymentDebtTarget(debt)
     paymentForm.reset({
       amount: 0,
-      paymentDate: new Date().toISOString().split('T')[0],
+      paymentDate: toDateParam(new Date()),
       isEarlyPayment: false,
       discount: 0,
       notes: '',
@@ -294,10 +341,10 @@ export function DebtsPage() {
       />
 
       {/* Payment registration dialog */}
-      <Dialog open={!!paymentDebtTarget} onOpenChange={(open) => { if (!open) { setPaymentDebtTarget(null); paymentForm.reset() } }}>
+      <Dialog open={!!paymentDebtTarget} onOpenChange={(open) => { if (!open) closePaymentDialog() }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Registrar Pagamento</DialogTitle>
+            <DialogTitle>{editingPayment ? 'Editar Pagamento' : 'Registrar Pagamento'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {paymentDebtTarget && (
@@ -306,16 +353,23 @@ export function DebtsPage() {
                 <span className="font-semibold">{paymentDebtTarget.name}</span>
               </div>
             )}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
-              <input
-                ref={paymentFileInputRef}
-                type="file"
-                accept="image/*,.pdf"
-                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
-              />
-            </div>
-            {activeAccounts.length > 0 && (
+            {editingPayment && (
+              <p className="text-xs text-muted-foreground">
+                Alterar o valor atualiza o total pago da dívida e o lançamento na conta vinculada.
+              </p>
+            )}
+            {!editingPayment?.attachmentId && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
+                <input
+                  ref={paymentFileInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                />
+              </div>
+            )}
+            {(activeAccounts.length > 0 || !!editingPayment?.accountId) && (
               <Controller
                 name="accountId"
                 control={paymentForm.control}
@@ -326,6 +380,9 @@ export function DebtsPage() {
                       {activeAccounts.map((a) => (
                         <option key={a.id} value={a.id}>{a.name}</option>
                       ))}
+                      {editingPayment?.accountId && !activeAccounts.some((a) => a.id === editingPayment.accountId) && (
+                        <option value={editingPayment.accountId}>{editingPayment.accountName ?? 'Conta'} (inativa)</option>
+                      )}
                     </NativeSelect>
                   </Field>
                 )}
@@ -397,22 +454,25 @@ export function DebtsPage() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setPaymentDebtTarget(null); paymentForm.reset() }}>
+            <Button variant="outline" onClick={closePaymentDialog}>
               Cancelar
             </Button>
             <Button
               onClick={paymentForm.handleSubmit(handlePayment as () => Promise<void>)}
-              disabled={registerPayment.isPending}
-              icon={registerPayment.isPending ? <Spinner size="tiny" /> : undefined}
+              disabled={registerPayment.isPending || updatePayment.isPending}
+              icon={registerPayment.isPending || updatePayment.isPending ? <Spinner size="tiny" /> : undefined}
             >
-              {registerPayment.isPending ? 'Salvando…' : 'Registrar'}
+              {registerPayment.isPending || updatePayment.isPending ? 'Salvando…' : editingPayment ? 'Salvar' : 'Registrar'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Payments list dialog */}
-      <Dialog open={!!paymentsDebtId} onOpenChange={(open) => { if (!open) setPaymentsDebtId(null) }}>
+      <Dialog
+        open={!!paymentsDebtId && !paymentDebtTarget && !deletePaymentTarget && !viewReceipt}
+        onOpenChange={(open) => { if (!open) setPaymentsDebtId(null) }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Pagamentos</DialogTitle>
@@ -427,11 +487,19 @@ export function DebtsPage() {
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {paymentsData.map((payment: DebtPayment) => (
                 <div key={payment.id} className="border border-border rounded-lg p-3 space-y-1.5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <CurrencyBadge value={payment.amount} />
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(payment.paymentDate + 'T12:00:00').toLocaleDateString('pt-BR')}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground mr-1">
+                        {new Date(payment.paymentDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+                      </span>
+                      <Button variant="ghost" size="icon-sm" onClick={() => openEditPayment(payment)} title="Editar pagamento">
+                        <Pencil size={13} />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => setDeletePaymentTarget(payment)} title="Excluir pagamento">
+                        <Trash2 size={13} />
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {payment.isEarlyPayment && (
@@ -473,6 +541,21 @@ export function DebtsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deletePaymentTarget}
+        onOpenChange={(open) => { if (!open) setDeletePaymentTarget(null) }}
+        title="Excluir Pagamento"
+        message={
+          deletePaymentTarget?.accountName
+            ? `O valor volta para o saldo devedor da dívida e o lançamento na conta "${deletePaymentTarget.accountName}" será removido. Deseja continuar?`
+            : 'O valor volta para o saldo devedor da dívida. Deseja continuar?'
+        }
+        confirmText="Excluir"
+        destructive
+        onConfirm={handleDeletePayment}
+        loading={deletePayment.isPending}
+      />
 
       {/* Snowball strategy dialog */}
       {viewReceipt && (

@@ -9,5 +9,7 @@ public record UpdateTransactionCommand(
     decimal Amount,
     DateOnly Date,
     long? CategoryId,
-    string? Description
+    string? Description,
+    long? AccountId = null,
+    long? DestinationAccountId = null
 ) : IRequest<Result<TransactionDto>>;

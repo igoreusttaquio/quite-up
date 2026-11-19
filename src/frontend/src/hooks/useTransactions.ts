@@ -9,6 +9,8 @@ function invalidateRelated(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['accounts'] })
   queryClient.invalidateQueries({ queryKey: ['budgets'] })
   queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+  queryClient.invalidateQueries({ queryKey: ['reports'] })
+  queryClient.invalidateQueries({ queryKey: ['debts'] })
 }
 
 export function useTransactions(filters?: TransactionFilters) {

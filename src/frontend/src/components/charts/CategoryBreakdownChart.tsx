@@ -1,43 +1,49 @@
 import { useMemo, useState } from 'react'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { cn } from '../../lib/utils'
-import { usePeriodReport } from '../../hooks/useReports'
+import type { DashboardCategoryItem } from '../../types'
 import { ChartCard } from './ChartCard'
 import { CurrencyTooltip } from './ChartTooltip'
 import { CATEGORY_COLORS } from './chartTheme'
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-const monthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
 const MAX_SLICES = 6
 
 interface Slice {
+  categoryId?: string | null
   name: string
   value: number
   percentage: number
   color: string
 }
 
-function toDateParam(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+interface CategoryBreakdownChartProps {
+  title: string
+  subtitle?: string
+  items: DashboardCategoryItem[]
+  loading?: boolean
+  emptyMessage?: string
+  /** Chamado ao clicar numa categoria (não é chamado para "Outros"/"Sem categoria"). */
+  onSelectCategory?: (categoryId: string) => void
 }
 
-export function ExpensesByCategoryChart() {
-  const now = new Date()
-  const startDate = toDateParam(new Date(now.getFullYear(), now.getMonth(), 1))
-  const endDate = toDateParam(new Date(now.getFullYear(), now.getMonth() + 1, 0))
-
-  const { data, isLoading } = usePeriodReport(startDate, endDate, true)
+export function CategoryBreakdownChart({
+  title,
+  subtitle,
+  items: rawItems,
+  loading,
+  emptyMessage = 'Sem dados neste período',
+  onSelectCategory,
+}: CategoryBreakdownChartProps) {
   const [active, setActive] = useState<number | null>(null)
 
   const slices = useMemo<Slice[]>(() => {
-    const items = [...(data?.expensesByCategory ?? [])].sort((a, b) => b.totalAmount - a.totalAmount)
+    const items = [...rawItems].sort((a, b) => b.totalAmount - a.totalAmount)
     const total = items.reduce((sum, item) => sum + item.totalAmount, 0)
     if (total <= 0) return []
 
     const result: Slice[] = items.slice(0, MAX_SLICES).map((item, index) => ({
+      categoryId: item.categoryId,
       name: item.categoryName,
       value: item.totalAmount,
       percentage: (item.totalAmount / total) * 100,
@@ -56,7 +62,7 @@ export function ExpensesByCategoryChart() {
     }
 
     return result
-  }, [data])
+  }, [rawItems])
 
   const total = slices.reduce((sum, slice) => sum + slice.value, 0)
   const selected = active !== null ? slices[active] : null
@@ -64,11 +70,22 @@ export function ExpensesByCategoryChart() {
 
   return (
     <ChartCard
-      title="Despesas por categoria"
-      subtitle={monthLabel.format(now)}
-      loading={isLoading}
+      title={title}
+      subtitle={subtitle}
+      loading={loading}
       empty={slices.length === 0}
-      emptyMessage="Sem despesas neste mês"
+      emptyMessage={emptyMessage}
+      action={
+        selected?.categoryId && onSelectCategory ? (
+          <button
+            type="button"
+            onClick={() => onSelectCategory(selected.categoryId!)}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Filtrar por {selected.name}
+          </button>
+        ) : undefined
+      }
       height={320}
     >
       <div className="flex h-full flex-col items-center gap-3 sm:flex-row sm:gap-6">
@@ -86,7 +103,7 @@ export function ExpensesByCategoryChart() {
               >
                 {slices.map((slice, index) => (
                   <Cell
-                    key={slice.name}
+                    key={`${slice.categoryId ?? 'none'}-${slice.name}`}
                     fill={slice.color}
                     fillOpacity={active === null || active === index ? 1 : 0.25}
                     className="cursor-pointer outline-none"
@@ -116,7 +133,7 @@ export function ExpensesByCategoryChart() {
 
         <ul className="grid w-full min-w-0 grid-cols-2 gap-x-3 gap-y-0.5 sm:flex sm:flex-col sm:gap-1">
           {slices.map((slice, index) => (
-            <li key={slice.name} className="min-w-0">
+            <li key={`${slice.categoryId ?? 'none'}-${slice.name}`} className="min-w-0">
               <button
                 type="button"
                 onClick={() => toggle(index)}

@@ -85,6 +85,8 @@ export interface UpdateTransactionRequest {
   date: string
   categoryId?: string
   description?: string
+  accountId?: string
+  destinationAccountId?: string
 }
 
 export interface Attachment {
@@ -108,6 +110,7 @@ export interface TransactionFilters {
   pageSize?: number
   accountId?: string
   type?: TransactionType
+  categoryId?: string
   startDate?: string
   endDate?: string
 }
@@ -244,6 +247,8 @@ export interface RegisterDebtPaymentRequest {
   accountId?: string
 }
 
+export type UpdateDebtPaymentRequest = RegisterDebtPaymentRequest
+
 export interface SnowballStrategyItem {
   debtId: string
   name: string
@@ -343,10 +348,39 @@ export interface Notification {
 
 // === Dashboard ===
 
+export interface DashboardFilters {
+  startDate: string
+  endDate: string
+  type?: 'Income' | 'Expense'
+  categoryId?: string
+}
+
+export interface DashboardSeriesPoint {
+  date: string
+  income: number
+  expenses: number
+  net: number
+}
+
+export interface DashboardCategoryItem {
+  categoryId?: string | null
+  categoryName: string
+  color?: string | null
+  totalAmount: number
+  transactionCount: number
+  percentage: number
+}
+
 export interface DashboardSummary {
+  startDate: string
+  endDate: string
   totalBalance: number
-  monthlyIncome: number
-  monthlyExpenses: number
+  periodIncome: number
+  periodExpenses: number
+  seriesGranularity: 'day' | 'month'
+  series: DashboardSeriesPoint[]
+  expensesByCategory: DashboardCategoryItem[]
+  incomeByCategory: DashboardCategoryItem[]
   recentTransactions: Transaction[]
 }
 

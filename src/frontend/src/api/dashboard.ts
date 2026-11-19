@@ -1,6 +1,14 @@
 import { api } from '../lib/axios'
-import type { DashboardSummary } from '../types'
+import type { DashboardFilters, DashboardSummary } from '../types'
 
 export const dashboardApi = {
-  get: () => api.get<DashboardSummary>('/dashboard/'),
+  get: (filters: DashboardFilters) =>
+    api.get<DashboardSummary>('/dashboard/', {
+      params: {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        type: filters.type || undefined,
+        categoryId: filters.categoryId || undefined,
+      },
+    }),
 }

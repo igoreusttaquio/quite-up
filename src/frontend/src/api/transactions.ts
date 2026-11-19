@@ -27,6 +27,8 @@ export const transactionsApi = {
       date: data.date,
       categoryId: data.categoryId ?? null,
       description: data.description ?? null,
+      accountId: data.accountId ?? null,
+      destinationAccountId: data.destinationAccountId ?? null,
     }),
   delete: (id: string) => api.delete<void>(`/transactions/${id}`),
 }

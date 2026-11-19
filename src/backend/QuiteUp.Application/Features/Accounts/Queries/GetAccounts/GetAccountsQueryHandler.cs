@@ -15,11 +15,13 @@ public class GetAccountsQueryHandler(
     public async Task<Result<IReadOnlyList<AccountDto>>> Handle(GetAccountsQuery request, CancellationToken cancellationToken)
     {
         var userId = currentUser.UserId!.Value;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
+        // Saldo atual: transações com data futura (agendadas) ainda não contam.
         var accounts = await context.Accounts
             .Where(a => a.UserId == userId && (request.IncludeInactive || a.IsActive))
-            .Include(a => a.Transactions)
-            .Include(a => a.IncomingTransfers)
+            .Include(a => a.Transactions.Where(t => t.Date <= today))
+            .Include(a => a.IncomingTransfers.Where(t => t.Date <= today))
             .OrderBy(a => a.Name)
             .ToListAsync(cancellationToken);
 
