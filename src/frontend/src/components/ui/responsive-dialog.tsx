@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Drawer } from 'vaul'
 import { X } from 'lucide-react'
@@ -71,6 +71,18 @@ export function ResponsiveDialog({
   const [discardOpen, setDiscardOpen] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
+  // Mantém montado só enquanto aberto e durante a animação de saída; depois desmonta,
+  // para nenhum sheet/modal fechado ficar invisível no DOM (cobrindo a tela).
+  const [mounted, setMounted] = useState(open)
+  useEffect(() => {
+    if (open) {
+      setMounted(true)
+      return
+    }
+    const t = window.setTimeout(() => setMounted(false), 600)
+    return () => window.clearTimeout(t)
+  }, [open])
+
   const requestClose = useCallback(
     (fromBack: boolean) => {
       if (confirmOnClose) {
@@ -86,6 +98,19 @@ export function ResponsiveDialog({
   )
 
   const historyId = useDialogHistory(open, () => requestClose(true))
+
+  // Rede de segurança: ao fechar o último diálogo, garante que o body voltou a aceitar
+  // cliques/scroll (Radix/vaul às vezes deixam pointer-events/overflow presos quando um
+  // diálogo é aberto a partir de outro elemento modal, como um menu).
+  useEffect(() => {
+    if (open) return
+    const timer = window.setTimeout(() => {
+      if (document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]')) return
+      const body = document.body
+      if (body.style.pointerEvents === 'none') body.style.pointerEvents = ''
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [open])
 
   const handleOpenChange = (next: boolean) => {
     if (next) onOpenChange(true)
@@ -163,6 +188,8 @@ export function ResponsiveDialog({
       }}
     />
   ) : null
+
+  if (!open && !mounted) return discard
 
   if (isDesktop) {
     return (

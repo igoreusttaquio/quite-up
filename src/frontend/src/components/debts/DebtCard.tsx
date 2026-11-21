@@ -57,7 +57,9 @@ export function DebtCard({
           </p>
           <p className="text-sm text-muted-foreground">{debtTypeLabels[debt.type]}</p>
         </div>
-        <DropdownMenu>
+        {/* modal={false}: o menu abre diálogos (Editar, Parcelas); se fosse modal, o
+            pointer-events:none que ele põe no body podia ficar preso após fechar o diálogo. */}
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild onClick={stop}>
             <Button variant="ghost" size="icon-sm" aria-label={`Ações de ${debt.name}`} className="-mr-1.5 -mt-1">
               <EllipsisVertical size={16} />

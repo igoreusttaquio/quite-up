@@ -134,6 +134,18 @@
 .radix-dialog-content[data-state="open"]   { animation: dialog-show 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .radix-dialog-content[data-state="closed"] { animation: dialog-hide 0.15s ease-in; }
 
+/*
+ * Diálogos/sheets fechando (ou que a biblioteca não desmontou) nunca podem capturar cliques:
+ * o vaul deixava overlay e conteúdo invisíveis com data-state=closed cobrindo a tela,
+ * travando o app depois de fechar qualquer bottom sheet.
+ */
+[data-vaul-overlay][data-state='closed'],
+[data-vaul-drawer][data-state='closed'],
+.radix-dialog-overlay[data-state='closed'],
+.radix-dialog-content[data-state='closed'] {
+  pointer-events: none !important;
+}
+
 /* Sem animações para quem pede menos movimento (inclui o slide do bottom sheet do vaul). */
 @media (prefers-reduced-motion: reduce) {
   .radix-dialog-overlay,
