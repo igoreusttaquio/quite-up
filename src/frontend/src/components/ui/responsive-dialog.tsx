@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { repushDialogEntry, useDialogHistory } from '../../hooks/useDialogHistory'
+import { releaseStuckScrollLock } from '../../lib/scroll-lock'
 import { Button } from './button'
 
 /*
@@ -99,16 +100,11 @@ export function ResponsiveDialog({
 
   const historyId = useDialogHistory(open, () => requestClose(true))
 
-  // Rede de segurança: ao fechar o último diálogo, garante que o body voltou a aceitar
-  // cliques/scroll (Radix/vaul às vezes deixam pointer-events/overflow presos quando um
-  // diálogo é aberto a partir de outro elemento modal, como um menu).
+  // Rede de segurança: ao fechar o último diálogo, garante que a página voltou a aceitar
+  // cliques e rolagem (Radix/vaul às vezes deixam pointer-events/overflow/position presos).
   useEffect(() => {
     if (open) return
-    const timer = window.setTimeout(() => {
-      if (document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]')) return
-      const body = document.body
-      if (body.style.pointerEvents === 'none') body.style.pointerEvents = ''
-    }, 400)
+    const timer = window.setTimeout(releaseStuckScrollLock, 700)
     return () => window.clearTimeout(timer)
   }, [open])
 
@@ -221,7 +217,9 @@ export function ResponsiveDialog({
 
   return (
     <>
-      <Drawer.Root open={open} onOpenChange={handleOpenChange} repositionInputs>
+      {/* noBodyStyles: no Safari o vaul fixa o body (position:fixed !important) e, se o sheet
+          for desmontado antes de fechar, a página para de rolar. A trava de rolagem já vem do Radix. */}
+      <Drawer.Root open={open} onOpenChange={handleOpenChange} repositionInputs noBodyStyles>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-50 bg-black/50" />
           <Drawer.Content

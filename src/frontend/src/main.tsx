@@ -9,6 +9,9 @@ import { invalidateTransactionData, queryClient } from './lib/queryClient'
 import { clearPersistedCache, idbPersister } from './lib/offline'
 import { useAuthStore } from './store/authStore'
 import { router } from './router'
+import { installScrollLockWatchdog } from './lib/scroll-lock'
+
+installScrollLockWatchdog()
 import './styles/index.css'
 
 const WEEK = 7 * 24 * 60 * 60 * 1000

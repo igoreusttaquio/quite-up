@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { releaseStuckScrollLock } from '../lib/scroll-lock'
 import {
   LayoutDashboard,
   Wallet,
@@ -61,6 +63,14 @@ function DashboardShell() {
   const { sidebarCollapsed: collapsed } = usePreferences()
   const location = useLocation()
 
+  // Ao trocar de tela: volta ao topo e, se nenhum diálogo estiver aberto, solta qualquer
+  // trava de rolagem/toque que um sheet/modal tenha deixado para trás.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    const timer = window.setTimeout(releaseStuckScrollLock, 700)
+    return () => window.clearTimeout(timer)
+  }, [location.pathname])
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex min-h-dvh w-full bg-background">
@@ -85,17 +95,19 @@ function DashboardShell() {
           >
             <div className="mx-auto w-full min-w-0 max-w-[2200px]">
               <ErrorBoundary>
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={location.pathname}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
-                  >
-                    <Outlet />
-                  </motion.div>
-                </AnimatePresence>
+                {/*
+                  Transição só de entrada. Antes era AnimatePresence mode="wait": ao navegar no
+                  meio de outra transição a página nova podia ficar presa invisível (opacity 0),
+                  e o <Outlet/> da página que saía já renderizava a rota nova (montagem dupla).
+                */}
+                <motion.div
+                  key={location.pathname}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                >
+                  <Outlet />
+                </motion.div>
               </ErrorBoundary>
             </div>
           </div>
