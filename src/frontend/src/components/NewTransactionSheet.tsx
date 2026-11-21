@@ -36,6 +36,9 @@ const createSchema = z
 
 type CreateFormData = z.infer<typeof createSchema>
 
+/** Valores iniciais (ex.: duplicar uma transação). A data é sempre a de hoje. */
+export type NewTransactionPrefill = Partial<Omit<CreateFormData, 'date'>>
+
 const emptyForm = (): CreateFormData => ({
   accountId: '',
   categoryId: '',
@@ -55,7 +58,15 @@ function getFieldError(errors: Record<string, any>, field: string): string | und
 }
 
 /** Formulário de nova transação, aberto de qualquer tela (barra inferior, página de transações...). */
-export function NewTransactionSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function NewTransactionSheet({
+  open,
+  onOpenChange,
+  prefill,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  prefill?: NewTransactionPrefill
+}) {
   const toast = useAppToast()
   const navigate = useNavigate()
   const { data: accounts } = useAccounts()
@@ -73,10 +84,10 @@ export function NewTransactionSheet({ open, onOpenChange }: { open: boolean; onO
   // Formulário limpo (e com a data de hoje) toda vez que abre.
   useEffect(() => {
     if (open) {
-      form.reset(emptyForm())
+      form.reset({ ...emptyForm(), ...prefill, date: todayParam() })
       if (fileRef.current) fileRef.current.value = ''
     }
-  }, [open, form])
+  }, [open, form, prefill])
 
   const watchType = form.watch('type')
 
@@ -124,7 +135,7 @@ export function NewTransactionSheet({ open, onOpenChange }: { open: boolean; onO
   return (
     <TransactionFormSheet
       open={open}
-      title="Nova Transação"
+      title={prefill ? 'Duplicar transação' : 'Nova Transação'}
       form={form}
       accounts={accounts?.filter((a) => a.isActive) ?? []}
       categories={(categories ?? []).filter((c) => c.type === watchType)}

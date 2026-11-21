@@ -81,7 +81,7 @@ function NewTransactionNavButton() {
     <div className="flex flex-1 items-center justify-center">
       <button
         type="button"
-        onClick={open}
+        onClick={() => open()}
         aria-label="Nova transação"
         title="Nova transação"
         className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

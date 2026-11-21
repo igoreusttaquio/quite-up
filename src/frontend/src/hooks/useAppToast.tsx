@@ -10,8 +10,8 @@ export interface ToastAction {
  */
 export function useAppToast() {
   return {
-    success: (title: string, description?: string, action?: ToastAction) =>
-      toast.success(title, { description, action, duration: action ? 4000 : 2500 }),
+    success: (title: string, description?: string, action?: ToastAction, duration?: number) =>
+      toast.success(title, { description, action, duration: duration ?? (action ? 4000 : 2500) }),
     error: (title: string, description?: string) =>
       toast.error(title, { description, duration: 6000, closeButton: true }),
     info: (title: string, description?: string, action?: ToastAction) =>

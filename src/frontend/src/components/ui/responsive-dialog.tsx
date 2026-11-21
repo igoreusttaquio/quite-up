@@ -33,6 +33,11 @@ export interface ResponsiveDialogProps {
   description?: ReactNode
   /** Esconde título/descrição visualmente, mantendo-os para leitores de tela. */
   hideHeader?: boolean
+  /**
+   * Esconde só o título/descrição (continuam para leitores de tela); a linha do cabeçalho
+   * com `headerAside` e o X permanece. Útil quando o corpo tem seu próprio destaque.
+   */
+  hideTitle?: boolean
   /** Conteúdo extra na linha do título (ex.: badge), à esquerda do X. */
   headerAside?: ReactNode
   size?: ResponsiveDialogSize
@@ -53,6 +58,7 @@ export function ResponsiveDialog({
   title,
   description,
   hideHeader,
+  hideTitle,
   headerAside,
   size = 'md',
   footer,
@@ -100,7 +106,7 @@ export function ResponsiveDialog({
         'px-4 pt-4 pb-3 sm:px-5 md:px-6 md:pt-6 md:pb-4'
       )}
     >
-      <div className="min-w-0 flex-1">
+      <div className={cn('min-w-0 flex-1', hideTitle && 'sr-only')}>
         <TitleTag isDesktop={isDesktop} className="text-lg font-semibold leading-tight text-foreground">
           {title}
         </TitleTag>
@@ -110,7 +116,9 @@ export function ResponsiveDialog({
           </DescriptionTag>
         )}
       </div>
-      {headerAside && <div className="flex flex-shrink-0 items-center gap-2">{headerAside}</div>}
+      {headerAside && (
+        <div className={cn('flex flex-shrink-0 items-center gap-2', hideTitle && 'mr-auto')}>{headerAside}</div>
+      )}
       {!hideClose && (
         <CloseTag isDesktop={isDesktop} />
       )}

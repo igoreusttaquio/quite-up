@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAppToast } from './useAppToast'
 import { transactionsApi } from '../api/transactions'
-import type { CreateTransactionRequest, UpdateTransactionRequest, TransactionFilters } from '../types'
+import type { CreateTransactionRequest, UpdateTransactionRequest, TransactionFilters, TransactionPage } from '../types'
 
 const TRANSACTIONS_KEY = ['transactions'] as const
 
@@ -44,4 +46,58 @@ export function useDeleteTransaction() {
     mutationFn: (id: string) => transactionsApi.delete(id),
     onSuccess: () => invalidateRelated(queryClient),
   })
+}
+
+const UNDO_WINDOW_MS = 5000
+
+/**
+ * Exclusão com "Desfazer": some da lista na hora (otimista) e só é enviada ao servidor
+ * depois de 5s. "Desfazer" cancela. Exclusões pendentes são enviadas se a tela desmontar.
+ */
+export function useUndoableDeleteTransaction() {
+  const queryClient = useQueryClient()
+  const deleteTransaction = useDeleteTransaction()
+  const toast = useAppToast()
+  const pending = useRef(new Map<string, number>())
+  const mutateRef = useRef(deleteTransaction.mutate)
+  mutateRef.current = deleteTransaction.mutate
+
+  useEffect(() => {
+    const timers = pending.current
+    return () => {
+      timers.forEach((timer, id) => {
+        window.clearTimeout(timer)
+        mutateRef.current(id)
+      })
+      timers.clear()
+    }
+  }, [])
+
+  return (id: string, description: string) => {
+    queryClient.setQueriesData<TransactionPage>({ queryKey: TRANSACTIONS_KEY }, (old) =>
+      old && 'items' in old
+        ? { ...old, items: old.items.filter((t) => t.id !== id), totalCount: Math.max(0, old.totalCount - 1) }
+        : old
+    )
+
+    const timer = window.setTimeout(() => {
+      pending.current.delete(id)
+      mutateRef.current(id)
+    }, UNDO_WINDOW_MS)
+    pending.current.set(id, timer)
+
+    toast.success(
+      'Transação excluída',
+      description,
+      {
+        label: 'Desfazer',
+        onClick: () => {
+          window.clearTimeout(timer)
+          pending.current.delete(id)
+          queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY })
+        },
+      },
+      UNDO_WINDOW_MS
+    )
+  }
 }

@@ -15,16 +15,15 @@ import {
   Loader2,
   Paperclip,
   Upload,
-  Repeat,
+  Copy,
   ArrowUp,
   ArrowDown,
   Scale,
 } from 'lucide-react'
 import {
   useTransactions,
-  useCreateTransaction,
   useUpdateTransaction,
-  useDeleteTransaction,
+  useUndoableDeleteTransaction,
 } from '../hooks/useTransactions'
 import { useUploadAttachment, useDeleteAttachment } from '../hooks/useAttachment'
 import { useAppToast } from '../hooks/useAppToast'
@@ -45,11 +44,10 @@ import { NativeSelect } from '../components/ui/native-select'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { Spinner } from '../components/ui/spinner'
 import { getApiErrorMessage, toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
-import { describeAmount, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
+import { describeAmount, formatBRL, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
+import { TransactionDetailDialog } from '../components/transactions/TransactionDetailDialog'
 import { useNewTransaction } from '../context/NewTransactionContext'
 import type { TransactionType, Transaction, TransactionTotals, Account, Category } from '../types'
-
-const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 const updateSchema = z
   .object({
@@ -63,13 +61,7 @@ const updateSchema = z
   })
   .superRefine(transferRefinement)
 
-const repeatSchema = z.object({
-  amount: z.number().positive('Valor deve ser positivo'),
-  date: z.string().min(1, 'Data é obrigatória'),
-})
-
 type UpdateFormData = z.infer<typeof updateSchema>
-type RepeatFormData = z.infer<typeof repeatSchema>
 
 /** Valor com sinal do ponto de vista da conta filtrada (transferência sai de uma e entra na outra). */
 function signedAmount(tx: Transaction, accountId?: string): number {
@@ -139,14 +131,12 @@ export function TransactionsPage() {
 
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
-  const createTransaction = useCreateTransaction()
   const updateTransaction = useUpdateTransaction()
-  const deleteTransaction = useDeleteTransaction()
+  const deleteWithUndoRaw = useUndoableDeleteTransaction()
 
   const [detailTarget, setDetailTarget] = useState<Transaction | null>(null)
   const [editTarget, setEditTarget] = useState<Transaction | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
-  const [repeatTarget, setRepeatTarget] = useState<Transaction | null>(null)
   const [viewReceipt, setViewReceipt] = useState<{ transactionId: string; attachmentId: string; fileName: string; contentType: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
@@ -165,11 +155,6 @@ export function TransactionsPage() {
       categoryId: '',
       description: '',
     },
-  })
-
-  const repeatForm = useForm<RepeatFormData>({
-    resolver: zodResolver(repeatSchema),
-    defaultValues: { amount: 0, date: todayParam() },
   })
 
   const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
@@ -200,37 +185,24 @@ export function TransactionsPage() {
     }
   }
 
-  const handleRepeat = async (data: RepeatFormData) => {
-    if (!repeatTarget) return
-    try {
-      await createTransaction.mutateAsync({
-        type: repeatTarget.type,
-        amount: data.amount,
-        date: data.date,
-        accountId: repeatTarget.accountId,
-        categoryId: repeatTarget.type !== 'Transfer' ? repeatTarget.categoryId || undefined : undefined,
-        destinationAccountId: repeatTarget.type === 'Transfer' ? repeatTarget.destinationAccountId || undefined : undefined,
-        description: repeatTarget.description || undefined,
-        debtId: repeatTarget.type === 'Expense' ? repeatTarget.debtId || undefined : undefined,
-      })
-      setRepeatTarget(null)
-      toast.success(
-        describeAmount(repeatTarget.type, data.amount) + ' repetida',
-        'Lançada em ' + dateFormatter.format(new Date(data.date + 'T12:00:00'))
-      )
-    } catch (error) {
-      toast.error('Erro ao repetir transação', getApiErrorMessage(error))
-    }
+  const deleteWithUndo = (transaction: Transaction) => {
+    setDetailTarget(null)
+    setDeleteTarget(null)
+    deleteWithUndoRaw(transaction.id, describeAmount(transaction.type, transaction.amount))
   }
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return
-    try {
-      await deleteTransaction.mutateAsync(deleteTarget.id)
-      setDeleteTarget(null)
-    } catch (error) {
-      toast.error('Erro ao excluir transação', getApiErrorMessage(error))
-    }
+  const duplicate = (transaction: Transaction) => {
+    setDetailTarget(null)
+    const isTransfer = transaction.type === 'Transfer'
+    openNewTransaction({
+      type: transaction.type,
+      amount: transaction.amount,
+      accountId: transaction.accountId,
+      categoryId: !isTransfer ? transaction.categoryId ?? '' : '',
+      destinationAccountId: isTransfer ? transaction.destinationAccountId ?? '' : '',
+      description: transaction.description ?? '',
+      debtId: transaction.type === 'Expense' ? transaction.debtId ?? '' : '',
+    })
   }
 
   const handleUploadAttachment = async (transactionId: string, file: File) => {
@@ -260,18 +232,13 @@ export function TransactionsPage() {
     })
   }
 
-  const openRepeat = (transaction: Transaction) => {
-    setDetailTarget(null)
-    setRepeatTarget(transaction)
-    repeatForm.reset({ amount: transaction.amount, date: todayParam() })
-  }
-
   const openDelete = (transaction: Transaction) => {
     setDetailTarget(null)
     setDeleteTarget(transaction)
   }
 
   const categoriesById = new Map((categories ?? []).map((c) => [c.id, c]))
+  const detailTx = detailTarget ? result?.items.find((t) => t.id === detailTarget.id) ?? detailTarget : null
 
   const editAccounts = withCurrentAccount(activeAccounts, editTarget?.accountId, editTarget?.accountName)
   const editDestinationAccounts = withCurrentAccount(
@@ -286,7 +253,7 @@ export function TransactionsPage() {
       <PageHeader
         title="Transações"
         action={
-          <Button onClick={openNewTransaction} icon={<Plus size={16} />} >
+          <Button onClick={() => openNewTransaction()} icon={<Plus size={16} />} >
             Nova Transação
           </Button>
         }
@@ -387,7 +354,7 @@ export function TransactionsPage() {
           description={hasActiveFilters ? 'Tente ajustar os filtros.' : 'Registre sua primeira transação.'}
           action={
             !hasActiveFilters ? (
-              <Button onClick={openNewTransaction} icon={<Plus size={16} />}>Nova Transação</Button>
+              <Button onClick={() => openNewTransaction()} icon={<Plus size={16} />}>Nova Transação</Button>
             ) : (
               <Button variant="outline" onClick={clearFilters}>Limpar filtros</Button>
             )
@@ -403,7 +370,7 @@ export function TransactionsPage() {
           totalPages={totalPages}
           onOpen={setDetailTarget}
           onEdit={openEdit}
-          onRepeat={openRepeat}
+          onDuplicate={duplicate}
           onDelete={openDelete}
           onPageChange={setPage}
           onViewReceipt={(t) => t.attachmentId && t.attachmentFileName && t.attachmentContentType && setViewReceipt({
@@ -421,189 +388,29 @@ export function TransactionsPage() {
         />
       )}
 
-      {/* Detail / actions dialog */}
-      <ResponsiveDialog
-        open={!!detailTarget}
+      {/* Detalhe da transação */}
+      <TransactionDetailDialog
+        transaction={detailTx}
+        category={detailTx?.categoryId ? categoriesById.get(detailTx.categoryId) : undefined}
+        accounts={accounts ?? []}
+        signedAmount={(t) => signedAmount(t, filterAccountId || undefined)}
         onOpenChange={(open) => { if (!open) setDetailTarget(null) }}
-        title={detailTarget ? transactionTypeLabels[detailTarget.type] : ''}
-        footer={
-          <DialogActions
-            primary={
-              <Button onClick={() => detailTarget && openRepeat(detailTarget)} icon={<Repeat size={14} />}>
-                Repetir
-              </Button>
-            }
-            secondary={
-              <Button variant="outline" onClick={() => detailTarget && openEdit(detailTarget)} icon={<Pencil size={14} />}>
-                Editar
-              </Button>
-            }
-            destructive={
-              <Button
-                variant="ghost"
-                onClick={() => detailTarget && openDelete(detailTarget)}
-                icon={<Trash2 size={14} />}
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-              >
-                Excluir
-              </Button>
-            }
-          />
+        onEdit={openEdit}
+        onDuplicate={duplicate}
+        onDelete={deleteWithUndo}
+        onUploadAttachment={(t, file) => uploadAttachment.mutateAsync({ transactionId: t.id, file }).catch(() => {})}
+        onRemoveAttachment={(t) => deleteAttachment.mutateAsync(t.id).catch(() => {})}
+        onViewAttachment={(t) =>
+          t.attachmentId &&
+          setViewReceipt({
+            transactionId: t.id,
+            attachmentId: t.attachmentId,
+            fileName: t.attachmentFileName ?? 'Comprovante',
+            contentType: t.attachmentContentType ?? '',
+          })
         }
-      >
-        {detailTarget && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <TransactionIcon
-                transaction={detailTarget}
-                category={detailTarget.categoryId ? categoriesById.get(detailTarget.categoryId) : undefined}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">
-                  {detailTarget.description || transactionTypeLabels[detailTarget.type]}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {dateFormatter.format(new Date(detailTarget.date + 'T12:00:00'))}
-                </p>
-              </div>
-              <CurrencyBadge
-                value={signedAmount(detailTarget, filterAccountId || undefined)}
-                className={detailTarget.type === 'Transfer' && !filterAccountId ? 'text-muted-foreground' : undefined}
-              />
-            </div>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-lg border border-border p-3 text-sm">
-              {detailTarget.type === 'Transfer' ? (
-                <>
-                  <dt className="text-muted-foreground">Sai de</dt>
-                  <dd className="truncate font-medium">{detailTarget.accountName}</dd>
-                  <dt className="text-muted-foreground">Entra em</dt>
-                  <dd className="truncate font-medium">{detailTarget.destinationAccountName ?? '—'}</dd>
-                </>
-              ) : (
-                <>
-                  <dt className="text-muted-foreground">Conta</dt>
-                  <dd className="truncate font-medium">{detailTarget.accountName}</dd>
-                  <dt className="text-muted-foreground">Categoria</dt>
-                  <dd className="truncate font-medium">{detailTarget.categoryName || '—'}</dd>
-                </>
-              )}
-              {detailTarget.debtName && (
-                <>
-                  <dt className="text-muted-foreground">Dívida</dt>
-                  <dd className="truncate font-medium">{detailTarget.debtName}</dd>
-                </>
-              )}
-            </dl>
-            {detailTarget.attachmentId ? (
-              <button
-                type="button"
-                className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-                onClick={() => {
-                  const t = detailTarget
-                  setDetailTarget(null)
-                  if (t.attachmentId && t.attachmentFileName && t.attachmentContentType) {
-                    setViewReceipt({
-                      transactionId: t.id,
-                      attachmentId: t.attachmentId,
-                      fileName: t.attachmentFileName,
-                      contentType: t.attachmentContentType,
-                    })
-                  }
-                }}
-              >
-                <Paperclip size={14} />
-                {detailTarget.attachmentFileName || 'Ver comprovante'}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  const id = detailTarget.id
-                  setDetailTarget(null)
-                  setUploadingId(id)
-                  fileInputRef.current?.click()
-                }}
-              >
-                <Upload size={14} />
-                Anexar comprovante
-              </button>
-            )}
-          </div>
-        )}
-      </ResponsiveDialog>
-
-      {/* Repeat dialog */}
-      <ResponsiveDialog
-        open={!!repeatTarget}
-        onOpenChange={(open) => { if (!open) setRepeatTarget(null) }}
-        title="Repetir Transação"
-        footer={
-          <DialogActions
-            primary={
-              <Button
-                onClick={repeatForm.handleSubmit(handleRepeat as () => Promise<void>)}
-                disabled={createTransaction.isPending}
-                icon={createTransaction.isPending ? <Loader2 size={14} className="animate-spin" /> : <Repeat size={14} />}
-              >
-                {createTransaction.isPending ? 'Salvando…' : 'Repetir'}
-              </Button>
-            }
-            secondary={
-              <Button variant="outline" onClick={() => setRepeatTarget(null)}>Cancelar</Button>
-            }
-          />
-        }
-      >
-        {repeatTarget && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-              <TransactionIcon
-                transaction={repeatTarget}
-                category={repeatTarget.categoryId ? categoriesById.get(repeatTarget.categoryId) : undefined}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">
-                  {repeatTarget.description || transactionTypeLabels[repeatTarget.type]}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {repeatTarget.type === 'Transfer'
-                    ? `${repeatTarget.accountName} → ${repeatTarget.destinationAccountName ?? '—'}`
-                    : [repeatTarget.accountName, repeatTarget.categoryName].filter(Boolean).join(' · ')}
-                </p>
-              </div>
-            </div>
-            <Controller
-              name="amount"
-              control={repeatForm.control}
-              render={({ field: { onChange, value } }) => (
-                <Field
-                  label="Valor"
-                  required
-                  validationState={repeatForm.formState.errors.amount ? 'error' : undefined}
-                  validationMessage={repeatForm.formState.errors.amount?.message}
-                >
-                  <CurrencyInput value={value ?? 0} onChange={onChange} />
-                </Field>
-              )}
-            />
-            <Controller
-              name="date"
-              control={repeatForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Data"
-                  required
-                  validationState={repeatForm.formState.errors.date ? 'error' : undefined}
-                  validationMessage={repeatForm.formState.errors.date?.message}
-                >
-                  <DateInput {...field} />
-                </Field>
-              )}
-            />
-          </div>
-        )}
-      </ResponsiveDialog>
+        uploading={uploadAttachment.isPending}
+      />
 
       {/* Edit dialog */}
       <ResponsiveDialog
@@ -725,12 +532,19 @@ export function TransactionsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
-        title="Excluir Transação"
-        message="Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita."
+        title={
+          deleteTarget
+            ? `Excluir “${deleteTarget.description || transactionTypeLabels[deleteTarget.type]}” de ${formatBRL(deleteTarget.amount)}?`
+            : ''
+        }
+        message="Você poderá desfazer logo em seguida."
         confirmText="Excluir"
         destructive
-        onConfirm={handleDelete}
-        loading={deleteTransaction.isPending}
+        onConfirm={() => {
+          if (!deleteTarget) return
+          navigator.vibrate?.(10)
+          deleteWithUndo(deleteTarget)
+        }}
       />
 
       <input
@@ -847,7 +661,7 @@ function TransactionTable({
   totalPages,
   onOpen,
   onEdit,
-  onRepeat,
+  onDuplicate,
   onDelete,
   onPageChange,
   onViewReceipt,
@@ -863,7 +677,7 @@ function TransactionTable({
   totalPages: number
   onOpen: (t: Transaction) => void
   onEdit: (t: Transaction) => void
-  onRepeat: (t: Transaction) => void
+  onDuplicate: (t: Transaction) => void
   onDelete: (t: Transaction) => void
   onPageChange: (p: number) => void
   onViewReceipt: (t: Transaction) => void
@@ -977,8 +791,8 @@ function TransactionTable({
                           )}
                         </div>
                         <div className="hidden md:flex gap-1 justify-end" onClick={stop}>
-                          <Button variant="ghost" size="icon-sm" onClick={() => onRepeat(tx)} title="Repetir">
-                            <Repeat size={13} />
+                          <Button variant="ghost" size="icon-sm" onClick={() => onDuplicate(tx)} title="Duplicar" aria-label="Duplicar">
+                            <Copy size={13} />
                           </Button>
                           <Button variant="ghost" size="icon-sm" onClick={() => onEdit(tx)} title="Editar">
                             <Pencil size={13} />
