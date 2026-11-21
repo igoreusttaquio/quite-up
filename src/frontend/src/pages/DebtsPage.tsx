@@ -149,7 +149,10 @@ export function DebtsPage() {
       if (file && result.transactionId && !result.attachmentId) {
         await uploadAttachment.mutateAsync({ transactionId: result.transactionId, file })
       }
-      toast.success(editingPayment ? 'Pagamento atualizado!' : 'Pagamento registrado!')
+      toast.success(
+        (editingPayment ? 'Pagamento atualizado: ' : 'Pagamento de ') + brl.format(data.amount) + (editingPayment ? '' : ' registrado'),
+        paymentDebtTarget.name
+      )
       closePaymentDialog()
       if (paymentFileInputRef.current) paymentFileInputRef.current.value = ''
     } catch (error) {
@@ -162,7 +165,7 @@ export function DebtsPage() {
     try {
       await deletePayment.mutateAsync({ debtId: deletePaymentTarget.debtId, paymentId: deletePaymentTarget.id })
       setDeletePaymentTarget(null)
-      toast.success('Pagamento excluído!')
+      toast.success('Pagamento excluído', 'O valor voltou para o saldo devedor.')
     } catch (error) {
       toast.error('Erro ao excluir pagamento', getApiErrorMessage(error))
     }
@@ -259,7 +262,7 @@ export function DebtsPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5 gap-4">
           {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : filteredDebts.length === 0 ? (
@@ -276,7 +279,7 @@ export function DebtsPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5 gap-4">
           {filteredDebts.map((debt) => (
             <DebtCard
               key={debt.id}

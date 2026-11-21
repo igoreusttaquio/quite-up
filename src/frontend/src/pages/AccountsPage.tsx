@@ -105,7 +105,7 @@ export function AccountsPage() {
       />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5 gap-4">
           {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : activeAccounts.length === 0 ? (
@@ -120,7 +120,7 @@ export function AccountsPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5 gap-4">
           {activeAccounts.map((account) => (
             <AccountCard
               key={account.id}

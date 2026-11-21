@@ -8,6 +8,15 @@ export const transactionTypeLabels: Record<TransactionType, string> = {
   Transfer: 'Transferência',
 }
 
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+export const formatBRL = (value: number) => brl.format(value)
+
+/** Ex.: "Despesa de R$ 45,00" */
+export function describeAmount(type: TransactionType, amount: number) {
+  return transactionTypeLabels[type] + ' de ' + brl.format(amount)
+}
+
 /** Data de hoje (local) no formato yyyy-MM-dd. */
 export const todayParam = () => toDateParam(new Date())
 

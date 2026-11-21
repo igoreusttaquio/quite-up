@@ -46,7 +46,7 @@ import { CurrencyInput } from '../components/ui/currency-input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
 import { getApiErrorMessage, toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
-import { transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
+import { describeAmount, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
 import { useNewTransaction } from '../context/NewTransactionContext'
 import type { TransactionType, Transaction, TransactionTotals, Account, Category } from '../types'
 
@@ -195,7 +195,7 @@ export function TransactionsPage() {
         },
       })
       setEditTarget(null)
-      toast.success('Transação atualizada!')
+      toast.success('Transação atualizada', describeAmount(editTarget.type, data.amount))
     } catch (error) {
       toast.error('Erro ao atualizar transação', getApiErrorMessage(error))
     }
@@ -215,7 +215,10 @@ export function TransactionsPage() {
         debtId: repeatTarget.type === 'Expense' ? repeatTarget.debtId || undefined : undefined,
       })
       setRepeatTarget(null)
-      toast.success('Transação repetida!')
+      toast.success(
+        describeAmount(repeatTarget.type, data.amount) + ' repetida',
+        'Lançada em ' + dateFormatter.format(new Date(data.date + 'T12:00:00'))
+      )
     } catch (error) {
       toast.error('Erro ao repetir transação', getApiErrorMessage(error))
     }

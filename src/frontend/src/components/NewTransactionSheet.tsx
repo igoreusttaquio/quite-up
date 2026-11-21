@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm, Controller, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -17,7 +18,7 @@ import { NativeSelect } from './ui/native-select'
 import { CurrencyInput } from './ui/currency-input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from './ui/sheet'
 import { getApiErrorMessage } from '../lib/utils'
-import { transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
+import { describeAmount, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
 import type { TransactionType, Account, Category, Debt } from '../types'
 
 const createSchema = z
@@ -56,6 +57,7 @@ function getFieldError(errors: Record<string, any>, field: string): string | und
 /** Formulário de nova transação, aberto de qualquer tela (barra inferior, página de transações...). */
 export function NewTransactionSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const toast = useAppToast()
+  const navigate = useNavigate()
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
   const { data: debts } = useDebts()
@@ -106,7 +108,14 @@ export function NewTransactionSheet({ open, onOpenChange }: { open: boolean; onO
         await uploadAttachment.mutateAsync({ transactionId: result.id, file })
       }
       onOpenChange(false)
-      toast.success(isTransfer ? 'Transferência registrada!' : 'Transação registrada!')
+      const accountName = (id?: string) => accounts?.find((a) => a.id === id)?.name
+      const details = isTransfer
+        ? [accountName(data.accountId), accountName(data.destinationAccountId)].filter(Boolean).join(' → ')
+        : [categories?.find((c) => c.id === data.categoryId)?.name, accountName(data.accountId)].filter(Boolean).join(' · ')
+      toast.success(describeAmount(data.type, data.amount) + ' registrada', details || undefined, {
+        label: 'Ver',
+        onClick: () => navigate('/transactions'),
+      })
     } catch (error) {
       toast.error('Erro ao salvar transação', getApiErrorMessage(error))
     }

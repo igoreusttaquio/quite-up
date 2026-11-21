@@ -19,6 +19,11 @@ import {
   BarChart3,
   MoreHorizontal,
   Plus,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Rows2,
+  Rows3,
+  Rows4,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useLogout } from '../hooks/useAuth'
@@ -29,6 +34,42 @@ import { Button } from '../components/ui/button'
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip'
 import { cn } from '../lib/utils'
 import { NewTransactionProvider, useNewTransaction } from '../context/NewTransactionContext'
+import { densityLabels, usePreferences, type Density } from '../context/PreferencesContext'
+
+const densityIcons: Record<Density, typeof Rows3> = { compact: Rows4, default: Rows3, comfortable: Rows2 }
+
+/** Botão de ícone da lateral com tooltip (à direita quando recolhida). */
+function SidebarIconButton({
+  label,
+  onClick,
+  collapsed,
+  disabled,
+  children,
+}: {
+  label: string
+  onClick: () => void
+  collapsed: boolean
+  disabled?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onClick}
+          disabled={disabled}
+          className={collapsed ? undefined : 'flex-1'}
+          aria-label={label}
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side={collapsed ? 'right' : 'top'}>{label}</TooltipContent>
+    </Tooltip>
+  )
+}
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
@@ -97,6 +138,8 @@ function DashboardShell() {
   const user = useAuthStore((s) => s.user)
   const logout = useLogout()
   const { mode, toggle } = useTheme()
+  const { density, cycleDensity, sidebarCollapsed: collapsed, toggleSidebar } = usePreferences()
+  const DensityIcon = densityIcons[density]
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 
@@ -104,85 +147,115 @@ function DashboardShell() {
     <TooltipProvider delayDuration={300}>
       <div className="min-h-screen w-full bg-background flex">
         {/* Sidebar — Desktop */}
-        <aside className="hidden md:flex flex-col fixed top-0 left-0 w-60 h-screen z-20 border-r border-border bg-card">
-          {/* Logo */}
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-2.5 px-4 h-14 border-b border-border flex-shrink-0"
+        <aside
+          className={cn(
+            'hidden md:flex flex-col fixed top-0 left-0 h-screen z-20 border-r border-border bg-card transition-[width] duration-200',
+            collapsed ? 'w-16' : 'w-60'
+          )}
+        >
+          {/* Logo + recolher */}
+          <div
+            className={cn(
+              'flex h-14 flex-shrink-0 items-center border-b border-border',
+              collapsed ? 'justify-center px-2' : 'justify-between gap-2 pl-4 pr-2'
+            )}
           >
-            <img src="/favicon.svg" alt="Quite-Up" className="w-8 h-8 flex-shrink-0" />
-            <div>
-              <span className="font-bold text-primary tracking-tight block leading-none">Quite-Up</span>
-              <span className="text-[10px] text-muted-foreground leading-none mt-0.5 block">Finanças pessoais</span>
-            </div>
-          </Link>
+            {!collapsed && (
+              <Link to="/dashboard" className="flex min-w-0 items-center gap-2.5">
+                <img src="/favicon.svg" alt="Quite-Up" className="w-8 h-8 flex-shrink-0" />
+                <div className="min-w-0">
+                  <span className="font-bold text-primary tracking-tight block leading-none">Quite-Up</span>
+                  <span className="text-[10px] text-muted-foreground leading-none mt-0.5 block">Finanças pessoais</span>
+                </div>
+              </Link>
+            )}
+            <SidebarIconButton
+              label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+              onClick={toggleSidebar}
+              collapsed={collapsed}
+            >
+              {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+            </SidebarIconButton>
+          </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto pt-3">
-            {navItems.map(({ label, path, Icon }) => (
-              <NavLink
-                key={path}
-                to={path}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium no-underline transition-colors',
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                  )
-                }
-              >
-                <Icon size={17} className="flex-shrink-0" />
-                <span>{label}</span>
-              </NavLink>
-            ))}
+          <nav className={cn('flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden pt-3', collapsed ? 'p-2' : 'p-3')}>
+            {navItems.map(({ label, path, Icon }) => {
+              const link = (
+                <NavLink
+                  key={path}
+                  to={path}
+                  aria-label={collapsed ? label : undefined}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-lg py-2.5 text-sm font-medium no-underline transition-colors',
+                      collapsed ? 'justify-center px-0' : 'px-3',
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    )
+                  }
+                >
+                  <Icon size={17} className="flex-shrink-0" />
+                  {!collapsed && <span className="truncate">{label}</span>}
+                </NavLink>
+              )
+              return collapsed ? (
+                <Tooltip key={path}>
+                  <TooltipTrigger asChild>{link}</TooltipTrigger>
+                  <TooltipContent side="right">{label}</TooltipContent>
+                </Tooltip>
+              ) : (
+                link
+              )
+            })}
           </nav>
 
           {/* Sidebar footer */}
-          <div className="p-3 border-t border-border space-y-1">
-            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg">
+          <div className={cn('border-t border-border space-y-1', collapsed ? 'p-2' : 'p-3')}>
+            <div className={cn('flex items-center gap-2.5 rounded-lg py-2', collapsed ? 'justify-center' : 'px-2')}>
               <UserAvatar name={user?.name} size={30} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate leading-none">{user?.name}</p>
-                <p className="text-xs text-subtle truncate mt-0.5">{user?.email}</p>
-              </div>
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate leading-none">{user?.name}</p>
+                  <p className="text-xs text-subtle truncate mt-0.5">{user?.email}</p>
+                </div>
+              )}
             </div>
-            <div className="flex gap-1 px-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={toggle}
-                    className="flex-1"
-                    aria-label={mode === 'light' ? 'Modo escuro' : 'Modo claro'}
-                  >
-                    {mode === 'light' ? <Moon size={15} /> : <Sun size={15} />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{mode === 'light' ? 'Modo escuro' : 'Modo claro'}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => logout.mutate()}
-                    disabled={logout.isPending}
-                    className="flex-1"
-                    aria-label="Sair"
-                  >
-                    <LogOut size={15} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sair</TooltipContent>
-              </Tooltip>
+            <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'px-2')}>
+              <SidebarIconButton
+                label={mode === 'light' ? 'Modo escuro' : 'Modo claro'}
+                onClick={toggle}
+                collapsed={collapsed}
+              >
+                {mode === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+              </SidebarIconButton>
+              <SidebarIconButton
+                label={`Densidade: ${densityLabels[density]} (clique para alternar)`}
+                onClick={cycleDensity}
+                collapsed={collapsed}
+              >
+                <DensityIcon size={15} />
+              </SidebarIconButton>
+              <SidebarIconButton
+                label="Sair"
+                onClick={() => logout.mutate()}
+                disabled={logout.isPending}
+                collapsed={collapsed}
+              >
+                <LogOut size={15} />
+              </SidebarIconButton>
             </div>
           </div>
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 w-full md:ml-60 flex flex-col min-h-screen">
+        <main
+          className={cn(
+            'flex-1 min-w-0 w-full flex flex-col min-h-screen transition-[margin] duration-200',
+            collapsed ? 'md:ml-16' : 'md:ml-60'
+          )}
+        >
           {/* Mobile header */}
           <header className="md:hidden w-full flex items-center justify-between px-4 h-14 border-b border-border bg-card sticky top-0 z-10 flex-shrink-0">
             <Link to="/dashboard" className="flex items-center gap-2 font-bold text-primary text-lg tracking-tight">
@@ -259,7 +332,7 @@ function DashboardShell() {
 
           {/* Page content */}
           <div className="flex-1 min-w-0 w-full p-4 pb-24 md:p-6 lg:p-8">
-            <div className="w-full min-w-0 max-w-[1400px] mx-auto">
+            <div className="w-full min-w-0 max-w-[2200px] mx-auto">
               <ErrorBoundary>
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div

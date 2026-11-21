@@ -107,7 +107,7 @@ export function CategoriesPage() {
       />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5 gap-3">
           {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : categories?.length === 0 ? (
@@ -236,7 +236,7 @@ function CategoryGroup({
   return (
     <div>
       <p className="text-base font-semibold mb-3">{title}</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5 gap-3">
         {categories.map((category) => (
           <CategoryCard
             key={category.id}

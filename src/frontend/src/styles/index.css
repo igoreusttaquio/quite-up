@@ -84,6 +84,9 @@
   *, *::before, *::after {
     box-sizing: border-box;
   }
+  /* Densidade (Preferências): escala o rem, e com ele textos e espaçamentos do Tailwind. */
+  html[data-density='compact'] { font-size: 87.5%; }
+  html[data-density='comfortable'] { font-size: 112.5%; }
   html {
     width: 100%;
     max-width: 100%;

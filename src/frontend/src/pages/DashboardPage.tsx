@@ -318,111 +318,116 @@ export function DashboardPage() {
         loading={isLoading}
         type={filterType}
       />
-      {!filterCategoryId && (
-        <CategoryBreakdownChart
-          key={filterKey}
-          title={showCategoryIncome ? 'Receitas por categoria' : 'Despesas por categoria'}
-          subtitle={periodDescription}
-          items={categoryItems}
-          loading={isLoading}
-          emptyMessage={showCategoryIncome ? 'Sem receitas neste período' : 'Sem despesas neste período'}
-          selectedCategoryId={sliceCategoryId ?? null}
-          onSelectedChange={(id) => setSlice(id ? { key: filterKey, categoryId: id } : null)}
-        />
-      )}
-
-      {/* Recent transactions */}
-      <div className="card">
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-subtle">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-base font-semibold">{listTitle}</span>
-            {sliceCategoryName && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setSlice(null)}
-                aria-label="Remover filtro da categoria"
-                title="Remover filtro da categoria"
-              >
-                <X size={14} />
-              </Button>
-            )}
+      {/* Categorias + transações: lado a lado em telas largas (o clique na fatia filtra a lista ao lado) */}
+      <div className="space-y-6 xl:grid xl:grid-cols-5 xl:items-start xl:gap-6 xl:space-y-0">
+        {!filterCategoryId && (
+          <div className="min-w-0 xl:col-span-2">
+            <CategoryBreakdownChart
+              key={filterKey}
+              title={showCategoryIncome ? 'Receitas por categoria' : 'Despesas por categoria'}
+              subtitle={periodDescription}
+              items={categoryItems}
+              loading={isLoading}
+              emptyMessage={showCategoryIncome ? 'Sem receitas neste período' : 'Sem despesas neste período'}
+              selectedCategoryId={sliceCategoryId ?? null}
+              onSelectedChange={(id) => setSlice(id ? { key: filterKey, categoryId: id } : null)}
+            />
           </div>
-          <Link
-            to={{
-              pathname: '/transactions',
-              search: new URLSearchParams({
-                from: startDate,
-                to: endDate,
-                ...(listType ? { type: listType } : {}),
-                ...(listCategoryId ? { category: listCategoryId } : {}),
-              }).toString(),
-            }}
-            className="flex-shrink-0 text-sm text-primary hover:underline font-medium transition-colors"
-          >
-            Ver todas →
-          </Link>
-        </div>
+        )}
 
-        {listLoading ? (
-          <div className="p-5 space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 animate-pulse">
-                <div className="w-9 h-9 rounded-full bg-muted flex-shrink-0" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-3.5 w-1/3 rounded bg-muted" />
-                  <div className="h-3 w-1/4 rounded bg-muted" />
-                </div>
-                <div className="h-4 w-20 rounded bg-muted" />
-              </div>
-            ))}
-          </div>
-        ) : !recentTransactions.length ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-4 text-center px-5">
-            <ArrowRightLeft size={44} className="text-muted-foreground opacity-40" />
-            <div className="space-y-1">
-              <p className="text-base font-semibold">Nenhuma transação</p>
-              <p className="text-sm text-muted-foreground">
-                {hasActiveFilters ? 'Nada encontrado para os filtros selecionados' : 'Registre sua primeira transação para começar'}
-              </p>
+        {/* Recent transactions */}
+        <div className={cn('card min-w-0', filterCategoryId ? 'xl:col-span-5' : 'xl:col-span-3')}>
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-subtle">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate text-base font-semibold">{listTitle}</span>
+              {sliceCategoryName && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setSlice(null)}
+                  aria-label="Remover filtro da categoria"
+                  title="Remover filtro da categoria"
+                >
+                  <X size={14} />
+                </Button>
+              )}
             </div>
-            <Link to="/transactions" className="text-sm text-primary hover:underline font-medium">
-              Registrar transação →
+            <Link
+              to={{
+                pathname: '/transactions',
+                search: new URLSearchParams({
+                  from: startDate,
+                  to: endDate,
+                  ...(listType ? { type: listType } : {}),
+                  ...(listCategoryId ? { category: listCategoryId } : {}),
+                }).toString(),
+              }}
+              className="flex-shrink-0 text-sm text-primary hover:underline font-medium transition-colors"
+            >
+              Ver todas →
             </Link>
           </div>
-        ) : (
-          <ul className="divide-y divide-subtle">
-            {recentTransactions.map((tx) => (
-              <li key={tx.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
-                <TransactionIcon
-                  transaction={tx}
-                  category={tx.categoryId ? categoriesById.get(tx.categoryId) : undefined}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">
-                    {tx.description || typeLabels[tx.type]}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {tx.type === 'Transfer'
-                      ? `${tx.accountName} → ${tx.destinationAccountName ?? '—'} · `
-                      : tx.categoryName && `${tx.categoryName} · `}
-                    {dateFormatter.format(new Date(tx.date + 'T12:00:00'))}
-                  </p>
+
+          {listLoading ? (
+            <div className="p-5 space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <div className="w-9 h-9 rounded-full bg-muted flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3.5 w-1/3 rounded bg-muted" />
+                    <div className="h-3 w-1/4 rounded bg-muted" />
+                  </div>
+                  <div className="h-4 w-20 rounded bg-muted" />
                 </div>
-                {tx.type === 'Transfer' ? (
-                  <CurrencyBadge value={tx.amount} className="text-muted-foreground" />
-                ) : (
-                  <CurrencyBadge value={tx.type === 'Expense' ? -tx.amount : tx.amount} />
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+              ))}
+            </div>
+          ) : !recentTransactions.length ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4 text-center px-5">
+              <ArrowRightLeft size={44} className="text-muted-foreground opacity-40" />
+              <div className="space-y-1">
+                <p className="text-base font-semibold">Nenhuma transação</p>
+                <p className="text-sm text-muted-foreground">
+                  {hasActiveFilters ? 'Nada encontrado para os filtros selecionados' : 'Registre sua primeira transação para começar'}
+                </p>
+              </div>
+              <Link to="/transactions" className="text-sm text-primary hover:underline font-medium">
+                Registrar transação →
+              </Link>
+            </div>
+          ) : (
+            <ul className="divide-y divide-subtle">
+              {recentTransactions.map((tx) => (
+                <li key={tx.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
+                  <TransactionIcon
+                    transaction={tx}
+                    category={tx.categoryId ? categoriesById.get(tx.categoryId) : undefined}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">
+                      {tx.description || typeLabels[tx.type]}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {tx.type === 'Transfer'
+                        ? `${tx.accountName} → ${tx.destinationAccountName ?? '—'} · `
+                        : tx.categoryName && `${tx.categoryName} · `}
+                      {dateFormatter.format(new Date(tx.date + 'T12:00:00'))}
+                    </p>
+                  </div>
+                  {tx.type === 'Transfer' ? (
+                    <CurrencyBadge value={tx.amount} className="text-muted-foreground" />
+                  ) : (
+                    <CurrencyBadge value={tx.type === 'Expense' ? -tx.amount : tx.amount} />
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* Quick links */}
       {!isLoading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:hidden">
           <QuickLink to="/accounts" icon={<Building2 size={22} />} label="Contas" />
           <QuickLink to="/categories" icon={<Tag size={22} />} label="Categorias" />
           <QuickLink to="/transactions" icon={<ArrowRightLeft size={22} />} label="Transações" />
