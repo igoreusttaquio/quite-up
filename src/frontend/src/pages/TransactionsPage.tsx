@@ -12,6 +12,7 @@ import {
   Paperclip,
   Upload,
   Copy,
+  Repeat,
   ArrowUp,
   ArrowDown,
   Scale,
@@ -233,6 +234,7 @@ export function TransactionsPage() {
           onOpen={(t) => actions.openDetail(t, { accountId: filterAccountId || undefined })}
           onEdit={actions.openEdit}
           onDuplicate={actions.duplicate}
+          onRepeat={actions.repeat}
           onDelete={actions.requestDelete}
           onPageChange={setPage}
           onViewReceipt={actions.viewReceipt}
@@ -355,6 +357,7 @@ function TransactionTable({
   onOpen,
   onEdit,
   onDuplicate,
+  onRepeat,
   onDelete,
   onPageChange,
   onViewReceipt,
@@ -372,6 +375,7 @@ function TransactionTable({
   onOpen: (t: Transaction) => void
   onEdit: (t: Transaction) => void
   onDuplicate: (t: Transaction) => void
+  onRepeat: (t: Transaction) => void
   onDelete: (t: Transaction) => void
   onPageChange: (p: number) => void
   onViewReceipt: (t: Transaction) => void
@@ -385,7 +389,7 @@ function TransactionTable({
   return (
     <div>
       <div className={`card overflow-hidden transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
-        <div className="hidden md:grid grid-cols-[44px_1fr_140px_160px_130px_44px_100px] gap-3 px-4 py-2.5 border-b border-border bg-muted/50">
+        <div className="hidden md:grid grid-cols-[44px_1fr_140px_160px_130px_44px_132px] gap-3 px-4 py-2.5 border-b border-border bg-muted/50">
           {['', 'Descrição', 'Categoria', 'Conta', 'Valor', '', ''].map((h, i) => (
             <span key={i} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</span>
           ))}
@@ -421,7 +425,7 @@ function TransactionTable({
                             onOpen(tx)
                           }
                         }}
-                        className="grid grid-cols-[44px_1fr_auto] md:grid-cols-[44px_1fr_140px_160px_130px_44px_100px] gap-3 px-4 py-3.5 items-center hover:bg-muted/50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted/50"
+                        className="grid grid-cols-[44px_1fr_auto] md:grid-cols-[44px_1fr_140px_160px_130px_44px_132px] gap-3 px-4 py-3.5 items-center hover:bg-muted/50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted/50"
                       >
                         <div className="flex items-center justify-center">
                           <TransactionIcon
@@ -486,6 +490,9 @@ function TransactionTable({
                           )}
                         </div>
                         <div className="hidden md:flex gap-1 justify-end" onClick={stop}>
+                          <Button variant="ghost" size="icon-sm" onClick={() => onRepeat(tx)} title="Repetir (só valor e data)" aria-label="Repetir">
+                            <Repeat size={13} />
+                          </Button>
                           <Button variant="ghost" size="icon-sm" onClick={() => onDuplicate(tx)} title="Duplicar" aria-label="Duplicar">
                             <Copy size={13} />
                           </Button>

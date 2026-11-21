@@ -3,8 +3,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2 } from 'lucide-react'
-import { useUpdateTransaction, useUndoableDeleteTransaction } from '../hooks/useTransactions'
+import { Loader2, Repeat } from 'lucide-react'
+import { useCreateTransaction, useUpdateTransaction, useUndoableDeleteTransaction } from '../hooks/useTransactions'
 import { useUploadAttachment, useDeleteAttachment } from '../hooks/useAttachment'
 import { useAppToast } from '../hooks/useAppToast'
 import { useAccounts } from '../hooks/useAccounts'
@@ -46,7 +46,10 @@ interface TransactionActionsValue {
   openDetail: (transaction: Transaction, options?: OpenDetailOptions) => void
   openEdit: (transaction: Transaction) => void
   requestDelete: (transaction: Transaction) => void
+  /** Formulário completo de nova transação, preenchido (data de hoje). */
   duplicate: (transaction: Transaction) => void
+  /** Diálogo rápido: repete a transação mudando só valor e data. */
+  repeat: (transaction: Transaction) => void
   viewReceipt: (transaction: Transaction) => void
   /** Online aguarda o envio; offline enfileira (o arquivo fica no IndexedDB). */
   uploadAttachment: (transactionId: string, file: File) => Promise<void>
@@ -68,6 +71,15 @@ const updateSchema = z
   .superRefine(transferRefinement)
 
 type UpdateFormData = z.infer<typeof updateSchema>
+
+const repeatSchema = z.object({
+  amount: z.number().positive('Valor deve ser positivo'),
+  date: z.string().min(1, 'Data é obrigatória'),
+})
+
+type RepeatFormData = z.infer<typeof repeatSchema>
+
+const dateBR = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR')
 
 /** Garante que a conta atual da transação apareça no select, mesmo se estiver inativa. */
 function withCurrentAccount(accounts: Account[], id?: string, name?: string): Account[] {
@@ -103,6 +115,7 @@ export function TransactionActionsProvider({ children }: { children: ReactNode }
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
   const updateTransaction = useUpdateTransaction()
+  const createTransaction = useCreateTransaction()
   const deleteWithUndoRaw = useUndoableDeleteTransaction()
   const upload = useUploadAttachment()
   const deleteAttachmentMutation = useDeleteAttachment()
@@ -111,6 +124,7 @@ export function TransactionActionsProvider({ children }: { children: ReactNode }
   const [detail, setDetail] = useState<{ tx: Transaction; accountId?: string } | null>(null)
   const [editTarget, setEditTarget] = useState<Transaction | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
+  const [repeatTarget, setRepeatTarget] = useState<Transaction | null>(null)
   const [receipt, setReceipt] = useState<{ attachmentId: string; fileName: string; contentType: string } | null>(null)
 
   const detailTx = useLatestTransaction(detail?.tx ?? null)
@@ -126,6 +140,11 @@ export function TransactionActionsProvider({ children }: { children: ReactNode }
       categoryId: '',
       description: '',
     },
+  })
+
+  const repeatForm = useForm<RepeatFormData>({
+    resolver: zodResolver(repeatSchema),
+    defaultValues: { amount: 0, date: todayParam() },
   })
 
   /** Criada offline e ainda sem id no servidor: editar/excluir só depois de sincronizar. */
@@ -187,6 +206,45 @@ export function TransactionActionsProvider({ children }: { children: ReactNode }
     },
     [openNewTransaction]
   )
+
+  const repeat = useCallback(
+    (transaction: Transaction) => {
+      setDetail(null)
+      setRepeatTarget(transaction)
+      repeatForm.reset({ amount: transaction.amount, date: todayParam() })
+    },
+    [repeatForm]
+  )
+
+  const handleRepeat = async (data: RepeatFormData) => {
+    const t = repeatTarget
+    if (!t) return
+    const isTransfer = t.type === 'Transfer'
+    const variables = {
+      type: t.type,
+      amount: data.amount,
+      date: data.date,
+      accountId: t.accountId,
+      categoryId: !isTransfer ? t.categoryId || undefined : undefined,
+      destinationAccountId: isTransfer ? t.destinationAccountId || undefined : undefined,
+      description: t.description || undefined,
+      debtId: t.type === 'Expense' ? t.debtId || undefined : undefined,
+      clientRequestId: crypto.randomUUID(),
+    }
+    if (!isOnline()) {
+      createTransaction.mutate(variables)
+      setRepeatTarget(null)
+      toast.info('Salva offline', 'Será sincronizada quando a conexão voltar.')
+      return
+    }
+    try {
+      await createTransaction.mutateAsync(variables)
+      setRepeatTarget(null)
+      toast.success(describeAmount(t.type, data.amount) + ' repetida', 'Lançada em ' + dateBR(data.date))
+    } catch (error) {
+      toast.error('Erro ao repetir transação', getApiErrorMessage(error))
+    }
+  }
 
   const viewReceipt = useCallback((transaction: Transaction) => {
     if (!transaction.attachmentId) return
@@ -265,8 +323,8 @@ export function TransactionActionsProvider({ children }: { children: ReactNode }
   )
 
   const value = useMemo<TransactionActionsValue>(
-    () => ({ openDetail, openEdit, requestDelete, duplicate, viewReceipt, uploadAttachment, removeAttachment }),
-    [openDetail, openEdit, requestDelete, duplicate, viewReceipt, uploadAttachment, removeAttachment]
+    () => ({ openDetail, openEdit, requestDelete, duplicate, repeat, viewReceipt, uploadAttachment, removeAttachment }),
+    [openDetail, openEdit, requestDelete, duplicate, repeat, viewReceipt, uploadAttachment, removeAttachment]
   )
 
   const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
@@ -291,6 +349,7 @@ export function TransactionActionsProvider({ children }: { children: ReactNode }
         onOpenChange={(open) => { if (!open) setDetail(null) }}
         onEdit={openEdit}
         onDuplicate={duplicate}
+        onRepeat={repeat}
         onDelete={deleteWithUndo}
         onUploadAttachment={(t, file) => uploadAttachment(t.id, file)}
         onRemoveAttachment={(t) => removeAttachment(t.id)}
@@ -412,6 +471,73 @@ export function TransactionActionsProvider({ children }: { children: ReactNode }
             </Field>
           )}
         />
+      </ResponsiveDialog>
+
+      {/* Repetir: só valor e data (o resto vem da transação original) */}
+      <ResponsiveDialog
+        open={!!repeatTarget}
+        onOpenChange={(open) => { if (!open) setRepeatTarget(null) }}
+        title="Repetir transação"
+        description={
+          repeatTarget
+            ? [
+                repeatTarget.description || transactionTypeLabels[repeatTarget.type],
+                repeatTarget.type === 'Transfer'
+                  ? `${repeatTarget.accountName} → ${repeatTarget.destinationAccountName ?? '—'}`
+                  : [repeatTarget.categoryName, repeatTarget.accountName].filter(Boolean).join(' · '),
+              ]
+                .filter(Boolean)
+                .join(' · ')
+            : undefined
+        }
+        size="sm"
+        footer={
+          <DialogActions
+            primary={
+              <Button
+                onClick={repeatForm.handleSubmit(handleRepeat as () => Promise<void>)}
+                disabled={createTransaction.isPending && isOnline()}
+                icon={createTransaction.isPending && isOnline() ? <Loader2 size={14} className="animate-spin" /> : <Repeat size={14} />}
+              >
+                {createTransaction.isPending && isOnline() ? 'Salvando…' : 'Repetir'}
+              </Button>
+            }
+            secondary={
+              <Button variant="outline" onClick={() => setRepeatTarget(null)}>Cancelar</Button>
+            }
+          />
+        }
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <Controller
+            name="amount"
+            control={repeatForm.control}
+            render={({ field: { onChange, value } }) => (
+              <Field
+                label="Valor"
+                required
+                validationState={repeatForm.formState.errors.amount ? 'error' : undefined}
+                validationMessage={repeatForm.formState.errors.amount?.message}
+              >
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="date"
+            control={repeatForm.control}
+            render={({ field }) => (
+              <Field
+                label="Data"
+                required
+                validationState={repeatForm.formState.errors.date ? 'error' : undefined}
+                validationMessage={repeatForm.formState.errors.date?.message}
+              >
+                <DateInput {...field} />
+              </Field>
+            )}
+          />
+        </div>
       </ResponsiveDialog>
 
       <ConfirmDialog

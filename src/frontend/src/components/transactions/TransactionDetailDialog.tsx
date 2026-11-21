@@ -9,6 +9,7 @@ import {
   Loader2,
   Paperclip,
   Pencil,
+  Repeat,
   Share2,
   Trash2,
 } from 'lucide-react'
@@ -62,6 +63,8 @@ interface TransactionDetailDialogProps {
   onOpenChange: (open: boolean) => void
   onEdit: (t: Transaction) => void
   onDuplicate: (t: Transaction) => void
+  /** Repetir rápido: só valor e data. */
+  onRepeat: (t: Transaction) => void
   onDelete: (t: Transaction) => void
   onUploadAttachment: (t: Transaction, file: File) => Promise<unknown>
   onRemoveAttachment: (t: Transaction) => Promise<unknown>
@@ -79,6 +82,7 @@ export function TransactionDetailDialog({
   onOpenChange,
   onEdit,
   onDuplicate,
+  onRepeat,
   onDelete,
   onUploadAttachment,
   onRemoveAttachment,
@@ -105,6 +109,9 @@ export function TransactionDetailDialog({
       } else if (key === 'd') {
         e.preventDefault()
         onDuplicate(tx)
+      } else if (key === 'r') {
+        e.preventDefault()
+        onRepeat(tx)
       } else if (e.key === 'Delete' && !temp) {
         e.preventDefault()
         setConfirmDelete(true)
@@ -112,7 +119,7 @@ export function TransactionDetailDialog({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, isDesktop, tx, onEdit, onDuplicate])
+  }, [open, isDesktop, tx, onEdit, onDuplicate, onRepeat])
 
   if (!tx) {
     return <ResponsiveDialog open={false} onOpenChange={onOpenChange} title="" />
@@ -164,9 +171,14 @@ export function TransactionDetailDialog({
               </Button>
             }
             secondary={
-              <Button variant="outline" onClick={() => onDuplicate(tx)} icon={<Copy size={14} />}>
-                Duplicar
-              </Button>
+              <div className="flex flex-col gap-2 md:flex-row">
+                <Button variant="outline" onClick={() => onRepeat(tx)} icon={<Repeat size={14} />} className="w-full md:w-auto">
+                  Repetir
+                </Button>
+                <Button variant="outline" onClick={() => onDuplicate(tx)} icon={<Copy size={14} />} className="w-full md:w-auto">
+                  Duplicar
+                </Button>
+              </div>
             }
             destructive={
               <Button
