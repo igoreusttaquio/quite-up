@@ -97,6 +97,18 @@ export interface Attachment {
   createdAt: string
 }
 
+export interface TransactionTotals {
+  income: number
+  expenses: number
+  transfersIn: number
+  transfersOut: number
+  net: number
+}
+
+export interface TransactionPage extends PaginatedResult<Transaction> {
+  totals: TransactionTotals
+}
+
 export interface PaginatedResult<T> {
   items: T[]
   totalCount: number

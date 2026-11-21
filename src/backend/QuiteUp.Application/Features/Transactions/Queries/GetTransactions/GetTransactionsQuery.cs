@@ -1,5 +1,4 @@
 using NetDevPack.SimpleMediator;
-using QuiteUp.Application.Common.Models;
 using QuiteUp.Application.Common.Results;
 using QuiteUp.Application.Features.Transactions.DTOs;
 using QuiteUp.Domain.Enums;
@@ -14,4 +13,4 @@ public record GetTransactionsQuery(
     DateOnly? EndDate = null,
     int Page = 1,
     int PageSize = 20
-) : IRequest<Result<PagedResult<TransactionDto>>>;
+) : IRequest<Result<TransactionPageDto>>;

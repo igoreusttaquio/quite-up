@@ -42,7 +42,7 @@ export function CurrencyInput({ value, onChange, className, disabled, id }: Curr
         onChange={() => {}}
         disabled={disabled}
         className={cn(
-          'flex h-9 w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm',
+          'flex h-9 w-full rounded-md border border-input bg-card py-2 pl-9 pr-3 text-sm',
           'ring-offset-background caret-transparent',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           'disabled:cursor-not-allowed disabled:opacity-50',

@@ -16,6 +16,9 @@ import {
   Paperclip,
   Upload,
   Repeat,
+  ArrowUp,
+  ArrowDown,
+  Scale,
 } from 'lucide-react'
 import {
   useTransactions,
@@ -46,7 +49,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../comp
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
 import { getApiErrorMessage, toDateParam } from '../lib/utils'
-import type { TransactionType, Transaction, Account, Category, Debt } from '../types'
+import type { TransactionType, Transaction, TransactionTotals, Account, Category, Debt } from '../types'
 
 const transactionTypeLabels: Record<TransactionType, string> = {
   Income: 'Receita',
@@ -490,6 +493,15 @@ export function TransactionsPage() {
         </div>
       </div>
 
+      {result && result.totalCount > 0 && (
+        <TotalsBar
+          totals={result.totals}
+          count={result.totalCount}
+          hasAccountFilter={!!filterAccountId}
+          isFetching={isFetching}
+        />
+      )}
+
       {isLoading ? (
         <SkeletonTable rows={8} />
       ) : !result || result.items.length === 0 ? (
@@ -866,6 +878,84 @@ export function TransactionsPage() {
           title={`Comprovante - ${viewReceipt.fileName}`}
         />
       )}
+    </div>
+  )
+}
+
+// ─── TotalsBar ────────────────────────────────────────────────────────────────
+
+function TotalsBar({
+  totals,
+  count,
+  hasAccountFilter,
+  isFetching,
+}: {
+  totals: TransactionTotals
+  count: number
+  hasAccountFilter: boolean
+  isFetching: boolean
+}) {
+  const inflow = totals.income + totals.transfersIn
+  const outflow = totals.expenses + totals.transfersOut
+
+  return (
+    <div className={`mb-5 transition-opacity ${isFetching ? 'opacity-60' : ''}`}>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <TotalTile
+          label="Entradas"
+          value={inflow}
+          tone="income"
+          icon={<ArrowUp size={14} />}
+          iconClass="bg-income-subtle text-income"
+          hint={hasAccountFilter && totals.transfersIn > 0 ? 'inclui transferências recebidas' : undefined}
+        />
+        <TotalTile
+          label="Saídas"
+          value={outflow}
+          tone="expense"
+          icon={<ArrowDown size={14} />}
+          iconClass="bg-expense-subtle text-expense"
+          hint={hasAccountFilter && totals.transfersOut > 0 ? 'inclui transferências enviadas' : undefined}
+        />
+        <TotalTile
+          label="Resultado"
+          value={totals.net}
+          tone="signed"
+          icon={<Scale size={14} />}
+          iconClass="bg-brand-light text-primary"
+        />
+      </div>
+      <p className="mt-1.5 text-right text-xs text-muted-foreground">
+        {count} {count === 1 ? 'transação' : 'transações'} no filtro
+        {!hasAccountFilter && ' · transferências entre contas não entram no total'}
+      </p>
+    </div>
+  )
+}
+
+function TotalTile({
+  label,
+  value,
+  tone,
+  icon,
+  iconClass,
+  hint,
+}: {
+  label: string
+  value: number
+  tone: 'income' | 'expense' | 'signed'
+  icon: React.ReactNode
+  iconClass: string
+  hint?: string
+}) {
+  return (
+    <div className="card min-w-0 px-3 py-2.5 sm:px-4 sm:py-3">
+      <div className="flex items-center gap-1.5">
+        <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${iconClass}`}>{icon}</span>
+        <span className="truncate text-xs text-muted-foreground">{label}</span>
+      </div>
+      <CurrencyBadge value={value} tone={tone} className="mt-1 block truncate text-sm sm:text-lg" />
+      {hint && <p className="mt-0.5 hidden truncate text-[11px] text-muted-foreground sm:block">{hint}</p>}
     </div>
   )
 }

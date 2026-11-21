@@ -23,8 +23,13 @@ interface CategoryBreakdownChartProps {
   items: DashboardCategoryItem[]
   loading?: boolean
   emptyMessage?: string
-  /** Chamado ao clicar numa categoria (não é chamado para "Outros"/"Sem categoria"). */
-  onSelectCategory?: (categoryId: string) => void
+  /** Categoria selecionada (controlado pelo pai). */
+  selectedCategoryId?: string | null
+  /**
+   * Chamado ao selecionar/desmarcar uma fatia: recebe o id da categoria, ou null ao desmarcar
+   * (ou ao escolher "Outros"/"Sem categoria", que não têm id para filtrar).
+   */
+  onSelectedChange?: (categoryId: string | null) => void
 }
 
 export function CategoryBreakdownChart({
@@ -33,9 +38,11 @@ export function CategoryBreakdownChart({
   items: rawItems,
   loading,
   emptyMessage = 'Sem dados neste período',
-  onSelectCategory,
+  selectedCategoryId,
+  onSelectedChange,
 }: CategoryBreakdownChartProps) {
-  const [active, setActive] = useState<number | null>(null)
+  // Destaque local só para fatias sem categoria ("Outros"/"Sem categoria").
+  const [localActive, setLocalActive] = useState<number | null>(null)
 
   const slices = useMemo<Slice[]>(() => {
     const items = [...rawItems].sort((a, b) => b.totalAmount - a.totalAmount)
@@ -65,8 +72,20 @@ export function CategoryBreakdownChart({
   }, [rawItems])
 
   const total = slices.reduce((sum, slice) => sum + slice.value, 0)
+  const controlledIndex = selectedCategoryId ? slices.findIndex((s) => s.categoryId === selectedCategoryId) : -1
+  const active = controlledIndex >= 0 ? controlledIndex : localActive
   const selected = active !== null ? slices[active] : null
-  const toggle = (index: number) => setActive((current) => (current === index ? null : index))
+
+  const toggle = (index: number) => {
+    const slice = slices[index]
+    if (slice?.categoryId) {
+      setLocalActive(null)
+      onSelectedChange?.(slice.categoryId === selectedCategoryId ? null : slice.categoryId)
+    } else {
+      setLocalActive((current) => (current === index ? null : index))
+      onSelectedChange?.(null)
+    }
+  }
 
   return (
     <ChartCard
@@ -76,13 +95,16 @@ export function CategoryBreakdownChart({
       empty={slices.length === 0}
       emptyMessage={emptyMessage}
       action={
-        selected?.categoryId && onSelectCategory ? (
+        selected ? (
           <button
             type="button"
-            onClick={() => onSelectCategory(selected.categoryId!)}
+            onClick={() => {
+              setLocalActive(null)
+              onSelectedChange?.(null)
+            }}
             className="text-xs font-medium text-primary hover:underline"
           >
-            Filtrar por {selected.name}
+            Limpar seleção
           </button>
         ) : undefined
       }

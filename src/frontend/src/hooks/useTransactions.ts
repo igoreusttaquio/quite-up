@@ -13,10 +13,11 @@ function invalidateRelated(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['debts'] })
 }
 
-export function useTransactions(filters?: TransactionFilters) {
+export function useTransactions(filters?: TransactionFilters, enabled = true) {
   return useQuery({
     queryKey: [...TRANSACTIONS_KEY, filters] as const,
     queryFn: () => transactionsApi.list(filters).then((r) => r.data),
+    enabled,
   })
 }
 

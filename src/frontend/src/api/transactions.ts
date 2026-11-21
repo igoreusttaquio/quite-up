@@ -3,13 +3,13 @@ import type {
   Transaction,
   CreateTransactionRequest,
   UpdateTransactionRequest,
-  PaginatedResult,
+  TransactionPage,
   TransactionFilters,
 } from '../types'
 
 export const transactionsApi = {
   list: (filters?: TransactionFilters) =>
-    api.get<PaginatedResult<Transaction>>('/transactions', { params: filters }),
+    api.get<TransactionPage>('/transactions', { params: filters }),
   create: (data: CreateTransactionRequest) =>
     api.post<Transaction>('/transactions', {
       type: data.type,

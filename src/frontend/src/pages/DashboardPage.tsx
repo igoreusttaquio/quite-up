@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Wallet, ArrowUp, ArrowDown, ArrowRightLeft, Building2, Tag, User, Filter, X, Plus, ChevronRight } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
 import { useCategories } from '../hooks/useCategories'
 import { useAccounts } from '../hooks/useAccounts'
+import { useTransactions } from '../hooks/useTransactions'
 import { useAuthStore } from '../store/authStore'
 import { CurrencyBadge, type CurrencyTone } from '../components/CurrencyBadge'
 import { IconBadge } from '../components/IconBadge'
@@ -137,13 +139,38 @@ export function DashboardPage() {
   const totalBalance = dashboard?.totalBalance ?? 0
   const periodIncome = dashboard?.periodIncome ?? 0
   const periodExpenses = dashboard?.periodExpenses ?? 0
-  const recentTransactions = dashboard?.recentTransactions ?? []
   const periodDescription = describePeriod(period, startDate, endDate)
   const periodSuffix = period === 'this-month' ? 'do Mês' : 'no Período'
 
   const showCategoryIncome = filterType === 'Income'
   const categoryItems = showCategoryIncome ? dashboard?.incomeByCategory ?? [] : dashboard?.expensesByCategory ?? []
   const filterKey = `${startDate}|${endDate}|${filterType ?? ''}|${filterCategoryId ?? ''}`
+
+  // Fatia selecionada no gráfico de categorias: filtra só a lista de transações abaixo.
+  // Guardada junto com a chave dos filtros, para ser descartada quando eles mudam.
+  const [slice, setSlice] = useState<{ key: string; categoryId: string } | null>(null)
+  const sliceCategoryId = slice?.key === filterKey ? slice.categoryId : undefined
+  const sliceCategory = sliceCategoryId ? categoriesById.get(sliceCategoryId) : undefined
+  const sliceType: 'Income' | 'Expense' = showCategoryIncome ? 'Income' : 'Expense'
+
+  const sliceTransactions = useTransactions(
+    sliceCategoryId
+      ? { startDate, endDate, type: sliceType, categoryId: sliceCategoryId, page: 1, pageSize: 8 }
+      : undefined,
+    !!sliceCategoryId
+  )
+
+  const listCategoryId = sliceCategoryId ?? filterCategoryId
+  const listType = sliceCategoryId ? sliceType : filterType
+  const recentTransactions = sliceCategoryId
+    ? sliceTransactions.data?.items ?? []
+    : dashboard?.recentTransactions ?? []
+  const listLoading = sliceCategoryId ? sliceTransactions.isLoading : isLoading
+  const listTitle = sliceCategory
+    ? `Transações · ${sliceCategory.name}`
+    : hasActiveFilters
+      ? 'Transações do Filtro'
+      : 'Transações Recentes'
 
   return (
     <div className="space-y-6 pb-16 md:pb-0">
@@ -303,33 +330,45 @@ export function DashboardPage() {
           items={categoryItems}
           loading={isLoading}
           emptyMessage={showCategoryIncome ? 'Sem receitas neste período' : 'Sem despesas neste período'}
-          onSelectCategory={(id) => updateParams({ category: id })}
+          selectedCategoryId={sliceCategoryId ?? null}
+          onSelectedChange={(id) => setSlice(id ? { key: filterKey, categoryId: id } : null)}
         />
       )}
 
       {/* Recent transactions */}
       <div className="card">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-subtle">
-          <span className="text-base font-semibold">
-            {hasActiveFilters ? 'Transações do Filtro' : 'Transações Recentes'}
-          </span>
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-subtle">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-base font-semibold">{listTitle}</span>
+            {sliceCategory && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setSlice(null)}
+                aria-label="Remover filtro da categoria"
+                title="Remover filtro da categoria"
+              >
+                <X size={14} />
+              </Button>
+            )}
+          </div>
           <Link
             to={{
               pathname: '/transactions',
               search: new URLSearchParams({
                 from: startDate,
                 to: endDate,
-                ...(filterType ? { type: filterType } : {}),
-                ...(filterCategoryId ? { category: filterCategoryId } : {}),
+                ...(listType ? { type: listType } : {}),
+                ...(listCategoryId ? { category: listCategoryId } : {}),
               }).toString(),
             }}
-            className="text-sm text-primary hover:underline font-medium transition-colors"
+            className="flex-shrink-0 text-sm text-primary hover:underline font-medium transition-colors"
           >
             Ver todas →
           </Link>
         </div>
 
-        {isLoading ? (
+        {listLoading ? (
           <div className="p-5 space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 animate-pulse">
