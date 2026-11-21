@@ -27,7 +27,10 @@ public class GetTransactionsQueryHandler(
         if (request.Type.HasValue)
             query = query.Where(t => t.Type == request.Type.Value);
 
-        if (request.CategoryId.HasValue)
+        if (request.Uncategorized)
+            // Receitas/despesas sem categoria (transferências nunca têm categoria, então ficam de fora).
+            query = query.Where(t => t.CategoryId == null && t.Type != TransactionType.Transfer);
+        else if (request.CategoryId.HasValue)
             query = query.Where(t => t.CategoryId == request.CategoryId.Value);
 
         if (request.StartDate.HasValue)

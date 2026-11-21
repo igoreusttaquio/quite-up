@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { cn } from '../../lib/utils'
+import { cn, UNCATEGORIZED_ID } from '../../lib/utils'
 import type { DashboardCategoryItem } from '../../types'
 import { ChartCard } from './ChartCard'
 import { CurrencyTooltip } from './ChartTooltip'
@@ -27,7 +27,7 @@ interface CategoryBreakdownChartProps {
   selectedCategoryId?: string | null
   /**
    * Chamado ao selecionar/desmarcar uma fatia: recebe o id da categoria, ou null ao desmarcar
-   * (ou ao escolher "Outros"/"Sem categoria", que não têm id para filtrar).
+   * (ou ao escolher "Outros", que agrupa várias categorias e não tem um id para filtrar).
    */
   onSelectedChange?: (categoryId: string | null) => void
 }
@@ -41,7 +41,7 @@ export function CategoryBreakdownChart({
   selectedCategoryId,
   onSelectedChange,
 }: CategoryBreakdownChartProps) {
-  // Destaque local só para fatias sem categoria ("Outros"/"Sem categoria").
+  // Destaque local só para a fatia "Outros" (não filtra).
   const [localActive, setLocalActive] = useState<number | null>(null)
 
   const slices = useMemo<Slice[]>(() => {
@@ -50,7 +50,8 @@ export function CategoryBreakdownChart({
     if (total <= 0) return []
 
     const result: Slice[] = items.slice(0, MAX_SLICES).map((item, index) => ({
-      categoryId: item.categoryId,
+      // Fatia "Sem categoria" vem sem id: usa o filtro especial para poder ser selecionada.
+      categoryId: item.categoryId ?? UNCATEGORIZED_ID,
       name: item.categoryName,
       value: item.totalAmount,
       percentage: (item.totalAmount / total) * 100,

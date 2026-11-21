@@ -18,6 +18,7 @@ import {
   Bell,
   BarChart3,
   MoreHorizontal,
+  Plus,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useLogout } from '../hooks/useAuth'
@@ -27,6 +28,7 @@ import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/ui/button'
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip'
 import { cn } from '../lib/utils'
+import { NewTransactionProvider, useNewTransaction } from '../context/NewTransactionContext'
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
@@ -41,14 +43,57 @@ const navItems = [
   { label: 'Perfil', path: '/profile', Icon: User },
 ]
 
-const bottomNavItems = [
-  { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
+// Barra inferior (mobile): 2 itens + botão "Nova transação" no centro + 1 item + "Mais".
+const bottomNavLeft = [
+  { label: 'Início', path: '/dashboard', Icon: LayoutDashboard },
   { label: 'Transações', path: '/transactions', Icon: ArrowRightLeft },
-  { label: 'Contas', path: '/accounts', Icon: Wallet },
-  { label: 'Perfil', path: '/profile', Icon: User },
 ]
+const bottomNavRight = [{ label: 'Contas', path: '/accounts', Icon: Wallet }]
+
+function BottomNavLink({ label, path, Icon }: { label: string; path: string; Icon: typeof Wallet }) {
+  return (
+    <NavLink
+      to={path}
+      className={({ isActive }) =>
+        cn(
+          'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-1.5 min-w-0 flex-1 overflow-hidden transition-colors',
+          isActive ? 'text-primary' : 'text-muted-foreground'
+        )
+      }
+    >
+      <Icon size={20} className="flex-shrink-0" />
+      <span className="w-full truncate text-center">{label}</span>
+    </NavLink>
+  )
+}
+
+/** Botão central da barra inferior: abre o formulário de nova transação sem sair da tela. */
+function NewTransactionNavButton() {
+  const { open } = useNewTransaction()
+  return (
+    <div className="flex flex-1 items-center justify-center">
+      <button
+        type="button"
+        onClick={open}
+        aria-label="Nova transação"
+        title="Nova transação"
+        className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Plus size={22} />
+      </button>
+    </div>
+  )
+}
 
 export function DashboardLayout() {
+  return (
+    <NewTransactionProvider>
+      <DashboardShell />
+    </NewTransactionProvider>
+  )
+}
+
+function DashboardShell() {
   const user = useAuthStore((s) => s.user)
   const logout = useLogout()
   const { mode, toggle } = useTheme()
@@ -234,20 +279,12 @@ export function DashboardLayout() {
 
         {/* Bottom nav — Mobile */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-10 w-full max-w-full flex justify-around border-t border-border bg-card pb-safe">
-          {bottomNavItems.map(({ label, path, Icon }) => (
-            <NavLink
-              key={path}
-              to={path}
-              className={({ isActive }) =>
-                cn(
-                  'flex flex-col items-center gap-0.5 no-underline text-xs py-2 px-1.5 min-w-0 flex-1 overflow-hidden transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
-                )
-              }
-            >
-              <Icon size={20} className="flex-shrink-0" />
-              <span className="w-full truncate text-center">{label}</span>
-            </NavLink>
+          {bottomNavLeft.map((item) => (
+            <BottomNavLink key={item.path} {...item} />
+          ))}
+          <NewTransactionNavButton />
+          {bottomNavRight.map((item) => (
+            <BottomNavLink key={item.path} {...item} />
           ))}
           <button
             type="button"

@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useForm, Controller, type UseFormReturn } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -31,60 +31,26 @@ import { useAppToast } from '../hooks/useAppToast'
 import { ReceiptViewer } from '../components/ReceiptViewer'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
-import { useDebts } from '../hooks/useDebts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonTable } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { TransactionIcon } from '../components/TransactionIcon'
-import { Fab } from '../components/Fab'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { DateInput } from '../components/ui/date-input'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
 import { CurrencyInput } from '../components/ui/currency-input'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
-import { getApiErrorMessage, toDateParam } from '../lib/utils'
-import type { TransactionType, Transaction, TransactionTotals, Account, Category, Debt } from '../types'
-
-const transactionTypeLabels: Record<TransactionType, string> = {
-  Income: 'Receita',
-  Expense: 'Despesa',
-  Transfer: 'Transferência',
-}
+import { getApiErrorMessage, toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
+import { transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
+import { useNewTransaction } from '../context/NewTransactionContext'
+import type { TransactionType, Transaction, TransactionTotals, Account, Category } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
-
-const today = () => toDateParam(new Date())
-
-const transferRefinement = (
-  data: { type: TransactionType; accountId?: string; destinationAccountId?: string },
-  ctx: z.RefinementCtx
-) => {
-  if (data.type !== 'Transfer') return
-  if (!data.destinationAccountId) {
-    ctx.addIssue({ code: 'custom', path: ['destinationAccountId'], message: 'Conta de destino é obrigatória' })
-  } else if (data.destinationAccountId === data.accountId) {
-    ctx.addIssue({ code: 'custom', path: ['destinationAccountId'], message: 'Origem e destino devem ser diferentes' })
-  }
-}
-
-const createSchema = z
-  .object({
-    accountId: z.string().min(1, 'Conta é obrigatória'),
-    categoryId: z.string().optional(),
-    type: z.enum(['Income', 'Expense', 'Transfer']),
-    amount: z.number().positive('Valor deve ser positivo'),
-    description: z.string().optional(),
-    date: z.string().min(1, 'Data é obrigatória'),
-    destinationAccountId: z.string().optional(),
-    debtId: z.string().optional(),
-  })
-  .superRefine(transferRefinement)
 
 const updateSchema = z
   .object({
@@ -103,16 +69,8 @@ const repeatSchema = z.object({
   date: z.string().min(1, 'Data é obrigatória'),
 })
 
-type CreateFormData = z.infer<typeof createSchema>
 type UpdateFormData = z.infer<typeof updateSchema>
 type RepeatFormData = z.infer<typeof repeatSchema>
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getFieldError(errors: Record<string, any>, field: string): string | undefined {
-  const err = errors[field]
-  if (!err) return undefined
-  return typeof err.message === 'string' ? err.message : undefined
-}
 
 /** Valor com sinal do ponto de vista da conta filtrada (transferência sai de uma e entra na outra). */
 function signedAmount(tx: Transaction, accountId?: string): number {
@@ -132,6 +90,7 @@ function withCurrentAccount(accounts: Account[], id?: string, name?: string): Ac
 export function TransactionsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const toast = useAppToast()
+  const { open: openNewTransaction } = useNewTransaction()
 
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
   const filterAccountId = searchParams.get('account') || ''
@@ -181,37 +140,20 @@ export function TransactionsPage() {
 
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
-  const { data: debts } = useDebts()
   const createTransaction = useCreateTransaction()
   const updateTransaction = useUpdateTransaction()
   const deleteTransaction = useDeleteTransaction()
 
-  const [createOpen, setCreateOpen] = useState(false)
   const [detailTarget, setDetailTarget] = useState<Transaction | null>(null)
   const [editTarget, setEditTarget] = useState<Transaction | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
   const [repeatTarget, setRepeatTarget] = useState<Transaction | null>(null)
   const [viewReceipt, setViewReceipt] = useState<{ transactionId: string; attachmentId: string; fileName: string; contentType: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const createFileRef = useRef<HTMLInputElement>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
 
   const uploadAttachment = useUploadAttachment()
   const deleteAttachment = useDeleteAttachment()
-
-  const createForm = useForm<CreateFormData>({
-    resolver: zodResolver(createSchema),
-    defaultValues: {
-      accountId: '',
-      categoryId: '',
-      type: 'Expense',
-      amount: 0,
-      description: '',
-      date: today(),
-      destinationAccountId: '',
-      debtId: '',
-    },
-  })
 
   const editForm = useForm<UpdateFormData>({
     resolver: zodResolver(updateSchema),
@@ -220,7 +162,7 @@ export function TransactionsPage() {
       accountId: '',
       destinationAccountId: '',
       amount: 0,
-      date: today(),
+      date: todayParam(),
       categoryId: '',
       description: '',
     },
@@ -228,52 +170,14 @@ export function TransactionsPage() {
 
   const repeatForm = useForm<RepeatFormData>({
     resolver: zodResolver(repeatSchema),
-    defaultValues: { amount: 0, date: today() },
+    defaultValues: { amount: 0, date: todayParam() },
   })
 
-  const watchType = createForm.watch('type')
   const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
-  const pendingDebts = debts?.filter((d) => !d.isPaid) ?? []
   const totalPages = result ? Math.ceil(result.totalCount / result.pageSize) : 0
   const filterCategories = (categories ?? []).filter(
     (c) => !filterType || filterType === 'Transfer' || c.type === filterType
   )
-
-  // Ao trocar o tipo, limpa campos que não fazem sentido para o novo tipo.
-  useEffect(() => {
-    if (watchType === 'Transfer') {
-      createForm.setValue('categoryId', '')
-      createForm.setValue('debtId', '')
-    } else {
-      createForm.setValue('destinationAccountId', '')
-      const currentCategory = categories?.find((c) => c.id === createForm.getValues('categoryId'))
-      if (currentCategory && currentCategory.type !== watchType) createForm.setValue('categoryId', '')
-      if (watchType !== 'Expense') createForm.setValue('debtId', '')
-    }
-  }, [watchType, categories, createForm])
-
-  const handleCreate = async (data: CreateFormData) => {
-    try {
-      const isTransfer = data.type === 'Transfer'
-      const result = await createTransaction.mutateAsync({
-        ...data,
-        categoryId: !isTransfer ? data.categoryId || undefined : undefined,
-        destinationAccountId: isTransfer ? data.destinationAccountId || undefined : undefined,
-        description: data.description || undefined,
-        debtId: data.type === 'Expense' ? data.debtId || undefined : undefined,
-      })
-      const file = createFileRef.current?.files?.[0]
-      if (file) {
-        await uploadAttachment.mutateAsync({ transactionId: result.id, file })
-      }
-      setCreateOpen(false)
-      createForm.reset()
-      if (createFileRef.current) createFileRef.current.value = ''
-      toast.success(isTransfer ? 'Transferência registrada!' : 'Transação registrada!')
-    } catch (error) {
-      toast.error('Erro ao salvar transação', getApiErrorMessage(error))
-    }
-  }
 
   const handleEdit = async (data: UpdateFormData) => {
     if (!editTarget) return
@@ -357,43 +261,13 @@ export function TransactionsPage() {
   const openRepeat = (transaction: Transaction) => {
     setDetailTarget(null)
     setRepeatTarget(transaction)
-    repeatForm.reset({ amount: transaction.amount, date: today() })
+    repeatForm.reset({ amount: transaction.amount, date: todayParam() })
   }
 
   const openDelete = (transaction: Transaction) => {
     setDetailTarget(null)
     setDeleteTarget(transaction)
   }
-
-  const openCreate = () => {
-    createForm.reset({
-      accountId: '',
-      categoryId: '',
-      type: 'Expense',
-      amount: 0,
-      description: '',
-      date: today(),
-      destinationAccountId: '',
-      debtId: '',
-    })
-    setCreateOpen(true)
-  }
-
-  // Atalho vindo de outras telas (ex.: botão flutuante do dashboard): /transactions?new=1
-  const openNewFromUrl = searchParams.get('new') === '1'
-  useEffect(() => {
-    if (!openNewFromUrl) return
-    openCreate()
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        next.delete('new')
-        return next
-      },
-      { replace: true }
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openNewFromUrl])
 
   const categoriesById = new Map((categories ?? []).map((c) => [c.id, c]))
 
@@ -406,16 +280,15 @@ export function TransactionsPage() {
   const editCategories = (categories ?? []).filter((c) => c.type === editTarget?.type)
 
   return (
-    <div className="w-full min-w-0 pb-16 md:pb-0">
+    <div className="w-full min-w-0">
       <PageHeader
         title="Transações"
         action={
-          <Button onClick={openCreate} icon={<Plus size={16} />} className="hidden md:inline-flex">
+          <Button onClick={openNewTransaction} icon={<Plus size={16} />} >
             Nova Transação
           </Button>
         }
       />
-      <Fab onClick={openCreate} label="Nova transação" icon={<Plus size={24} />} />
 
       {/* Filter bar */}
       <div className="mb-5 card px-4 py-3">
@@ -445,7 +318,7 @@ export function TransactionsPage() {
                     const next = new URLSearchParams(prev)
                     if (value) next.set('type', value)
                     else next.delete('type')
-                    if (category && value && (value === 'Transfer' || category.type !== value)) next.delete('category')
+                    if (value === 'Transfer' || (category && value && category.type !== value)) next.delete('category')
                     next.delete('page')
                     return next
                   },
@@ -466,6 +339,7 @@ export function TransactionsPage() {
               onChange={(e) => updateFilter('category', e.target.value)}
             >
               <option value="">Todas as categorias</option>
+              <option value={UNCATEGORIZED_ID}>Sem categoria</option>
               {filterCategories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -511,7 +385,7 @@ export function TransactionsPage() {
           description={hasActiveFilters ? 'Tente ajustar os filtros.' : 'Registre sua primeira transação.'}
           action={
             !hasActiveFilters ? (
-              <Button onClick={openCreate} icon={<Plus size={16} />}>Nova Transação</Button>
+              <Button onClick={openNewTransaction} icon={<Plus size={16} />}>Nova Transação</Button>
             ) : (
               <Button variant="outline" onClick={clearFilters}>Limpar filtros</Button>
             )
@@ -544,21 +418,6 @@ export function TransactionsPage() {
           uploadingId={uploadingId}
         />
       )}
-
-      {/* Create sheet */}
-      <TransactionFormSheet
-        open={createOpen}
-        title="Nova Transação"
-        form={createForm}
-        accounts={activeAccounts}
-        categories={(categories ?? []).filter((c) => c.type === watchType)}
-        debts={pendingDebts}
-        watchType={watchType}
-        isPending={createTransaction.isPending || uploadAttachment.isPending}
-        onSubmit={createForm.handleSubmit(handleCreate as () => Promise<void>)}
-        onClose={() => setCreateOpen(false)}
-        fileInputRef={createFileRef}
-      />
 
       {/* Detail / actions dialog */}
       <Dialog open={!!detailTarget} onOpenChange={(open) => { if (!open) setDetailTarget(null) }}>
@@ -1167,7 +1026,7 @@ const weekdayFormatter = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', da
 const weekdayYearFormatter = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 
 function dayLabel(date: string): string {
-  const todayStr = today()
+  const todayStr = todayParam()
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
   if (date === todayStr) return 'Hoje'
@@ -1195,212 +1054,4 @@ function getPaginationPages(current: number, total: number): (number | '…')[] 
   if (current < total - 2) pages.push('…')
   pages.push(total)
   return pages
-}
-
-// ─── TransactionFormSheet ─────────────────────────────────────────────────────
-
-function TransactionFormSheet({
-  open,
-  title,
-  form,
-  accounts,
-  categories,
-  debts,
-  watchType,
-  isPending,
-  onSubmit,
-  onClose,
-  fileInputRef,
-}: {
-  open: boolean
-  title: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  form: UseFormReturn<any>
-  accounts: Account[]
-  categories: Category[]
-  debts: Debt[]
-  watchType: TransactionType
-  isPending: boolean
-  onSubmit: () => void
-  onClose: () => void
-  fileInputRef?: React.RefObject<HTMLInputElement | null>
-}) {
-  const isTransfer = watchType === 'Transfer'
-  const originId = form.watch('accountId')
-
-  return (
-    <Sheet open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
-        </SheetHeader>
-        <SheetBody>
-          <div className="space-y-4">
-            <Controller
-              name="type"
-              control={form.control}
-              render={({ field }) => (
-                <Field label="Tipo" required>
-                  <NativeSelect {...field}>
-                    {(Object.entries(transactionTypeLabels) as [TransactionType, string][]).map(([v, l]) => (
-                      <option key={v} value={v}>{l}</option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="accountId"
-              control={form.control}
-              render={({ field }) => (
-                <Field
-                  label={isTransfer ? 'Conta de Origem (sai)' : 'Conta'}
-                  required
-                  validationState={form.formState.errors.accountId ? 'error' : undefined}
-                  validationMessage={getFieldError(form.formState.errors, 'accountId')}
-                >
-                  <NativeSelect
-                    {...field}
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      field.onChange(e)
-                      if (e.target.value && e.target.value === form.getValues('destinationAccountId')) {
-                        form.setValue('destinationAccountId', '')
-                      }
-                    }}
-                  >
-                    <option value="">Selecione uma conta</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              )}
-            />
-
-            {isTransfer && (
-              <Controller
-                name="destinationAccountId"
-                control={form.control}
-                render={({ field }) => (
-                  <Field
-                    label="Conta de Destino (entra)"
-                    required
-                    validationState={form.formState.errors.destinationAccountId ? 'error' : undefined}
-                    validationMessage={getFieldError(form.formState.errors, 'destinationAccountId')}
-                  >
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Selecione uma conta</option>
-                      {accounts
-                        .filter((a) => a.id !== originId)
-                        .map((a) => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            )}
-
-            {!isTransfer && (
-              <Controller
-                name="categoryId"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Categoria">
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Sem categoria</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            )}
-
-            {watchType === 'Expense' && debts.length > 0 && (
-              <Controller
-                name="debtId"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Lançar na dívida">
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Nenhuma</option>
-                      {debts.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            )}
-
-            <Controller
-              name="amount"
-              control={form.control}
-              render={({ field: { onChange, value } }) => (
-                <Field
-                  label="Valor"
-                  required
-                  validationState={form.formState.errors.amount ? 'error' : undefined}
-                  validationMessage={getFieldError(form.formState.errors, 'amount')}
-                >
-                  <CurrencyInput value={value ?? 0} onChange={onChange} />
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="date"
-              control={form.control}
-              render={({ field }) => (
-                <Field
-                  label="Data"
-                  required
-                  validationState={form.formState.errors.date ? 'error' : undefined}
-                  validationMessage={getFieldError(form.formState.errors, 'date')}
-                >
-                  <DateInput {...field} />
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="description"
-              control={form.control}
-              render={({ field }) => (
-                <Field label="Descrição">
-                  <Input {...field} placeholder="Descrição opcional" />
-                </Field>
-              )}
-            />
-
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf"
-                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-5">
-            <Button
-              className="flex-1"
-              onClick={onSubmit}
-              disabled={isPending}
-              icon={isPending ? <Loader2 size={14} className="animate-spin" /> : undefined}
-            >
-              {isPending ? 'Salvando…' : 'Salvar'}
-            </Button>
-            <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          </div>
-        </SheetBody>
-      </SheetContent>
-    </Sheet>
-  )
 }

@@ -14,6 +14,8 @@ namespace QuiteUp.Api.Endpoints.Transactions;
 
 public class TransactionEndpoints : IEndpoint
 {
+    private const string UncategorizedFilter = "none";
+
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/transactions")
@@ -32,12 +34,14 @@ public class TransactionEndpoints : IEndpoint
             int pageSize = 20) =>
         {
             long? decodedAccountId = accountId is not null ? encoder.Decode(accountId) : null;
-            long? decodedCategoryId = categoryId is not null ? encoder.Decode(categoryId) : null;
+            // categoryId=none filtra as transações sem categoria.
+            var uncategorized = categoryId == UncategorizedFilter;
+            long? decodedCategoryId = categoryId is not null && !uncategorized ? encoder.Decode(categoryId) : null;
             DateOnly? parsedStart = startDate is not null && DateOnly.TryParse(startDate, out var s) ? s : null;
             DateOnly? parsedEnd = endDate is not null && DateOnly.TryParse(endDate, out var e) ? e : null;
 
             var result = await sender.Send(new GetTransactionsQuery(
-                decodedAccountId, type, decodedCategoryId, parsedStart, parsedEnd, page, pageSize));
+                decodedAccountId, type, decodedCategoryId, parsedStart, parsedEnd, page, pageSize, uncategorized));
 
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
         });

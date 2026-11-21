@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Wallet, ArrowUp, ArrowDown, ArrowRightLeft, Building2, Tag, User, Filter, X, Plus, ChevronRight } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Wallet, ArrowUp, ArrowDown, ArrowRightLeft, Building2, Tag, User, Filter, X, ChevronRight } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
 import { useCategories } from '../hooks/useCategories'
 import { useAccounts } from '../hooks/useAccounts'
@@ -8,7 +8,6 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useAuthStore } from '../store/authStore'
 import { CurrencyBadge, type CurrencyTone } from '../components/CurrencyBadge'
 import { IconBadge } from '../components/IconBadge'
-import { Fab } from '../components/Fab'
 import { TransactionIcon } from '../components/TransactionIcon'
 import { accountTypeVisual } from '../lib/entity-icons'
 import { SkeletonCard } from '../components/Skeleton'
@@ -17,7 +16,7 @@ import { CategoryBreakdownChart } from '../components/charts/CategoryBreakdownCh
 import { NativeSelect } from '../components/ui/native-select'
 import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
-import { cn, toDateParam } from '../lib/utils'
+import { cn, toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
 import type { Account, DashboardFilters, TransactionType } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
@@ -78,7 +77,6 @@ export function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: categories } = useCategories()
   const { data: accounts, isLoading: accountsLoading } = useAccounts()
-  const navigate = useNavigate()
 
   const rawPeriod = searchParams.get('period')
   const period: PeriodPreset = rawPeriod && rawPeriod in periodLabels ? (rawPeriod as PeriodPreset) : DEFAULT_PERIOD
@@ -150,7 +148,11 @@ export function DashboardPage() {
   // Guardada junto com a chave dos filtros, para ser descartada quando eles mudam.
   const [slice, setSlice] = useState<{ key: string; categoryId: string } | null>(null)
   const sliceCategoryId = slice?.key === filterKey ? slice.categoryId : undefined
-  const sliceCategory = sliceCategoryId ? categoriesById.get(sliceCategoryId) : undefined
+  const sliceCategoryName = !sliceCategoryId
+    ? undefined
+    : sliceCategoryId === UNCATEGORIZED_ID
+      ? 'Sem categoria'
+      : categoriesById.get(sliceCategoryId)?.name
   const sliceType: 'Income' | 'Expense' = showCategoryIncome ? 'Income' : 'Expense'
 
   const sliceTransactions = useTransactions(
@@ -166,20 +168,14 @@ export function DashboardPage() {
     ? sliceTransactions.data?.items ?? []
     : dashboard?.recentTransactions ?? []
   const listLoading = sliceCategoryId ? sliceTransactions.isLoading : isLoading
-  const listTitle = sliceCategory
-    ? `Transações · ${sliceCategory.name}`
+  const listTitle = sliceCategoryName
+    ? `Transações · ${sliceCategoryName}`
     : hasActiveFilters
       ? 'Transações do Filtro'
       : 'Transações Recentes'
 
   return (
-    <div className="space-y-6 pb-16 md:pb-0">
-      <Fab
-        onClick={() => navigate('/transactions?new=1')}
-        label="Nova transação"
-        icon={<Plus size={24} />}
-      />
-
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">
@@ -340,7 +336,7 @@ export function DashboardPage() {
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-subtle">
           <div className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-base font-semibold">{listTitle}</span>
-            {sliceCategory && (
+            {sliceCategoryName && (
               <Button
                 variant="ghost"
                 size="icon-sm"

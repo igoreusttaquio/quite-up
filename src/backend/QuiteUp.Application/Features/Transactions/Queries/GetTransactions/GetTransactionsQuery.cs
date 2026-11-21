@@ -12,5 +12,6 @@ public record GetTransactionsQuery(
     DateOnly? StartDate = null,
     DateOnly? EndDate = null,
     int Page = 1,
-    int PageSize = 20
+    int PageSize = 20,
+    bool Uncategorized = false
 ) : IRequest<Result<TransactionPageDto>>;

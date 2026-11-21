@@ -5,6 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Valor de filtro de categoria que significa "sem categoria" (entendido pela API). */
+export const UNCATEGORIZED_ID = 'none'
+
 /** Extrai uma mensagem legível de um erro da API (axios), com fallback. */
 export function getApiErrorMessage(error: unknown, fallback = 'Não foi possível concluir a operação.'): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
