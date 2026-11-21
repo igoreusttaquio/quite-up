@@ -56,7 +56,7 @@ public class TransactionEndpoints : IEndpoint
             long? debtId = req.DebtId is not null ? encoder.Decode(req.DebtId) : null;
 
             var result = await sender.Send(new CreateTransactionCommand(
-                req.Type, req.Amount, req.Date, accountId.Value, catId, destId, req.Description, debtId));
+                req.Type, req.Amount, req.Date, accountId.Value, catId, destId, req.Description, debtId, req.ClientRequestId));
 
             return result.IsSuccess
                 ? Results.Created($"/api/transactions/{result.Value!.Id}", result.Value)
@@ -136,7 +136,8 @@ public class TransactionEndpoints : IEndpoint
         string? CategoryId,
         string? DestinationAccountId,
         string? Description,
-        string? DebtId = null);
+        string? DebtId = null,
+        Guid? ClientRequestId = null);
 
     private record UpdateTransactionRequest(
         decimal Amount,

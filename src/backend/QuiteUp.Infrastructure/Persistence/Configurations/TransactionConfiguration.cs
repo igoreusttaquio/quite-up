@@ -24,6 +24,7 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.Property(t => t.Date).HasColumnName("date");
         builder.Property(t => t.Description).HasColumnName("description").HasMaxLength(255);
         builder.Property(t => t.DebtId).HasColumnName("debt_id");
+        builder.Property(t => t.ClientRequestId).HasColumnName("client_request_id");
 
         builder.HasOne(t => t.Account)
             .WithMany(a => a.Transactions)
@@ -49,5 +50,9 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.HasIndex(t => new { t.AccountId, t.Date }).HasDatabaseName("ix_transactions_account_id_date");
         builder.HasIndex(t => t.DestinationAccountId).HasDatabaseName("ix_transactions_destination_account_id");
         builder.HasIndex(t => t.DebtId).HasDatabaseName("ix_transactions_debt_id");
+        builder.HasIndex(t => new { t.UserId, t.ClientRequestId })
+            .IsUnique()
+            .HasFilter("client_request_id IS NOT NULL")
+            .HasDatabaseName("ux_transactions_user_id_client_request_id");
     }
 }

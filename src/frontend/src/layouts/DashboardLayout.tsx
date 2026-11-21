@@ -24,6 +24,7 @@ import {
   type SidebarNavItem,
 } from '../components/layout/DesktopSidebar'
 import { BottomNav, MobileHeader } from '../components/layout/MobileNav'
+import { OfflineBanner } from '../components/OfflineBanner'
 
 const navItems: SidebarNavItem[] = [
   { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
@@ -66,6 +67,7 @@ function DashboardShell() {
           )}
         >
           <MobileHeader />
+          <OfflineBanner />
 
           {/* Conteúdo: no celular, espaço para a barra inferior + safe area */}
           <div

@@ -702,6 +702,10 @@ namespace QuiteUp.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("category_id");
 
+                    b.Property<Guid?>("ClientRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("client_request_id");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -750,6 +754,11 @@ namespace QuiteUp.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("AccountId", "Date")
                         .HasDatabaseName("ix_transactions_account_id_date");
+
+                    b.HasIndex("UserId", "ClientRequestId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_transactions_user_id_client_request_id")
+                        .HasFilter("client_request_id IS NOT NULL");
 
                     b.ToTable("transactions", (string)null);
                 });

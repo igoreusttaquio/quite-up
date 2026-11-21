@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAppToast } from './useAppToast'
 import { transactionsApi } from '../api/transactions'
-import type { CreateTransactionRequest, UpdateTransactionRequest, TransactionFilters, TransactionPage } from '../types'
+import { mutationKeys, type CreateTransactionVariables } from '../lib/queryClient'
+import { tempTransactionId } from '../lib/offline'
+import type { Account, Category, Transaction, UpdateTransactionRequest, TransactionFilters, TransactionPage } from '../types'
 
 const TRANSACTIONS_KEY = ['transactions'] as const
 
@@ -23,28 +25,93 @@ export function useTransactions(filters?: TransactionFilters, enabled = true) {
   })
 }
 
+/** Aplica `update` a todas as listas de transações em cache. */
+function updateCachedLists(
+  queryClient: ReturnType<typeof useQueryClient>,
+  update: (page: TransactionPage) => TransactionPage
+) {
+  queryClient.setQueriesData<TransactionPage>({ queryKey: TRANSACTIONS_KEY }, (old) =>
+    old && 'items' in old ? update(old) : old
+  )
+}
+
+/**
+ * Cria transação (com comprovante opcional). Otimista: aparece na hora na lista com um
+ * id provisório; offline, fica na fila e é enviada ao voltar a conexão, sem duplicar
+ * (clientRequestId).
+ */
 export function useCreateTransaction() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (data: CreateTransactionRequest) => transactionsApi.create(data).then((r) => r.data),
-    onSuccess: () => invalidateRelated(queryClient),
+  return useMutation<Transaction, Error, CreateTransactionVariables>({
+    mutationKey: mutationKeys.createTransaction,
+    onMutate: (vars) => {
+      const accounts = queryClient.getQueryData<Account[]>(['accounts']) ?? []
+      const categories = queryClient.getQueryData<Category[]>(['categories']) ?? []
+      const temp: Transaction = {
+        id: tempTransactionId(vars.clientRequestId),
+        type: vars.type,
+        amount: vars.amount,
+        date: vars.date,
+        description: vars.description,
+        accountId: vars.accountId,
+        accountName: accounts.find((a) => a.id === vars.accountId)?.name ?? '',
+        categoryId: vars.categoryId,
+        categoryName: categories.find((c) => c.id === vars.categoryId)?.name,
+        destinationAccountId: vars.destinationAccountId,
+        destinationAccountName: accounts.find((a) => a.id === vars.destinationAccountId)?.name,
+        debtId: vars.debtId,
+        createdAt: new Date().toISOString(),
+      }
+      // Só na 1ª página de cada lista (as demais se acertam ao sincronizar).
+      updateCachedLists(queryClient, (page) =>
+        page.page === 1 ? { ...page, items: [temp, ...page.items], totalCount: page.totalCount + 1 } : page
+      )
+    },
+    onSettled: () => invalidateRelated(queryClient),
   })
 }
 
 export function useUpdateTransaction() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateTransactionRequest }) =>
-      transactionsApi.update(id, data).then((r) => r.data),
-    onSuccess: () => invalidateRelated(queryClient),
+  return useMutation<Transaction, Error, { id: string; data: UpdateTransactionRequest }>({
+    mutationKey: mutationKeys.updateTransaction,
+    onMutate: ({ id, data }) => {
+      const categories = queryClient.getQueryData<Category[]>(['categories']) ?? []
+      const accounts = queryClient.getQueryData<Account[]>(['accounts']) ?? []
+      updateCachedLists(queryClient, (page) => ({
+        ...page,
+        items: page.items.map((t) =>
+          t.id !== id
+            ? t
+            : {
+                ...t,
+                amount: data.amount,
+                date: data.date,
+                description: data.description,
+                categoryId: data.categoryId,
+                categoryName: categories.find((c) => c.id === data.categoryId)?.name,
+                ...(data.accountId && {
+                  accountId: data.accountId,
+                  accountName: accounts.find((a) => a.id === data.accountId)?.name ?? t.accountName,
+                }),
+                ...(data.destinationAccountId && {
+                  destinationAccountId: data.destinationAccountId,
+                  destinationAccountName:
+                    accounts.find((a) => a.id === data.destinationAccountId)?.name ?? t.destinationAccountName,
+                }),
+              }
+        ),
+      }))
+    },
+    onSettled: () => invalidateRelated(queryClient),
   })
 }
 
 export function useDeleteTransaction() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => transactionsApi.delete(id),
-    onSuccess: () => invalidateRelated(queryClient),
+  return useMutation<void, Error, string>({
+    mutationKey: mutationKeys.deleteTransaction,
+    onSettled: () => invalidateRelated(queryClient),
   })
 }
 
@@ -74,11 +141,11 @@ export function useUndoableDeleteTransaction() {
   }, [])
 
   return (id: string, description: string) => {
-    queryClient.setQueriesData<TransactionPage>({ queryKey: TRANSACTIONS_KEY }, (old) =>
-      old && 'items' in old
-        ? { ...old, items: old.items.filter((t) => t.id !== id), totalCount: Math.max(0, old.totalCount - 1) }
-        : old
-    )
+    updateCachedLists(queryClient, (page) => ({
+      ...page,
+      items: page.items.filter((t) => t.id !== id),
+      totalCount: Math.max(0, page.totalCount - 1),
+    }))
 
     const timer = window.setTimeout(() => {
       pending.current.delete(id)

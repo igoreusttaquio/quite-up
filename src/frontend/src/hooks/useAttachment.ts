@@ -1,36 +1,36 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { attachmentsApi } from '../api/attachments'
+import { mutationKeys } from '../lib/queryClient'
 import { useAppToast } from './useAppToast'
+import type { Attachment } from '../types'
 
+function invalidate(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['transactions'] })
+  queryClient.invalidateQueries({ queryKey: ['debts'] })
+}
+
+/** Envia comprovante. Offline, o arquivo fica salvo localmente e é enviado ao voltar a conexão. */
 export function useUploadAttachment() {
   const queryClient = useQueryClient()
   const toast = useAppToast()
-  return useMutation({
-    mutationFn: ({ transactionId, file }: { transactionId: string; file: File }) =>
-      attachmentsApi.upload(transactionId, file).then((r) => r.data),
+  return useMutation<Attachment, Error, { transactionId: string; file: File }>({
+    mutationKey: mutationKeys.uploadAttachment,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['debts'] })
-      toast.success('Comprovante anexado com sucesso!')
+      invalidate(queryClient)
+      toast.success('Comprovante anexado')
     },
-    onError: () => {
-      toast.error('Erro ao anexar comprovante.')
-    },
+    onError: () => toast.error('Erro ao anexar comprovante'),
   })
 }
 
 export function useDeleteAttachment() {
   const queryClient = useQueryClient()
   const toast = useAppToast()
-  return useMutation({
-    mutationFn: (transactionId: string) => attachmentsApi.deleteByTransaction(transactionId),
+  return useMutation<void, Error, string>({
+    mutationKey: mutationKeys.deleteAttachment,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['debts'] })
-      toast.success('Comprovante removido!')
+      invalidate(queryClient)
+      toast.success('Comprovante removido')
     },
-    onError: () => {
-      toast.error('Erro ao remover comprovante.')
-    },
+    onError: () => toast.error('Erro ao remover comprovante'),
   })
 }

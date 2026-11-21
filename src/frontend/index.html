@@ -5,8 +5,15 @@
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#61459C" />
+    <!-- viewport-fit=cover: o app ocupa a tela toda (notch/barra de gestos tratados com env(safe-area-inset-*)).
+         interactive-widget: o teclado virtual redimensiona o conteúdo, sem cobrir campos e rodapés. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+    <!-- Cor da barra do sistema por tema; sincronizada com o tema escolhido no app (ThemeContext). -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1922" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Quite-Up</title>
   </head>
   <body>

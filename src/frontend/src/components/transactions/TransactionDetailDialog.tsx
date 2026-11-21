@@ -19,11 +19,12 @@ import { IconBadge } from '../IconBadge'
 import { TransactionTypeIcon } from '../TransactionTypeIcon'
 import { CategoryIcon } from '../../lib/category-icon'
 import { accountTypeVisual } from '../../lib/entity-icons'
-import { compressImage } from '../../lib/image'
 import { formatBRL, transactionTypeLabels } from '../../lib/transactions'
 import { cn, toDateParam } from '../../lib/utils'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { useAttachmentBlob } from '../../hooks/useAttachmentBlob'
+import { isTempTransactionId } from '../../lib/offline'
+import { PendingSyncBadge } from '../PendingSyncBadge'
 import type { Account, Category, Transaction, TransactionType } from '../../types'
 
 const typeBadge: Record<TransactionType, 'expense' | 'income' | 'secondary'> = {
@@ -66,6 +67,8 @@ interface TransactionDetailDialogProps {
   onRemoveAttachment: (t: Transaction) => Promise<unknown>
   onViewAttachment: (t: Transaction) => void
   uploading?: boolean
+  /** Há alterações desta transação aguardando sincronização (feitas offline). */
+  pendingSync?: boolean
 }
 
 export function TransactionDetailDialog({
@@ -81,6 +84,7 @@ export function TransactionDetailDialog({
   onRemoveAttachment,
   onViewAttachment,
   uploading,
+  pendingSync,
 }: TransactionDetailDialogProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -94,13 +98,14 @@ export function TransactionDetailDialog({
       // Só quando este é o único diálogo aberto (nada empilhado por cima).
       if (document.querySelectorAll('[role="dialog"]').length !== 1) return
       const key = e.key.toLowerCase()
-      if (key === 'e') {
+      const temp = isTempTransactionId(tx.id)
+      if (key === 'e' && !temp) {
         e.preventDefault()
         onEdit(tx)
       } else if (key === 'd') {
         e.preventDefault()
         onDuplicate(tx)
-      } else if (e.key === 'Delete') {
+      } else if (e.key === 'Delete' && !temp) {
         e.preventDefault()
         setConfirmDelete(true)
       }
@@ -114,6 +119,8 @@ export function TransactionDetailDialog({
   }
 
   const isTransfer = tx.type === 'Transfer'
+  // Criada offline e ainda sem id no servidor: só dá para duplicar até sincronizar.
+  const notSynced = isTempTransactionId(tx.id)
   const amount = signedAmount(tx)
   const title = tx.description || category?.name || transactionTypeLabels[tx.type]
   const account = accounts.find((a) => a.id === tx.accountId)
@@ -152,7 +159,7 @@ export function TransactionDetailDialog({
         footer={
           <DialogActions
             primary={
-              <Button onClick={() => onEdit(tx)} icon={<Pencil size={14} />}>
+              <Button onClick={() => onEdit(tx)} icon={<Pencil size={14} />} disabled={notSynced}>
                 Editar
               </Button>
             }
@@ -165,6 +172,7 @@ export function TransactionDetailDialog({
               <Button
                 variant="ghost"
                 onClick={() => setConfirmDelete(true)}
+                disabled={notSynced}
                 icon={<Trash2 size={14} />}
                 className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
@@ -197,6 +205,7 @@ export function TransactionDetailDialog({
               {formatBRL(Math.abs(amount))}
             </p>
             <p className="mt-1.5 text-sm text-muted-foreground">{describeDate(tx.date)}</p>
+            {(pendingSync || notSynced) && <PendingSyncBadge className="mt-2" />}
           </div>
         </div>
 
@@ -237,13 +246,19 @@ export function TransactionDetailDialog({
           )}
         </dl>
 
-        <AttachmentSection
-          transaction={tx}
-          uploading={!!uploading}
-          onUpload={(file) => onUploadAttachment(tx, file)}
-          onRemove={() => onRemoveAttachment(tx)}
-          onView={() => onViewAttachment(tx)}
-        />
+        {notSynced ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-4 text-center text-sm text-muted-foreground">
+            O comprovante poderá ser anexado depois que esta transação sincronizar.
+          </p>
+        ) : (
+          <AttachmentSection
+            transaction={tx}
+            uploading={!!uploading}
+            onUpload={(file) => onUploadAttachment(tx, file)}
+            onRemove={() => onRemoveAttachment(tx)}
+            onView={() => onViewAttachment(tx)}
+          />
+        )}
 
         <p className="text-center text-xs text-muted-foreground">
           Criada em {createdAtFormat.format(createdAt)} às {createdAtTime.format(createdAt)}
@@ -310,8 +325,7 @@ function AttachmentSection({
     if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return
     setPreparing(true)
     try {
-      const prepared = await compressImage(file)
-      await onUpload(prepared)
+      await onUpload(file)
     } finally {
       setPreparing(false)
       if (inputRef.current) inputRef.current.value = ''

@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
 import { useCreateTransaction } from '../hooks/useTransactions'
-import { useUploadAttachment } from '../hooks/useAttachment'
 import { useAppToast } from '../hooks/useAppToast'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
@@ -18,6 +17,8 @@ import { NativeSelect } from './ui/native-select'
 import { CurrencyInput } from './ui/currency-input'
 import { ResponsiveDialog, DialogActions } from './ui/responsive-dialog'
 import { getApiErrorMessage } from '../lib/utils'
+import { compressImage } from '../lib/image'
+import { isOnline } from '../lib/offline'
 import { describeAmount, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
 import type { TransactionType, Account, Category, Debt } from '../types'
 
@@ -73,7 +74,6 @@ export function NewTransactionSheet({
   const { data: categories } = useCategories()
   const { data: debts } = useDebts()
   const createTransaction = useCreateTransaction()
-  const uploadAttachment = useUploadAttachment()
   const fileRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<CreateFormData>({
@@ -107,17 +107,26 @@ export function NewTransactionSheet({
   const handleCreate = async (data: CreateFormData) => {
     try {
       const isTransfer = data.type === 'Transfer'
-      const result = await createTransaction.mutateAsync({
+      const picked = fileRef.current?.files?.[0]
+      const variables = {
         ...data,
         categoryId: !isTransfer ? data.categoryId || undefined : undefined,
         destinationAccountId: isTransfer ? data.destinationAccountId || undefined : undefined,
         description: data.description || undefined,
         debtId: data.type === 'Expense' ? data.debtId || undefined : undefined,
-      })
-      const file = fileRef.current?.files?.[0]
-      if (file) {
-        await uploadAttachment.mutateAsync({ transactionId: result.id, file })
+        clientRequestId: crypto.randomUUID(),
+        file: picked ? await compressImage(picked) : undefined,
       }
+
+      // Sem conexão: entra na fila (aparece na lista como pendente) e é enviada ao voltar a internet.
+      if (!isOnline()) {
+        createTransaction.mutate(variables)
+        onOpenChange(false)
+        toast.info('Salva offline', 'Será sincronizada quando a conexão voltar.')
+        return
+      }
+
+      await createTransaction.mutateAsync(variables)
       onOpenChange(false)
       const accountName = (id?: string) => accounts?.find((a) => a.id === id)?.name
       const details = isTransfer
@@ -141,7 +150,7 @@ export function NewTransactionSheet({
       categories={(categories ?? []).filter((c) => c.type === watchType)}
       debts={debts?.filter((d) => !d.isPaid) ?? []}
       watchType={watchType}
-      isPending={createTransaction.isPending || uploadAttachment.isPending}
+      isPending={createTransaction.isPending && isOnline()}
       onSubmit={form.handleSubmit(handleCreate as () => Promise<void>)}
       onClose={() => onOpenChange(false)}
       dirty={form.formState.isDirty}
@@ -353,7 +362,7 @@ function TransactionFormSheet({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,.pdf"
+            accept="image/*,application/pdf"
             className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
           />
         </div>

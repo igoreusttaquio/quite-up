@@ -70,6 +70,8 @@ export interface Transaction {
 }
 
 export interface CreateTransactionRequest {
+  /** Chave de idempotência gerada no cliente. */
+  clientRequestId?: string
   type: TransactionType
   amount: number
   date: string

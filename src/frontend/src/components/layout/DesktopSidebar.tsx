@@ -138,7 +138,7 @@ export function DesktopSidebar({ items }: { items: SidebarNavItem[] }) {
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col fixed top-0 left-0 z-20 h-screen border-r border-border bg-card',
+        'hidden md:flex flex-col fixed top-0 left-0 z-20 h-dvh border-r border-border bg-card',
         'transition-[width] duration-200 ease-in-out',
         collapsed ? 'w-[72px]' : 'w-[240px]'
       )}

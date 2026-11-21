@@ -13,5 +13,6 @@ public record CreateTransactionCommand(
     long? CategoryId,
     long? DestinationAccountId,
     string? Description,
-    long? DebtId = null
+    long? DebtId = null,
+    Guid? ClientRequestId = null
 ) : IRequest<Result<TransactionDto>>;

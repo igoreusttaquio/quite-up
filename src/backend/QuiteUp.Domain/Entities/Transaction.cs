@@ -16,6 +16,9 @@ public class Transaction : BaseEntity
 
     public long? DebtId { get; set; }
 
+    /// <summary>Chave de idempotência gerada pelo cliente (reenvios offline não duplicam).</summary>
+    public Guid? ClientRequestId { get; set; }
+
     public Attachment? Attachment { get; set; }
 
     public Account Account { get; set; } = null!;

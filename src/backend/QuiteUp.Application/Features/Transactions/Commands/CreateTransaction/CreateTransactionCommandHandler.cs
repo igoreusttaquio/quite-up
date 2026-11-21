@@ -17,6 +17,21 @@ public class CreateTransactionCommandHandler(
     {
         var userId = currentUser.UserId!.Value;
 
+        // Idempotência: reenvio da mesma criação (ex.: fila offline) devolve a transação já criada.
+        if (request.ClientRequestId.HasValue)
+        {
+            var existing = await context.Transactions
+                .Include(t => t.Account)
+                .Include(t => t.DestinationAccount)
+                .Include(t => t.Category)
+                .Include(t => t.Debt)
+                .Include(t => t.Attachment)
+                .FirstOrDefaultAsync(t => t.UserId == userId && t.ClientRequestId == request.ClientRequestId, cancellationToken);
+
+            if (existing is not null)
+                return Result<TransactionDto>.Success(ToDto(existing, idEncoder));
+        }
+
         var account = await context.Accounts
             .FirstOrDefaultAsync(a => a.Id == request.AccountId && a.UserId == userId, cancellationToken);
 
@@ -60,7 +75,8 @@ public class CreateTransactionCommandHandler(
             Amount = request.Amount,
             Date = request.Date,
             Description = request.Description,
-            DebtId = request.DebtId.HasValue && request.Type == TransactionType.Expense ? request.DebtId : null
+            DebtId = request.DebtId.HasValue && request.Type == TransactionType.Expense ? request.DebtId : null,
+            ClientRequestId = request.ClientRequestId
         };
 
         context.Transactions.Add(transaction);

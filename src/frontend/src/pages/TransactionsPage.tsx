@@ -44,6 +44,9 @@ import { NativeSelect } from '../components/ui/native-select'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { Spinner } from '../components/ui/spinner'
 import { getApiErrorMessage, toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
+import { compressImage } from '../lib/image'
+import { isOnline, isTempTransactionId, usePendingSyncIds } from '../lib/offline'
+import { PendingSyncBadge } from '../components/PendingSyncBadge'
 import { describeAmount, formatBRL, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
 import { TransactionDetailDialog } from '../components/transactions/TransactionDetailDialog'
 import { useNewTransaction } from '../context/NewTransactionContext'
@@ -166,18 +169,26 @@ export function TransactionsPage() {
   const handleEdit = async (data: UpdateFormData) => {
     if (!editTarget) return
     const isTransfer = editTarget.type === 'Transfer'
+    const variables = {
+      id: editTarget.id,
+      data: {
+        amount: data.amount,
+        date: data.date,
+        accountId: data.accountId,
+        destinationAccountId: isTransfer ? data.destinationAccountId || undefined : undefined,
+        categoryId: !isTransfer ? data.categoryId || undefined : undefined,
+        description: data.description || undefined,
+      },
+    }
+    // Offline: aplica na hora (otimista) e sincroniza depois.
+    if (!isOnline()) {
+      updateTransaction.mutate(variables)
+      setEditTarget(null)
+      toast.info('Alteração salva offline', 'Será sincronizada quando a conexão voltar.')
+      return
+    }
     try {
-      await updateTransaction.mutateAsync({
-        id: editTarget.id,
-        data: {
-          amount: data.amount,
-          date: data.date,
-          accountId: data.accountId,
-          destinationAccountId: isTransfer ? data.destinationAccountId || undefined : undefined,
-          categoryId: !isTransfer ? data.categoryId || undefined : undefined,
-          description: data.description || undefined,
-        },
-      })
+      await updateTransaction.mutateAsync(variables)
       setEditTarget(null)
       toast.success('Transação atualizada', describeAmount(editTarget.type, data.amount))
     } catch (error) {
@@ -205,20 +216,44 @@ export function TransactionsPage() {
     })
   }
 
+  /** Online aguarda o envio; offline enfileira (o arquivo fica no IndexedDB) e libera a tela. */
+  const uploadFile = async (transactionId: string, file: File) => {
+    const variables = { transactionId, file: await compressImage(file) }
+    if (!isOnline()) {
+      uploadAttachment.mutate(variables)
+      toast.info('Comprovante salvo offline', 'Será enviado quando a conexão voltar.')
+      return
+    }
+    await uploadAttachment.mutateAsync(variables).catch(() => {})
+  }
+
+  const removeAttachment = async (transactionId: string) => {
+    if (!isOnline()) {
+      deleteAttachment.mutate(transactionId)
+      toast.info('Remoção salva offline', 'Será sincronizada quando a conexão voltar.')
+      return
+    }
+    await deleteAttachment.mutateAsync(transactionId).catch(() => {})
+  }
+
   const handleUploadAttachment = async (transactionId: string, file: File) => {
     setUploadingId(transactionId)
-    try {
-      await uploadAttachment.mutateAsync({ transactionId, file })
-    } catch { /* handled by hook */ }
+    await uploadFile(transactionId, file)
     setUploadingId(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const handleDeleteAttachment = async (transactionId: string) => {
-    await deleteAttachment.mutateAsync(transactionId)
+  const handleDeleteAttachment = (transactionId: string) => removeAttachment(transactionId)
+
+  /** Criada offline e ainda sem id no servidor: editar/excluir só depois de sincronizar. */
+  const blockIfNotSynced = (transaction: Transaction) => {
+    if (!isTempTransactionId(transaction.id)) return false
+    toast.info('Aguardando sincronização', 'Esta transação foi criada offline; edite ou exclua depois que ela sincronizar.')
+    return true
   }
 
   const openEdit = (transaction: Transaction) => {
+    if (blockIfNotSynced(transaction)) return
     setDetailTarget(null)
     setEditTarget(transaction)
     editForm.reset({
@@ -233,11 +268,13 @@ export function TransactionsPage() {
   }
 
   const openDelete = (transaction: Transaction) => {
+    if (blockIfNotSynced(transaction)) return
     setDetailTarget(null)
     setDeleteTarget(transaction)
   }
 
   const categoriesById = new Map((categories ?? []).map((c) => [c.id, c]))
+  const pendingSyncIds = usePendingSyncIds()
   const detailTx = detailTarget ? result?.items.find((t) => t.id === detailTarget.id) ?? detailTarget : null
 
   const editAccounts = withCurrentAccount(activeAccounts, editTarget?.accountId, editTarget?.accountName)
@@ -363,6 +400,7 @@ export function TransactionsPage() {
       ) : (
         <TransactionTable
           transactions={result.items}
+          pendingSyncIds={pendingSyncIds}
           categoriesById={categoriesById}
           filterAccountId={filterAccountId || undefined}
           isFetching={isFetching}
@@ -380,6 +418,10 @@ export function TransactionsPage() {
             contentType: t.attachmentContentType,
           })}
           onUploadAttachment={(id) => {
+            if (isTempTransactionId(id)) {
+              toast.info('Aguardando sincronização', 'Anexe o comprovante depois que a transação sincronizar.')
+              return
+            }
             setUploadingId(id)
             fileInputRef.current?.click()
           }}
@@ -398,8 +440,8 @@ export function TransactionsPage() {
         onEdit={openEdit}
         onDuplicate={duplicate}
         onDelete={deleteWithUndo}
-        onUploadAttachment={(t, file) => uploadAttachment.mutateAsync({ transactionId: t.id, file }).catch(() => {})}
-        onRemoveAttachment={(t) => deleteAttachment.mutateAsync(t.id).catch(() => {})}
+        onUploadAttachment={(t, file) => uploadFile(t.id, file)}
+        onRemoveAttachment={(t) => removeAttachment(t.id)}
         onViewAttachment={(t) =>
           t.attachmentId &&
           setViewReceipt({
@@ -409,7 +451,8 @@ export function TransactionsPage() {
             contentType: t.attachmentContentType ?? '',
           })
         }
-        uploading={uploadAttachment.isPending}
+        uploading={uploadAttachment.isPending && isOnline()}
+        pendingSync={!!detailTx && pendingSyncIds.has(detailTx.id)}
       />
 
       {/* Edit dialog */}
@@ -654,6 +697,7 @@ function TotalTile({
 
 function TransactionTable({
   transactions,
+  pendingSyncIds,
   categoriesById,
   filterAccountId,
   isFetching,
@@ -670,6 +714,7 @@ function TransactionTable({
   uploadingId,
 }: {
   transactions: Transaction[]
+  pendingSyncIds: Set<string>
   categoriesById: Map<string, Category>
   filterAccountId?: string
   isFetching: boolean
@@ -739,6 +784,7 @@ function TransactionTable({
                           <p className="text-sm font-semibold truncate">
                             {tx.description || transactionTypeLabels[tx.type]}
                           </p>
+                          {pendingSyncIds.has(tx.id) && <PendingSyncBadge />}
                           <p className="text-xs text-muted-foreground truncate md:hidden">
                             {[isTransfer ? null : tx.categoryName, accountLabel].filter(Boolean).join(' · ')}
                           </p>
