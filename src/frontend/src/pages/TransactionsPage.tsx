@@ -34,7 +34,8 @@ import { EmptyState } from '../components/EmptyState'
 import { SkeletonTable } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
-import { TransactionTypeIcon } from '../components/TransactionTypeIcon'
+import { TransactionIcon } from '../components/TransactionIcon'
+import { Fab } from '../components/Fab'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { DateInput } from '../components/ui/date-input'
@@ -375,6 +376,24 @@ export function TransactionsPage() {
     setCreateOpen(true)
   }
 
+  // Atalho vindo de outras telas (ex.: botão flutuante do dashboard): /transactions?new=1
+  const openNewFromUrl = searchParams.get('new') === '1'
+  useEffect(() => {
+    if (!openNewFromUrl) return
+    openCreate()
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('new')
+        return next
+      },
+      { replace: true }
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openNewFromUrl])
+
+  const categoriesById = new Map((categories ?? []).map((c) => [c.id, c]))
+
   const editAccounts = withCurrentAccount(activeAccounts, editTarget?.accountId, editTarget?.accountName)
   const editDestinationAccounts = withCurrentAccount(
     activeAccounts,
@@ -384,15 +403,16 @@ export function TransactionsPage() {
   const editCategories = (categories ?? []).filter((c) => c.type === editTarget?.type)
 
   return (
-    <div className="w-full min-w-0">
+    <div className="w-full min-w-0 pb-16 md:pb-0">
       <PageHeader
         title="Transações"
         action={
-          <Button onClick={openCreate} icon={<Plus size={16} />}>
+          <Button onClick={openCreate} icon={<Plus size={16} />} className="hidden md:inline-flex">
             Nova Transação
           </Button>
         }
       />
+      <Fab onClick={openCreate} label="Nova transação" icon={<Plus size={24} />} />
 
       {/* Filter bar */}
       <div className="mb-5 card px-4 py-3">
@@ -488,6 +508,7 @@ export function TransactionsPage() {
       ) : (
         <TransactionTable
           transactions={result.items}
+          categoriesById={categoriesById}
           filterAccountId={filterAccountId || undefined}
           isFetching={isFetching}
           page={page}
@@ -536,7 +557,10 @@ export function TransactionsPage() {
           {detailTarget && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <TransactionTypeIcon type={detailTarget.type} />
+                <TransactionIcon
+                  transaction={detailTarget}
+                  category={detailTarget.categoryId ? categoriesById.get(detailTarget.categoryId) : undefined}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">
                     {detailTarget.description || transactionTypeLabels[detailTarget.type]}
@@ -610,7 +634,7 @@ export function TransactionsPage() {
               )}
             </div>
           )}
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => detailTarget && openDelete(detailTarget)}
@@ -638,7 +662,10 @@ export function TransactionsPage() {
           {repeatTarget && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                <TransactionTypeIcon type={repeatTarget.type} />
+                <TransactionIcon
+                  transaction={repeatTarget}
+                  category={repeatTarget.categoryId ? categoriesById.get(repeatTarget.categoryId) : undefined}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
                     {repeatTarget.description || transactionTypeLabels[repeatTarget.type]}
@@ -847,6 +874,7 @@ export function TransactionsPage() {
 
 function TransactionTable({
   transactions,
+  categoriesById,
   filterAccountId,
   isFetching,
   page,
@@ -862,6 +890,7 @@ function TransactionTable({
   uploadingId,
 }: {
   transactions: Transaction[]
+  categoriesById: Map<string, Category>
   filterAccountId?: string
   isFetching: boolean
   page: number
@@ -877,109 +906,129 @@ function TransactionTable({
   uploadingId: string | null
 }) {
   const stop = (e: React.MouseEvent) => e.stopPropagation()
+  const groups = groupByDay(transactions)
 
   return (
     <div>
       <div className={`card overflow-hidden transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
         <div className="hidden md:grid grid-cols-[44px_1fr_140px_160px_130px_44px_100px] gap-3 px-4 py-2.5 border-b border-border bg-muted/50">
-          {['', 'Descrição / Data', 'Categoria', 'Conta', 'Valor', '', ''].map((h, i) => (
+          {['', 'Descrição', 'Categoria', 'Conta', 'Valor', '', ''].map((h, i) => (
             <span key={i} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</span>
           ))}
         </div>
-        <ul className="divide-y divide-border">
-          {transactions.map((tx) => {
-            const isTransfer = tx.type === 'Transfer'
-            const accountLabel = isTransfer
-              ? `${tx.accountName} → ${tx.destinationAccountName ?? '—'}`
-              : tx.accountName
+        <div>
+          {groups.map((group) => {
+            const dayTotal = group.items
+              .filter((tx) => tx.type !== 'Transfer' || !!filterAccountId)
+              .reduce((sum, tx) => sum + signedAmount(tx, filterAccountId), 0)
             return (
-              <li
-                key={tx.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => onOpen(tx)}
-                onKeyDown={(e) => {
-                  if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault()
-                    onOpen(tx)
-                  }
-                }}
-                className="grid grid-cols-[44px_1fr_auto] md:grid-cols-[44px_1fr_140px_160px_130px_44px_100px] gap-3 px-4 py-3.5 items-center hover:bg-muted/50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted/50"
-              >
-                <div className="flex items-center justify-center">
-                  <TransactionTypeIcon type={tx.type} />
+              <section key={group.date} aria-label={dayLabel(group.date)} className="border-b border-border last:border-b-0">
+                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-muted/40 border-b border-border">
+                  <span className="text-xs font-semibold text-muted-foreground first-letter:uppercase">
+                    {dayLabel(group.date)}
+                  </span>
+                  <CurrencyBadge value={dayTotal} size="sm" className="text-xs" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate">
-                    {tx.description || transactionTypeLabels[tx.type]}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {dateFormatter.format(new Date(tx.date + 'T12:00:00'))}
-                    {accountLabel && <span className="md:hidden"> · {accountLabel}</span>}
-                  </p>
-                </div>
-                <span className="text-sm text-muted-foreground truncate hidden md:block">
-                  {isTransfer ? 'Transferência' : tx.categoryName || '—'}
-                </span>
-                <span className="text-sm text-muted-foreground truncate hidden md:block" title={accountLabel}>
-                  {accountLabel || '—'}
-                </span>
-                <div>
-                  <CurrencyBadge
-                    value={signedAmount(tx, filterAccountId)}
-                    className={isTransfer && !filterAccountId ? 'text-muted-foreground' : undefined}
-                  />
-                </div>
-                <div className="hidden md:flex items-center justify-center gap-0.5" onClick={stop}>
-                  {tx.attachmentId ? (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onViewReceipt(tx)}
-                        title="Ver comprovante"
-                        className="text-primary"
+                <ul className="divide-y divide-border">
+                  {group.items.map((tx) => {
+                    const isTransfer = tx.type === 'Transfer'
+                    const accountLabel = isTransfer
+                      ? `${tx.accountName} → ${tx.destinationAccountName ?? '—'}`
+                      : tx.accountName
+                    return (
+                      <li
+                        key={tx.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onOpen(tx)}
+                        onKeyDown={(e) => {
+                          if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault()
+                            onOpen(tx)
+                          }
+                        }}
+                        className="grid grid-cols-[44px_1fr_auto] md:grid-cols-[44px_1fr_140px_160px_130px_44px_100px] gap-3 px-4 py-3.5 items-center hover:bg-muted/50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:bg-muted/50"
                       >
-                        <Paperclip size={13} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onDeleteAttachment(tx.id)}
-                        title="Remover comprovante"
-                        className="text-destructive/70 hover:text-destructive"
-                      >
-                        <Trash2 size={11} />
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => onUploadAttachment(tx.id)}
-                      disabled={uploadingId === tx.id}
-                      title="Anexar comprovante"
-                      className="text-muted-foreground"
-                    >
-                      <Upload size={13} />
-                    </Button>
-                  )}
-                </div>
-                <div className="hidden md:flex gap-1 justify-end" onClick={stop}>
-                  <Button variant="ghost" size="icon-sm" onClick={() => onRepeat(tx)} title="Repetir">
-                    <Repeat size={13} />
-                  </Button>
-                  <Button variant="ghost" size="icon-sm" onClick={() => onEdit(tx)} title="Editar">
-                    <Pencil size={13} />
-                  </Button>
-                  <Button variant="ghost" size="icon-sm" onClick={() => onDelete(tx)} title="Excluir">
-                    <Trash2 size={13} />
-                  </Button>
-                </div>
-              </li>
+                        <div className="flex items-center justify-center">
+                          <TransactionIcon
+                            transaction={tx}
+                            category={tx.categoryId ? categoriesById.get(tx.categoryId) : undefined}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">
+                            {tx.description || transactionTypeLabels[tx.type]}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate md:hidden">
+                            {[isTransfer ? null : tx.categoryName, accountLabel].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <span className="text-sm text-muted-foreground truncate hidden md:block">
+                          {isTransfer ? 'Transferência' : tx.categoryName || '—'}
+                        </span>
+                        <span className="text-sm text-muted-foreground truncate hidden md:block" title={accountLabel}>
+                          {accountLabel || '—'}
+                        </span>
+                        <div>
+                          <CurrencyBadge
+                            value={signedAmount(tx, filterAccountId)}
+                            className={isTransfer && !filterAccountId ? 'text-muted-foreground' : undefined}
+                          />
+                        </div>
+                        <div className="hidden md:flex items-center justify-center gap-0.5" onClick={stop}>
+                          {tx.attachmentId ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => onViewReceipt(tx)}
+                                title="Ver comprovante"
+                                className="text-primary"
+                              >
+                                <Paperclip size={13} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => onDeleteAttachment(tx.id)}
+                                title="Remover comprovante"
+                                className="text-destructive/70 hover:text-destructive"
+                              >
+                                <Trash2 size={11} />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => onUploadAttachment(tx.id)}
+                              disabled={uploadingId === tx.id}
+                              title="Anexar comprovante"
+                              className="text-muted-foreground"
+                            >
+                              <Upload size={13} />
+                            </Button>
+                          )}
+                        </div>
+                        <div className="hidden md:flex gap-1 justify-end" onClick={stop}>
+                          <Button variant="ghost" size="icon-sm" onClick={() => onRepeat(tx)} title="Repetir">
+                            <Repeat size={13} />
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" onClick={() => onEdit(tx)} title="Editar">
+                            <Pencil size={13} />
+                          </Button>
+                          <Button variant="ghost" size="icon-sm" onClick={() => onDelete(tx)} title="Excluir">
+                            <Trash2 size={13} />
+                          </Button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
             )
           })}
-        </ul>
+        </div>
       </div>
 
       {totalPages > 1 && (
@@ -1022,6 +1071,30 @@ function TransactionTable({
       )}
     </div>
   )
+}
+
+const weekdayFormatter = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
+const weekdayYearFormatter = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+
+function dayLabel(date: string): string {
+  const todayStr = today()
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (date === todayStr) return 'Hoje'
+  if (date === toDateParam(yesterday)) return 'Ontem'
+  const d = new Date(date + 'T12:00:00')
+  return (d.getFullYear() === new Date().getFullYear() ? weekdayFormatter : weekdayYearFormatter).format(d)
+}
+
+/** Agrupa transações (já ordenadas por data desc) em blocos por dia. */
+function groupByDay(transactions: Transaction[]): { date: string; items: Transaction[] }[] {
+  const groups: { date: string; items: Transaction[] }[] = []
+  for (const tx of transactions) {
+    const last = groups[groups.length - 1]
+    if (last && last.date === tx.date) last.items.push(tx)
+    else groups.push({ date: tx.date, items: [tx] })
+  }
+  return groups
 }
 
 function getPaginationPages(current: number, total: number): (number | '…')[] {

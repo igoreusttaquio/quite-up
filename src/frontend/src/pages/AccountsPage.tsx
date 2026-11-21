@@ -9,6 +9,8 @@ import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
+import { IconBadge } from '../components/IconBadge'
+import { accountTypeVisual } from '../lib/entity-icons'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -25,12 +27,6 @@ const accountTypeLabels: Record<AccountType, string> = {
   Other: 'Outro',
 }
 
-const accountTypeEmoji: Record<AccountType, string> = {
-  CheckingAccount: '🏦',
-  Savings: '💰',
-  Wallet: '👛',
-  Other: '📁',
-}
 
 const createSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -270,14 +266,16 @@ function AccountCard({
   onEdit: () => void
   onDeactivate: () => void
 }) {
-  const emoji = accountTypeEmoji[account.type]
+  const { Icon, color } = accountTypeVisual[account.type]
   const label = accountTypeLabels[account.type]
 
   return (
     <div className="card p-5 space-y-4">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl flex-shrink-0">{emoji}</span>
+          <IconBadge color={color} size="lg">
+            <Icon size={20} />
+          </IconBadge>
           <div className="min-w-0">
             <p className="font-semibold text-base truncate">{account.name}</p>
             <p className="text-sm text-muted-foreground">{label}</p>
@@ -294,7 +292,7 @@ function AccountCard({
       </div>
       <div className="pt-3 border-t border-border">
         <p className="text-xs text-muted-foreground mb-1">Saldo atual</p>
-        <CurrencyBadge value={account.balance} />
+        <CurrencyBadge value={account.balance} tone="balance" size="lg" />
       </div>
     </div>
   )

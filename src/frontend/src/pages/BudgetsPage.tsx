@@ -305,11 +305,11 @@ function BudgetCard({
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Orçado</span>
-          <CurrencyBadge value={budget.amount} size="sm" />
+          <CurrencyBadge value={budget.amount} size="sm" tone="neutral" />
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Gasto</span>
-          <CurrencyBadge value={budget.spent} size="sm" />
+          <CurrencyBadge value={budget.spent} size="sm" tone="neutral" />
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Restante</span>
@@ -318,7 +318,7 @@ function BudgetCard({
               {remaining.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </span>
           ) : (
-            <CurrencyBadge value={remaining} size="sm" />
+            <CurrencyBadge value={remaining} size="sm" tone="balance" />
           )}
         </div>
       </div>

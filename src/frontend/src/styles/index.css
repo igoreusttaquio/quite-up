@@ -22,6 +22,7 @@
   --color-ring: var(--ring);
   --color-income: var(--income);
   --color-expense: var(--expense);
+  --color-warning: var(--warning);
 }
 
 :root {
@@ -47,6 +48,7 @@
   --ring: oklch(0.722 0.188 48.8);
   --income: oklch(0.56 0.15 145);
   --expense: oklch(0.577 0.245 27.325);
+  --warning: oklch(0.62 0.17 50);
   --subtle-foreground: oklch(0.66 0.02 298);
 }
 
@@ -72,6 +74,7 @@
   --ring: oklch(0.722 0.188 48.8);
   --income: oklch(0.64 0.15 145);
   --expense: oklch(0.65 0.22 27);
+  --warning: oklch(0.74 0.16 55);
   --subtle-foreground: oklch(0.52 0.02 298);
 }
 
@@ -133,6 +136,8 @@
   .text-expense { color: var(--expense); }
   .bg-income-subtle { background-color: color-mix(in oklch, var(--income) 14%, var(--background)); }
   .bg-expense-subtle { background-color: color-mix(in oklch, var(--expense) 14%, var(--background)); }
+  .text-warning { color: var(--warning); }
+  .bg-warning-subtle { background-color: color-mix(in oklch, var(--warning) 14%, var(--background)); }
 
   /* Legacy utility names (used throughout pages) */
   .text-brand { color: var(--primary); }

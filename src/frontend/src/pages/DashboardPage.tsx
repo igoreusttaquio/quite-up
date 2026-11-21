@@ -1,18 +1,22 @@
-import { Link, useSearchParams } from 'react-router-dom'
-import { Wallet, ArrowUp, ArrowDown, ArrowRightLeft, Building2, Tag, User, Filter, X } from 'lucide-react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Wallet, ArrowUp, ArrowDown, ArrowRightLeft, Building2, Tag, User, Filter, X, Plus, ChevronRight } from 'lucide-react'
 import { useDashboard } from '../hooks/useDashboard'
 import { useCategories } from '../hooks/useCategories'
+import { useAccounts } from '../hooks/useAccounts'
 import { useAuthStore } from '../store/authStore'
-import { CurrencyBadge } from '../components/CurrencyBadge'
+import { CurrencyBadge, type CurrencyTone } from '../components/CurrencyBadge'
+import { IconBadge } from '../components/IconBadge'
+import { Fab } from '../components/Fab'
+import { TransactionIcon } from '../components/TransactionIcon'
+import { accountTypeVisual } from '../lib/entity-icons'
 import { SkeletonCard } from '../components/Skeleton'
-import { TransactionTypeIcon } from '../components/TransactionTypeIcon'
 import { IncomeExpenseChart } from '../components/charts/IncomeExpenseChart'
 import { CategoryBreakdownChart } from '../components/charts/CategoryBreakdownChart'
 import { NativeSelect } from '../components/ui/native-select'
 import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
 import { cn, toDateParam } from '../lib/utils'
-import type { DashboardFilters, TransactionType } from '../types'
+import type { Account, DashboardFilters, TransactionType } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' })
 const fullDateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -71,6 +75,8 @@ export function DashboardPage() {
   const user = useAuthStore((s) => s.user)
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: categories } = useCategories()
+  const { data: accounts, isLoading: accountsLoading } = useAccounts()
+  const navigate = useNavigate()
 
   const rawPeriod = searchParams.get('period')
   const period: PeriodPreset = rawPeriod && rawPeriod in periodLabels ? (rawPeriod as PeriodPreset) : DEFAULT_PERIOD
@@ -125,6 +131,8 @@ export function DashboardPage() {
 
   const availableCategories = (categories ?? []).filter((c) => !filterType || c.type === filterType)
   const selectedCategory = categories?.find((c) => c.id === filterCategoryId)
+  const categoriesById = new Map((categories ?? []).map((c) => [c.id, c]))
+  const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
 
   const totalBalance = dashboard?.totalBalance ?? 0
   const periodIncome = dashboard?.periodIncome ?? 0
@@ -138,7 +146,13 @@ export function DashboardPage() {
   const filterKey = `${startDate}|${endDate}|${filterType ?? ''}|${filterCategoryId ?? ''}`
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16 md:pb-0">
+      <Fab
+        onClick={() => navigate('/transactions?new=1')}
+        label="Nova transação"
+        icon={<Plus size={24} />}
+      />
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">
@@ -240,6 +254,7 @@ export function DashboardPage() {
           <StatCard
             label="Saldo Total"
             value={totalBalance}
+            tone="balance"
             icon={<Wallet size={22} />}
             iconBg="bg-brand-light"
             iconColor="text-primary"
@@ -247,6 +262,7 @@ export function DashboardPage() {
           <StatCard
             label={`Receitas ${periodSuffix}`}
             value={periodIncome}
+            tone="income"
             hint={selectedCategory && filterType !== 'Expense' ? selectedCategory.name : undefined}
             muted={filterType === 'Expense'}
             icon={<ArrowUp size={22} />}
@@ -256,6 +272,7 @@ export function DashboardPage() {
           <StatCard
             label={`Despesas ${periodSuffix}`}
             value={periodExpenses}
+            tone="expense"
             hint={selectedCategory && filterType !== 'Income' ? selectedCategory.name : undefined}
             muted={filterType === 'Income'}
             icon={<ArrowDown size={22} />}
@@ -263,6 +280,11 @@ export function DashboardPage() {
             iconColor="text-expense"
           />
         </div>
+      )}
+
+      {/* Accounts strip */}
+      {!accountsLoading && activeAccounts.length > 0 && (
+        <AccountsStrip accounts={activeAccounts} />
       )}
 
       {/* Charts */}
@@ -337,7 +359,10 @@ export function DashboardPage() {
           <ul className="divide-y divide-subtle">
             {recentTransactions.map((tx) => (
               <li key={tx.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
-                <TransactionTypeIcon type={tx.type} />
+                <TransactionIcon
+                  transaction={tx}
+                  category={tx.categoryId ? categoriesById.get(tx.categoryId) : undefined}
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">
                     {tx.description || typeLabels[tx.type]}
@@ -373,9 +398,44 @@ export function DashboardPage() {
   )
 }
 
+function AccountsStrip({ accounts }: { accounts: Account[] }) {
+  return (
+    <section aria-label="Contas">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-semibold">Minhas contas</span>
+        <Link to="/accounts" className="text-xs font-medium text-primary hover:underline">
+          Gerenciar
+        </Link>
+      </div>
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden">
+        {accounts.map((account) => {
+          const { Icon, color } = accountTypeVisual[account.type]
+          return (
+            <Link
+              key={account.id}
+              to={`/transactions?account=${account.id}`}
+              className="card group flex min-w-[200px] flex-shrink-0 snap-start items-center gap-3 p-3.5 no-underline transition-colors hover:bg-muted/50"
+            >
+              <IconBadge color={color} size="sm">
+                <Icon size={16} />
+              </IconBadge>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs text-muted-foreground">{account.name}</p>
+                <CurrencyBadge value={account.balance} tone="balance" size="sm" />
+              </div>
+              <ChevronRight size={14} className="flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+            </Link>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 function StatCard({
   label,
   value,
+  tone,
   hint,
   muted,
   icon,
@@ -384,6 +444,7 @@ function StatCard({
 }: {
   label: string
   value: number
+  tone: CurrencyTone
   hint?: string
   muted?: boolean
   icon: React.ReactNode
@@ -396,7 +457,7 @@ function StatCard({
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{label}</p>
           <div className="mt-1.5">
-            <CurrencyBadge value={value} size={600} />
+            <CurrencyBadge value={value} tone={tone} size={600} />
           </div>
           {hint && <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>}
         </div>

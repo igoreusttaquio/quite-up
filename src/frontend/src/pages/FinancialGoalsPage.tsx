@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Trash2, Target, TrendingUp, History } from 'lucide-react'
+import { Plus, Pencil, Trash2, Target, TrendingUp, History, Trophy } from 'lucide-react'
 import {
   useFinancialGoals,
   useCreateFinancialGoal,
@@ -16,6 +16,7 @@ import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
+import { IconBadge } from '../components/IconBadge'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
@@ -46,7 +47,6 @@ type ContributionFormData = z.infer<typeof contributionSchema>
 
 const todayStr = () => new Date().toISOString().split('T')[0]
 
-const goalsEmoji = '🎯'
 
 const filterTabs = [
   { key: 'all', label: 'Todas' },
@@ -402,7 +402,7 @@ export function FinancialGoalsPage() {
                   <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div>
                       <p className="text-sm font-medium">
-                        <CurrencyBadge value={c.amount} size="sm" />
+                        <CurrencyBadge value={c.amount} size="sm" tone="neutral" />
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(c.date + 'T12:00:00').toLocaleDateString('pt-BR')}
@@ -453,7 +453,9 @@ function GoalCard({
     <div className="card p-5 space-y-4">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl flex-shrink-0">{goalsEmoji}</span>
+          <IconBadge color={goal.isCompleted ? 'var(--income)' : 'var(--primary)'} size="lg">
+            {goal.isCompleted ? <Trophy size={20} /> : <Target size={20} />}
+          </IconBadge>
           <div className="min-w-0">
             <p className="font-semibold text-base truncate">{goal.name}</p>
             <p className="text-xs text-muted-foreground">
@@ -490,11 +492,11 @@ function GoalCard({
       <div className="flex justify-between items-center">
         <div>
           <p className="text-xs text-muted-foreground">Atual</p>
-          <CurrencyBadge value={goal.currentAmount} size="sm" />
+          <CurrencyBadge value={goal.currentAmount} size="sm" tone="neutral" />
         </div>
         <div className="text-right">
           <p className="text-xs text-muted-foreground">Meta</p>
-          <CurrencyBadge value={goal.targetAmount} size="sm" />
+          <CurrencyBadge value={goal.targetAmount} size="sm" tone="neutral" />
         </div>
       </div>
 

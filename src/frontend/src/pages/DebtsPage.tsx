@@ -3,16 +3,18 @@ import { motion } from 'framer-motion'
 import { useForm, Controller, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Trash2, DollarSign, Snowflake, CalendarDays, Paperclip } from 'lucide-react'
+import { Plus, Pencil, Trash2, DollarSign, Snowflake, CalendarDays, Paperclip, PartyPopper, AlertTriangle, Clock } from 'lucide-react'
 import { useDebts, useCreateDebt, useUpdateDebt, useDeleteDebt, useDebtPayments, useRegisterDebtPayment, useUpdateDebtPayment, useDeleteDebtPayment, useSnowballStrategy } from '../hooks/useDebts'
 import { useAppToast } from '../hooks/useAppToast'
-import { getApiErrorMessage, toDateParam } from '../lib/utils'
+import { cn, getApiErrorMessage, toDateParam } from '../lib/utils'
 import { useAccounts } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
+import { IconBadge } from '../components/IconBadge'
+import { debtTypeVisual } from '../lib/entity-icons'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
@@ -33,11 +35,7 @@ const debtTypeLabels: Record<DebtType, string> = {
   CreditCard: 'Cartão de Crédito',
 }
 
-const debtTypeEmoji: Record<DebtType, string> = {
-  Loan: '\u{1F3E6}',
-  Financing: '\u{1F697}',
-  CreditCard: '\u{1F4B3}',
-}
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const debtSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -72,6 +70,7 @@ export function DebtsPage() {
   const toast = useAppToast()
   const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
   const { data: snowball, isLoading: snowballLoading } = useSnowballStrategy()
+  const snowballNextId = snowball?.debts.find((d) => d.order === 1)?.debtId
 
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'paid'>('all')
   const [createOpen, setCreateOpen] = useState(false)
@@ -282,6 +281,7 @@ export function DebtsPage() {
             <DebtCard
               key={debt.id}
               debt={debt}
+              isSnowballNext={debt.id === snowballNextId}
               onEdit={() => openEdit(debt)}
               onDelete={() => setDeleteTarget(debt)}
               onViewPayments={() => openPayments(debt.id)}
@@ -349,7 +349,7 @@ export function DebtsPage() {
           <div className="space-y-4">
             {paymentDebtTarget && (
               <div className="flex items-center gap-2 pb-2 border-b border-border">
-                <span className="text-lg">{debtTypeEmoji[paymentDebtTarget.type]}</span>
+                <DebtTypeIcon type={paymentDebtTarget.type} />
                 <span className="font-semibold">{paymentDebtTarget.name}</span>
               </div>
             )}
@@ -488,7 +488,7 @@ export function DebtsPage() {
               {paymentsData.map((payment: DebtPayment) => (
                 <div key={payment.id} className="border border-border rounded-lg p-3 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <CurrencyBadge value={payment.amount} />
+                    <CurrencyBadge value={payment.amount} tone="neutral" />
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-muted-foreground mr-1">
                         {new Date(payment.paymentDate + 'T12:00:00').toLocaleDateString('pt-BR')}
@@ -585,7 +585,7 @@ export function DebtsPage() {
               <div className="flex gap-4 text-sm">
                 <div className="flex-1 bg-muted rounded-lg p-3 text-center">
                   <p className="text-muted-foreground text-xs">Total Restante</p>
-                  <CurrencyBadge value={snowball.totalRemaining} size="sm" />
+                  <CurrencyBadge value={snowball.totalRemaining} size="sm" tone="neutral" />
                 </div>
                 <div className="flex-1 bg-muted rounded-lg p-3 text-center">
                   <p className="text-muted-foreground text-xs">Meses Estimados</p>
@@ -602,14 +602,14 @@ export function DebtsPage() {
                     className="flex items-center justify-between border border-border rounded-lg p-3"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-lg flex-shrink-0">{debtTypeEmoji[item.type]}</span>
+                      <DebtTypeIcon type={item.type} />
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{item.name}</p>
                         <p className="text-xs text-muted-foreground">{debtTypeLabels[item.type]}</p>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0 ml-3">
-                      <CurrencyBadge value={item.remainingAmount} size="sm" />
+                      <CurrencyBadge value={item.remainingAmount} size="sm" tone="neutral" />
                     </div>
                   </motion.div>
                 ))}
@@ -625,82 +625,165 @@ export function DebtsPage() {
   )
 }
 
+function DebtTypeIcon({ type }: { type: DebtType }) {
+  const { Icon, color } = debtTypeVisual[type]
+  return (
+    <IconBadge color={color} size="sm">
+      <Icon size={16} />
+    </IconBadge>
+  )
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function daysUntil(date: string): number {
+  const due = new Date(date + 'T12:00:00')
+  const now = new Date()
+  now.setHours(12, 0, 0, 0)
+  return Math.round((due.getTime() - now.getTime()) / DAY_MS)
+}
+
+function plural(n: number, one: string, many: string) {
+  return n === 1 ? one : many
+}
+
+function DueBadge({ debt }: { debt: Debt }) {
+  const dueDate = new Date(debt.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')
+  const days = daysUntil(debt.dueDate)
+
+  if (!debt.isPaid && days < 0) {
+    return (
+      <Badge variant="expense" className="gap-1">
+        <AlertTriangle size={11} />
+        Vencida há {-days} {plural(-days, 'dia', 'dias')}
+      </Badge>
+    )
+  }
+  if (!debt.isPaid && days <= 7) {
+    return (
+      <Badge variant="warning" className="gap-1">
+        <Clock size={11} />
+        {days === 0 ? 'Vence hoje' : 'Vence em ' + days + ' ' + plural(days, 'dia', 'dias')}
+      </Badge>
+    )
+  }
+  return (
+    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+      <CalendarDays size={12} />
+      Vencimento: {dueDate}
+    </span>
+  )
+}
+
 function DebtCard({
   debt,
+  isSnowballNext,
   onEdit,
   onDelete,
   onViewPayments,
   onRegisterPayment,
 }: {
   debt: Debt
+  isSnowballNext: boolean
   onEdit: () => void
   onDelete: () => void
   onViewPayments: () => void
   onRegisterPayment: () => void
 }) {
-  const emoji = debtTypeEmoji[debt.type]
+  const { Icon, color } = debtTypeVisual[debt.type]
   const label = debtTypeLabels[debt.type]
-  const progress = debt.totalAmount > 0 ? (debt.paidAmount / debt.totalAmount) * 100 : 0
-  const dueDate = new Date(debt.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')
+  const progress = debt.totalAmount > 0 ? Math.min((debt.paidAmount / debt.totalAmount) * 100, 100) : 0
+  const urgent = !debt.isPaid && daysUntil(debt.dueDate) <= 7
+  const progressColor = debt.isPaid
+    ? 'var(--income)'
+    : progress < 33
+      ? 'var(--warning)'
+      : 'var(--primary)'
 
   return (
-    <div className="card p-5 space-y-4 cursor-pointer" onClick={onViewPayments}>
+    <div
+      className={cn(
+        'card p-5 space-y-4 cursor-pointer transition-shadow hover:shadow-md',
+        debt.isPaid && 'border-income/40 bg-income-subtle',
+        isSnowballNext && !debt.isPaid && 'ring-2 ring-primary/40'
+      )}
+      onClick={onViewPayments}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl flex-shrink-0">{emoji}</span>
+          <IconBadge color={debt.isPaid ? 'var(--income)' : color} size="lg">
+            {debt.isPaid ? <PartyPopper size={20} /> : <Icon size={20} />}
+          </IconBadge>
           <div className="min-w-0">
             <p className="font-semibold text-base truncate">{debt.name}</p>
             <p className="text-sm text-muted-foreground">{label}</p>
           </div>
         </div>
         <div className="flex gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon-sm" onClick={onEdit}>
+          <Button variant="ghost" size="icon-sm" onClick={onEdit} title="Editar">
             <Pencil size={14} />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={onDelete}>
+          <Button variant="ghost" size="icon-sm" onClick={onDelete} title="Excluir">
             <Trash2 size={14} />
           </Button>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Total</span>
-          <CurrencyBadge value={debt.totalAmount} size="sm" />
+      {isSnowballNext && !debt.isPaid && (
+        <div className="flex items-center gap-1.5 rounded-lg bg-brand-light px-2.5 py-1.5 text-xs font-medium text-primary">
+          <Snowflake size={13} />
+          Próxima a quitar na Bola de Neve
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Pago</span>
-          <CurrencyBadge value={debt.paidAmount} size="sm" />
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Restante</span>
-          <CurrencyBadge value={debt.remainingAmount} size="sm" />
-        </div>
-      </div>
+      )}
 
-      {/* Progress bar */}
-      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+      {debt.isPaid ? (
+        <div className="py-1 text-center">
+          <p className="text-lg font-semibold text-income">Dívida quitada! 🎉</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Você pagou <span className="font-medium text-foreground tabular-nums">{brl.format(debt.paidAmount)}</span>
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Falta pagar</p>
+            <CurrencyBadge value={debt.remainingAmount} tone={urgent ? 'warning' : 'neutral'} size={700} />
+          </div>
+          <span className="text-2xl font-bold tabular-nums" style={{ color: progressColor }}>
+            {Math.round(progress)}%
+          </span>
+        </div>
+      )}
+
+      <div className="space-y-1.5">
         <div
-          className="h-full bg-primary rounded-full transition-all"
-          style={{ width: `${Math.min(progress, 100)}%` }}
-        />
+          className="h-2.5 w-full overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuenow={Math.round(progress)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Progresso de quitação"
+        >
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: progress + '%', backgroundColor: progressColor }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+          <span>Pago {brl.format(debt.paidAmount)}</span>
+          <span>Total {brl.format(debt.totalAmount)}</span>
+        </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <CalendarDays size={12} />
-          <span>Vence: {dueDate}</span>
-        </div>
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          {debt.isPaid ? (
-            <Badge variant="income">Quitada</Badge>
-          ) : (
-            <Badge variant="expense">Pendente</Badge>
-          )}
-          <Button size="sm" onClick={onRegisterPayment}>
-            Pagar
-          </Button>
-        </div>
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <DueBadge debt={debt} />
+        {!debt.isPaid && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Button size="sm" onClick={onRegisterPayment} icon={<DollarSign size={14} />}>
+              Pagar
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

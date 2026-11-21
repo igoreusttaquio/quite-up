@@ -87,14 +87,14 @@ export function ReportsPage() {
                     <TrendingUp size={16} className="text-income" />
                     <span className="text-sm text-muted-foreground">Receitas</span>
                   </div>
-                  <CurrencyBadge value={periodReport.totalIncome} size="lg" />
+                  <CurrencyBadge value={periodReport.totalIncome} size="lg" tone="income" />
                 </div>
                 <div className="p-4 rounded-lg bg-expense/10 border border-expense/20">
                   <div className="flex items-center gap-2 mb-1">
                     <TrendingDown size={16} className="text-expense" />
                     <span className="text-sm text-muted-foreground">Despesas</span>
                   </div>
-                  <CurrencyBadge value={periodReport.totalExpenses} size="lg" />
+                  <CurrencyBadge value={periodReport.totalExpenses} size="lg" tone="expense" />
                 </div>
                 <div className={`p-4 rounded-lg border ${
                   periodReport.netBalance >= 0
@@ -128,7 +128,7 @@ export function ReportsPage() {
                           <tr key={cat.categoryId} className="border-b border-border/50">
                             <td className="py-3 pr-4">{cat.categoryName}</td>
                             <td className="py-3 px-4 text-right">
-                              <CurrencyBadge value={cat.totalAmount} size="sm" />
+                              <CurrencyBadge value={cat.totalAmount} size="sm" tone="expense" />
                             </td>
                             <td className="py-3 px-4 text-center text-muted-foreground">{cat.transactionCount}</td>
                             <td className="py-3 pl-4">
@@ -189,10 +189,10 @@ export function ReportsPage() {
                     <tr key={item.month} className="border-b border-border/50">
                       <td className="py-3 pr-4 font-medium">{MONTHS[item.month - 1]}</td>
                       <td className="py-3 px-4 text-right">
-                        <CurrencyBadge value={item.income} size="sm" />
+                        <CurrencyBadge value={item.income} size="sm" tone="income" />
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <CurrencyBadge value={item.expenses} size="sm" />
+                        <CurrencyBadge value={item.expenses} size="sm" tone="expense" />
                       </td>
                       <td className="py-3 pl-4 text-right">
                         <span className={`font-semibold tabular-nums ${

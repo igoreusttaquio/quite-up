@@ -30,7 +30,7 @@ const DialogContent = forwardRef<
       ref={ref}
       className={cn(
         'fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2',
-        'bg-card border border-border rounded-xl shadow-xl p-6',
+        'bg-card border border-border rounded-xl shadow-xl p-5 sm:p-6',
         'flex flex-col gap-4 radix-dialog-content',
         className
       )}
@@ -54,7 +54,16 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 DialogHeader.displayName = 'DialogHeader'
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-row justify-end gap-2', className)} {...props} />
+  <div
+    className={cn(
+      // Mobile: botões dividem a largura e quebram linha quando não cabem.
+      // sm+: alinhados à direita com largura natural.
+      'flex flex-wrap gap-2 [&>*]:min-w-28 [&>*]:flex-1',
+      'sm:flex-nowrap sm:justify-end sm:[&>*]:min-w-0 sm:[&>*]:flex-none',
+      className
+    )}
+    {...props}
+  />
 )
 DialogFooter.displayName = 'DialogFooter'
 
