@@ -401,7 +401,10 @@ export function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <ul className="min-h-0 flex-1 divide-y divide-subtle overflow-y-auto overscroll-contain">
+            // Rolagem interna SÓ em telas largas (xl), onde o card tem a altura do gráfico ao lado.
+            // No celular, overflow-y-auto + overscroll-contain fazia o Chrome reter o gesto quando
+            // o dedo começava sobre a lista, e a página não rolava (medido com toque real).
+            <ul className="divide-y divide-subtle xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:overscroll-contain">
               {recentTransactions.map((tx) => (
                 <li key={tx.id}>
                   <button
