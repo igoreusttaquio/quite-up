@@ -2,7 +2,6 @@ import { Bell, CheckCheck, CheckCircle, AlertTriangle, XCircle, Info } from 'luc
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '../hooks/useNotifications'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
-import { Button } from '../components/ui/button'
 import { SkeletonLine } from '../components/Skeleton'
 import { useAppToast } from '../hooks/useAppToast'
 import type { Notification } from '../types'
@@ -58,16 +57,17 @@ export function NotificationsPage() {
     <div>
       <PageHeader
         title="Notificações"
-        action={
-          unreadCount > 0 ? (
-            <Button
-              onClick={handleMarkAllRead}
-              icon={<CheckCheck size={16} />}
-              disabled={markAllRead.isPending}
-            >
-              {markAllRead.isPending ? 'Marcando…' : `Marcar todas como lidas (${unreadCount})`}
-            </Button>
-          ) : undefined
+        secondaryActions={
+          unreadCount > 0
+            ? [
+                {
+                  label: markAllRead.isPending ? 'Marcando…' : `Marcar todas como lidas (${unreadCount})`,
+                  icon: <CheckCheck size={16} />,
+                  onClick: handleMarkAllRead,
+                  disabled: markAllRead.isPending,
+                },
+              ]
+            : []
         }
       />
 

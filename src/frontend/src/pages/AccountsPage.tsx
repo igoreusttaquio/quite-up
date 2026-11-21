@@ -96,11 +96,7 @@ export function AccountsPage() {
     <div>
       <PageHeader
         title="Contas"
-        action={
-          <Button onClick={() => setCreateOpen(true)} icon={<Plus size={16} />}>
-            Nova Conta
-          </Button>
-        }
+        primaryAction={{ label: 'Nova Conta', onClick: () => setCreateOpen(true) }}
       />
 
       {isLoading ? (

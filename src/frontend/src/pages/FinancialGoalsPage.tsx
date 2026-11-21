@@ -143,11 +143,13 @@ export function FinancialGoalsPage() {
     <div>
       <PageHeader
         title="Metas Financeiras"
-        action={
-          <Button onClick={() => { createForm.reset(); setCreateOpen(true) }} icon={<Plus size={16} />}>
-            Nova Meta
-          </Button>
-        }
+        primaryAction={{
+          label: 'Nova Meta',
+          onClick: () => {
+            createForm.reset()
+            setCreateOpen(true)
+          },
+        }}
       />
 
       {/* Filter tabs */}

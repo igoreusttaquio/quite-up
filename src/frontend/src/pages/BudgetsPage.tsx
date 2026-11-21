@@ -106,11 +106,7 @@ export function BudgetsPage() {
     <div>
       <PageHeader
         title="Orçamentos"
-        action={
-          <Button onClick={openCreate} icon={<Plus size={16} />}>
-            Novo Orçamento
-          </Button>
-        }
+        primaryAction={{ label: 'Novo Orçamento', onClick: openCreate }}
       />
 
       {/* Month / Year filter */}

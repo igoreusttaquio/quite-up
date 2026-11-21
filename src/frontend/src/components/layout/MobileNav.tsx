@@ -20,6 +20,7 @@ import { useUnreadCount } from '../../hooks/useNotifications'
 import { useTheme } from '../../context/ThemeContext'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useNewTransaction } from '../../context/NewTransactionContext'
+import { useCurrentPrimaryAction } from '../../context/PrimaryActionContext'
 import { ResponsiveDialog } from '../ui/responsive-dialog'
 import { UserAvatar } from '../UserAvatar'
 import { cn } from '../../lib/utils'
@@ -97,6 +98,10 @@ function BottomItem({ label, path, Icon, badge }: SidebarNavItem & { badge?: num
 
 export function BottomNav({ moreItems }: { moreItems: SidebarNavItem[] }) {
   const { open: openNewTransaction } = useNewTransaction()
+  // Ação principal da página atual (ex.: "Nova Dívida"); padrão: nova transação.
+  const pageAction = useCurrentPrimaryAction()
+  const plusLabel = pageAction?.label ?? 'Nova transação'
+  const onPlus = () => (pageAction ? pageAction.onClick() : openNewTransaction())
   const [moreOpen, setMoreOpen] = useState(false)
   const location = useLocation()
   const { data: unread = 0 } = useUnreadCount()
@@ -117,8 +122,9 @@ export function BottomNav({ moreItems }: { moreItems: SidebarNavItem[] }) {
         <div className="flex min-h-[52px] flex-1 items-center justify-center">
           <button
             type="button"
-            onClick={() => openNewTransaction()}
-            aria-label="Nova transação"
+            onClick={onPlus}
+            aria-label={plusLabel}
+            title={plusLabel}
             className="flex h-11 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
           >
             <Plus size={22} />

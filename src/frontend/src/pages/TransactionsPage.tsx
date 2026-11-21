@@ -117,11 +117,7 @@ export function TransactionsPage() {
     <div className="w-full min-w-0">
       <PageHeader
         title="Transações"
-        action={
-          <Button onClick={() => openNewTransaction()} icon={<Plus size={16} />} >
-            Nova Transação
-          </Button>
-        }
+        primaryAction={{ label: 'Nova Transação', onClick: () => openNewTransaction() }}
       />
 
       {/* Filter bar */}

@@ -17,6 +17,7 @@ import { TooltipProvider } from '../components/ui/tooltip'
 import { cn } from '../lib/utils'
 import { NewTransactionProvider } from '../context/NewTransactionContext'
 import { TransactionActionsProvider } from '../context/TransactionActionsContext'
+import { PrimaryActionProvider } from '../context/PrimaryActionContext'
 import { usePreferences } from '../context/PreferencesContext'
 import {
   DesktopSidebar,
@@ -48,7 +49,9 @@ export function DashboardLayout() {
   return (
     <NewTransactionProvider>
       <TransactionActionsProvider>
-        <DashboardShell />
+        <PrimaryActionProvider>
+          <DashboardShell />
+        </PrimaryActionProvider>
       </TransactionActionsProvider>
     </NewTransactionProvider>
   )

@@ -229,16 +229,10 @@ export function DebtsPage() {
     <div>
       <PageHeader
         title="Dívidas"
-        action={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setSnowballOpen(true)} icon={<Snowflake size={16} />}>
-              Bola de Neve
-            </Button>
-            <Button onClick={() => setCreateOpen(true)} icon={<Plus size={16} />}>
-              Nova Dívida
-            </Button>
-          </div>
-        }
+        primaryAction={{ label: 'Nova Dívida', onClick: () => setCreateOpen(true) }}
+        secondaryActions={[
+          { label: 'Bola de Neve', icon: <Snowflake size={16} />, onClick: () => setSnowballOpen(true) },
+        ]}
       />
 
       {/* Filter tabs */}

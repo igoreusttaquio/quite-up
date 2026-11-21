@@ -6,6 +6,7 @@ import { useCategories } from '../hooks/useCategories'
 import { useAccounts } from '../hooks/useAccounts'
 import { useTransactions } from '../hooks/useTransactions'
 import { useTransactionActions } from '../context/TransactionActionsContext'
+import { PageHeader } from '../components/PageHeader'
 import { useAuthStore } from '../store/authStore'
 import { CurrencyBadge, type CurrencyTone } from '../components/CurrencyBadge'
 import { IconBadge } from '../components/IconBadge'
@@ -178,13 +179,11 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Olá, {user?.name?.split(' ')[0]}
-        </h1>
-        <p className="text-sm text-muted-foreground capitalize mt-0.5">{periodDescription}</p>
-      </div>
+      <PageHeader
+        title={`Olá, ${user?.name?.split(' ')[0] ?? ''}`.trim()}
+        subtitle={<span className="first-letter:uppercase">{periodDescription}</span>}
+        className="mb-0"
+      />
 
       {/* Filters */}
       <div className="card px-4 py-3">

@@ -98,11 +98,7 @@ export function CategoriesPage() {
     <div>
       <PageHeader
         title="Categorias"
-        action={
-          <Button onClick={openCreate} icon={<Plus size={16} />}>
-            Nova Categoria
-          </Button>
-        }
+        primaryAction={{ label: 'Nova Categoria', onClick: openCreate }}
       />
 
       {isLoading ? (
