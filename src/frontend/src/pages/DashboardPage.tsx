@@ -5,6 +5,7 @@ import { useDashboard } from '../hooks/useDashboard'
 import { useCategories } from '../hooks/useCategories'
 import { useAccounts } from '../hooks/useAccounts'
 import { useTransactions } from '../hooks/useTransactions'
+import { useTransactionActions } from '../context/TransactionActionsContext'
 import { useAuthStore } from '../store/authStore'
 import { CurrencyBadge, type CurrencyTone } from '../components/CurrencyBadge'
 import { IconBadge } from '../components/IconBadge'
@@ -77,6 +78,7 @@ export function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: categories } = useCategories()
   const { data: accounts, isLoading: accountsLoading } = useAccounts()
+  const { openDetail } = useTransactionActions()
 
   const rawPeriod = searchParams.get('period')
   const period: PeriodPreset = rawPeriod && rawPeriod in periodLabels ? (rawPeriod as PeriodPreset) : DEFAULT_PERIOD
@@ -319,7 +321,7 @@ export function DashboardPage() {
         type={filterType}
       />
       {/* Categorias + transações: lado a lado em telas largas (o clique na fatia filtra a lista ao lado) */}
-      <div className="space-y-6 xl:grid xl:grid-cols-5 xl:items-start xl:gap-6 xl:space-y-0">
+      <div className="space-y-6 xl:grid xl:grid-cols-5 xl:items-stretch xl:gap-6 xl:space-y-0">
         {!filterCategoryId && (
           <div className="min-w-0 xl:col-span-2">
             <CategoryBreakdownChart
@@ -336,7 +338,12 @@ export function DashboardPage() {
         )}
 
         {/* Recent transactions */}
-        <div className={cn('card min-w-0', filterCategoryId ? 'xl:col-span-5' : 'xl:col-span-3')}>
+        <div
+          className={cn(
+            'card flex min-w-0 flex-col',
+            filterCategoryId ? 'xl:col-span-5' : 'xl:col-span-3 xl:h-0 xl:min-h-full'
+          )}
+        >
           <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-subtle">
             <div className="flex min-w-0 items-center gap-1.5">
               <span className="truncate text-base font-semibold">{listTitle}</span>
@@ -395,29 +402,35 @@ export function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <ul className="divide-y divide-subtle">
+            <ul className="min-h-0 flex-1 divide-y divide-subtle overflow-y-auto overscroll-contain">
               {recentTransactions.map((tx) => (
-                <li key={tx.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
-                  <TransactionIcon
-                    transaction={tx}
-                    category={tx.categoryId ? categoriesById.get(tx.categoryId) : undefined}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">
-                      {tx.description || typeLabels[tx.type]}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {tx.type === 'Transfer'
-                        ? `${tx.accountName} → ${tx.destinationAccountName ?? '—'} · `
-                        : tx.categoryName && `${tx.categoryName} · `}
-                      {dateFormatter.format(new Date(tx.date + 'T12:00:00'))}
-                    </p>
-                  </div>
-                  {tx.type === 'Transfer' ? (
-                    <CurrencyBadge value={tx.amount} className="text-muted-foreground" />
-                  ) : (
-                    <CurrencyBadge value={tx.type === 'Expense' ? -tx.amount : tx.amount} />
-                  )}
+                <li key={tx.id}>
+                  <button
+                    type="button"
+                    onClick={() => openDetail(tx)}
+                    className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none cursor-pointer"
+                  >
+                    <TransactionIcon
+                      transaction={tx}
+                      category={tx.categoryId ? categoriesById.get(tx.categoryId) : undefined}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">
+                        {tx.description || typeLabels[tx.type]}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {tx.type === 'Transfer'
+                          ? `${tx.accountName} → ${tx.destinationAccountName ?? '—'} · `
+                          : tx.categoryName && `${tx.categoryName} · `}
+                        {dateFormatter.format(new Date(tx.date + 'T12:00:00'))}
+                      </p>
+                    </div>
+                    {tx.type === 'Transfer' ? (
+                      <CurrencyBadge value={tx.amount} className="text-muted-foreground" />
+                    ) : (
+                      <CurrencyBadge value={tx.type === 'Expense' ? -tx.amount : tx.amount} />
+                    )}
+                  </button>
                 </li>
               ))}
             </ul>

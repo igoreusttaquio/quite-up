@@ -16,6 +16,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { TooltipProvider } from '../components/ui/tooltip'
 import { cn } from '../lib/utils'
 import { NewTransactionProvider } from '../context/NewTransactionContext'
+import { TransactionActionsProvider } from '../context/TransactionActionsContext'
 import { usePreferences } from '../context/PreferencesContext'
 import {
   DesktopSidebar,
@@ -39,14 +40,16 @@ const navItems: SidebarNavItem[] = [
   { label: 'Perfil', path: '/profile', Icon: User },
 ]
 
-// No celular, Dashboard/Transações/Contas/Orçamento ficam na barra inferior; o resto vai para "Mais".
-const MOBILE_BAR_PATHS = new Set(['/dashboard', '/transactions', '/accounts', '/budgets'])
+// No celular a barra é simétrica: Início, Transações | + | Contas, Mais. O resto vai para "Mais".
+const MOBILE_BAR_PATHS = new Set(['/dashboard', '/transactions', '/accounts'])
 const mobileMoreItems = navItems.filter((item) => !MOBILE_BAR_PATHS.has(item.path))
 
 export function DashboardLayout() {
   return (
     <NewTransactionProvider>
-      <DashboardShell />
+      <TransactionActionsProvider>
+        <DashboardShell />
+      </TransactionActionsProvider>
     </NewTransactionProvider>
   )
 }

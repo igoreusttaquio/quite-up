@@ -1,8 +1,5 @@
 import { useState, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import {
   Plus,
   Pencil,
@@ -12,7 +9,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Paperclip,
   Upload,
   Copy,
@@ -20,14 +16,9 @@ import {
   ArrowDown,
   Scale,
 } from 'lucide-react'
-import {
-  useTransactions,
-  useUpdateTransaction,
-  useUndoableDeleteTransaction,
-} from '../hooks/useTransactions'
-import { useUploadAttachment, useDeleteAttachment } from '../hooks/useAttachment'
+import { useTransactions } from '../hooks/useTransactions'
+import { useTransactionActions } from '../context/TransactionActionsContext'
 import { useAppToast } from '../hooks/useAppToast'
-import { ReceiptViewer } from '../components/ReceiptViewer'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { PageHeader } from '../components/PageHeader'
@@ -36,50 +27,15 @@ import { SkeletonTable } from '../components/Skeleton'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { TransactionIcon } from '../components/TransactionIcon'
 import { Button } from '../components/ui/button'
-import { ResponsiveDialog, DialogActions, ConfirmDialog } from '../components/ui/responsive-dialog'
-import { Input } from '../components/ui/input'
 import { DateInput } from '../components/ui/date-input'
-import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
-import { CurrencyInput } from '../components/ui/currency-input'
 import { Spinner } from '../components/ui/spinner'
-import { getApiErrorMessage, toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
-import { compressImage } from '../lib/image'
-import { isOnline, isTempTransactionId, usePendingSyncIds } from '../lib/offline'
+import { toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
+import { isTempTransactionId, usePendingSyncIds } from '../lib/offline'
 import { PendingSyncBadge } from '../components/PendingSyncBadge'
-import { describeAmount, formatBRL, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
-import { TransactionDetailDialog } from '../components/transactions/TransactionDetailDialog'
+import { signedAmount, todayParam, transactionTypeLabels } from '../lib/transactions'
 import { useNewTransaction } from '../context/NewTransactionContext'
-import type { TransactionType, Transaction, TransactionTotals, Account, Category } from '../types'
-
-const updateSchema = z
-  .object({
-    type: z.enum(['Income', 'Expense', 'Transfer']),
-    accountId: z.string().min(1, 'Conta é obrigatória'),
-    destinationAccountId: z.string().optional(),
-    amount: z.number().positive('Valor deve ser positivo'),
-    date: z.string().min(1, 'Data é obrigatória'),
-    categoryId: z.string().optional(),
-    description: z.string().optional(),
-  })
-  .superRefine(transferRefinement)
-
-type UpdateFormData = z.infer<typeof updateSchema>
-
-/** Valor com sinal do ponto de vista da conta filtrada (transferência sai de uma e entra na outra). */
-function signedAmount(tx: Transaction, accountId?: string): number {
-  if (tx.type === 'Income') return tx.amount
-  if (tx.type === 'Expense') return -tx.amount
-  if (accountId && tx.accountId === accountId) return -tx.amount
-  if (accountId && tx.destinationAccountId === accountId) return tx.amount
-  return tx.amount
-}
-
-/** Garante que a conta atual da transação apareça no select, mesmo se estiver inativa. */
-function withCurrentAccount(accounts: Account[], id?: string, name?: string): Account[] {
-  if (!id || accounts.some((a) => a.id === id)) return accounts
-  return [...accounts, { id, name: `${name ?? 'Conta'} (inativa)`, type: 'Other', balance: 0, isActive: false, createdAt: '' }]
-}
+import type { TransactionType, Transaction, TransactionTotals, Category } from '../types'
 
 export function TransactionsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -134,31 +90,10 @@ export function TransactionsPage() {
 
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
-  const updateTransaction = useUpdateTransaction()
-  const deleteWithUndoRaw = useUndoableDeleteTransaction()
+  const actions = useTransactionActions()
 
-  const [detailTarget, setDetailTarget] = useState<Transaction | null>(null)
-  const [editTarget, setEditTarget] = useState<Transaction | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null)
-  const [viewReceipt, setViewReceipt] = useState<{ transactionId: string; attachmentId: string; fileName: string; contentType: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
-
-  const uploadAttachment = useUploadAttachment()
-  const deleteAttachment = useDeleteAttachment()
-
-  const editForm = useForm<UpdateFormData>({
-    resolver: zodResolver(updateSchema),
-    defaultValues: {
-      type: 'Expense',
-      accountId: '',
-      destinationAccountId: '',
-      amount: 0,
-      date: todayParam(),
-      categoryId: '',
-      description: '',
-    },
-  })
 
   const activeAccounts = accounts?.filter((a) => a.isActive) ?? []
   const totalPages = result ? Math.ceil(result.totalCount / result.pageSize) : 0
@@ -166,124 +101,17 @@ export function TransactionsPage() {
     (c) => !filterType || filterType === 'Transfer' || c.type === filterType
   )
 
-  const handleEdit = async (data: UpdateFormData) => {
-    if (!editTarget) return
-    const isTransfer = editTarget.type === 'Transfer'
-    const variables = {
-      id: editTarget.id,
-      data: {
-        amount: data.amount,
-        date: data.date,
-        accountId: data.accountId,
-        destinationAccountId: isTransfer ? data.destinationAccountId || undefined : undefined,
-        categoryId: !isTransfer ? data.categoryId || undefined : undefined,
-        description: data.description || undefined,
-      },
-    }
-    // Offline: aplica na hora (otimista) e sincroniza depois.
-    if (!isOnline()) {
-      updateTransaction.mutate(variables)
-      setEditTarget(null)
-      toast.info('Alteração salva offline', 'Será sincronizada quando a conexão voltar.')
-      return
-    }
-    try {
-      await updateTransaction.mutateAsync(variables)
-      setEditTarget(null)
-      toast.success('Transação atualizada', describeAmount(editTarget.type, data.amount))
-    } catch (error) {
-      toast.error('Erro ao atualizar transação', getApiErrorMessage(error))
-    }
-  }
-
-  const deleteWithUndo = (transaction: Transaction) => {
-    setDetailTarget(null)
-    setDeleteTarget(null)
-    deleteWithUndoRaw(transaction.id, describeAmount(transaction.type, transaction.amount))
-  }
-
-  const duplicate = (transaction: Transaction) => {
-    setDetailTarget(null)
-    const isTransfer = transaction.type === 'Transfer'
-    openNewTransaction({
-      type: transaction.type,
-      amount: transaction.amount,
-      accountId: transaction.accountId,
-      categoryId: !isTransfer ? transaction.categoryId ?? '' : '',
-      destinationAccountId: isTransfer ? transaction.destinationAccountId ?? '' : '',
-      description: transaction.description ?? '',
-      debtId: transaction.type === 'Expense' ? transaction.debtId ?? '' : '',
-    })
-  }
-
-  /** Online aguarda o envio; offline enfileira (o arquivo fica no IndexedDB) e libera a tela. */
-  const uploadFile = async (transactionId: string, file: File) => {
-    const variables = { transactionId, file: await compressImage(file) }
-    if (!isOnline()) {
-      uploadAttachment.mutate(variables)
-      toast.info('Comprovante salvo offline', 'Será enviado quando a conexão voltar.')
-      return
-    }
-    await uploadAttachment.mutateAsync(variables).catch(() => {})
-  }
-
-  const removeAttachment = async (transactionId: string) => {
-    if (!isOnline()) {
-      deleteAttachment.mutate(transactionId)
-      toast.info('Remoção salva offline', 'Será sincronizada quando a conexão voltar.')
-      return
-    }
-    await deleteAttachment.mutateAsync(transactionId).catch(() => {})
-  }
-
   const handleUploadAttachment = async (transactionId: string, file: File) => {
     setUploadingId(transactionId)
-    await uploadFile(transactionId, file)
+    await actions.uploadAttachment(transactionId, file)
     setUploadingId(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const handleDeleteAttachment = (transactionId: string) => removeAttachment(transactionId)
-
-  /** Criada offline e ainda sem id no servidor: editar/excluir só depois de sincronizar. */
-  const blockIfNotSynced = (transaction: Transaction) => {
-    if (!isTempTransactionId(transaction.id)) return false
-    toast.info('Aguardando sincronização', 'Esta transação foi criada offline; edite ou exclua depois que ela sincronizar.')
-    return true
-  }
-
-  const openEdit = (transaction: Transaction) => {
-    if (blockIfNotSynced(transaction)) return
-    setDetailTarget(null)
-    setEditTarget(transaction)
-    editForm.reset({
-      type: transaction.type,
-      accountId: transaction.accountId,
-      destinationAccountId: transaction.destinationAccountId || '',
-      amount: transaction.amount,
-      date: transaction.date,
-      categoryId: transaction.categoryId || '',
-      description: transaction.description || '',
-    })
-  }
-
-  const openDelete = (transaction: Transaction) => {
-    if (blockIfNotSynced(transaction)) return
-    setDetailTarget(null)
-    setDeleteTarget(transaction)
-  }
 
   const categoriesById = new Map((categories ?? []).map((c) => [c.id, c]))
   const pendingSyncIds = usePendingSyncIds()
-  const detailTx = detailTarget ? result?.items.find((t) => t.id === detailTarget.id) ?? detailTarget : null
 
-  const editAccounts = withCurrentAccount(activeAccounts, editTarget?.accountId, editTarget?.accountName)
-  const editDestinationAccounts = withCurrentAccount(
-    activeAccounts,
-    editTarget?.destinationAccountId,
-    editTarget?.destinationAccountName
-  ).filter((a) => a.id !== editForm.watch('accountId'))
-  const editCategories = (categories ?? []).filter((c) => c.type === editTarget?.type)
 
   return (
     <div className="w-full min-w-0">
@@ -406,17 +234,12 @@ export function TransactionsPage() {
           isFetching={isFetching}
           page={page}
           totalPages={totalPages}
-          onOpen={setDetailTarget}
-          onEdit={openEdit}
-          onDuplicate={duplicate}
-          onDelete={openDelete}
+          onOpen={(t) => actions.openDetail(t, { accountId: filterAccountId || undefined })}
+          onEdit={actions.openEdit}
+          onDuplicate={actions.duplicate}
+          onDelete={actions.requestDelete}
           onPageChange={setPage}
-          onViewReceipt={(t) => t.attachmentId && t.attachmentFileName && t.attachmentContentType && setViewReceipt({
-            transactionId: t.id,
-            attachmentId: t.attachmentId,
-            fileName: t.attachmentFileName,
-            contentType: t.attachmentContentType,
-          })}
+          onViewReceipt={actions.viewReceipt}
           onUploadAttachment={(id) => {
             if (isTempTransactionId(id)) {
               toast.info('Aguardando sincronização', 'Anexe o comprovante depois que a transação sincronizar.')
@@ -425,175 +248,15 @@ export function TransactionsPage() {
             setUploadingId(id)
             fileInputRef.current?.click()
           }}
-          onDeleteAttachment={handleDeleteAttachment}
+          onDeleteAttachment={actions.removeAttachment}
           uploadingId={uploadingId}
         />
       )}
 
-      {/* Detalhe da transação */}
-      <TransactionDetailDialog
-        transaction={detailTx}
-        category={detailTx?.categoryId ? categoriesById.get(detailTx.categoryId) : undefined}
-        accounts={accounts ?? []}
-        signedAmount={(t) => signedAmount(t, filterAccountId || undefined)}
-        onOpenChange={(open) => { if (!open) setDetailTarget(null) }}
-        onEdit={openEdit}
-        onDuplicate={duplicate}
-        onDelete={deleteWithUndo}
-        onUploadAttachment={(t, file) => uploadFile(t.id, file)}
-        onRemoveAttachment={(t) => removeAttachment(t.id)}
-        onViewAttachment={(t) =>
-          t.attachmentId &&
-          setViewReceipt({
-            transactionId: t.id,
-            attachmentId: t.attachmentId,
-            fileName: t.attachmentFileName ?? 'Comprovante',
-            contentType: t.attachmentContentType ?? '',
-          })
-        }
-        uploading={uploadAttachment.isPending && isOnline()}
-        pendingSync={!!detailTx && pendingSyncIds.has(detailTx.id)}
-      />
-
-      {/* Edit dialog */}
-      <ResponsiveDialog
-        open={!!editTarget}
-        onOpenChange={(open) => { if (!open) setEditTarget(null) }}
-        title={editTarget?.type === 'Transfer' ? 'Editar Transferência' : 'Editar Transação'}
-        footer={
-          <DialogActions
-            primary={
-              <Button
-                onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
-                disabled={updateTransaction.isPending}
-                icon={updateTransaction.isPending ? <Loader2 size={14} className="animate-spin" /> : undefined}
-              >
-                {updateTransaction.isPending ? 'Salvando…' : 'Salvar'}
-              </Button>
-            }
-            secondary={
-              <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
-            }
-          />
-        }
-      >
-        <div className="space-y-4">
-          <Controller
-            name="accountId"
-            control={editForm.control}
-            render={({ field }) => (
-              <Field
-                label={editTarget?.type === 'Transfer' ? 'Conta de Origem (sai)' : 'Conta'}
-                required
-                validationState={editForm.formState.errors.accountId ? 'error' : undefined}
-                validationMessage={editForm.formState.errors.accountId?.message}
-              >
-                <NativeSelect {...field} value={field.value || ''}>
-                  {editAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </NativeSelect>
-              </Field>
-            )}
-          />
-          {editTarget?.type === 'Transfer' ? (
-            <Controller
-              name="destinationAccountId"
-              control={editForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Conta de Destino (entra)"
-                  required
-                  validationState={editForm.formState.errors.destinationAccountId ? 'error' : undefined}
-                  validationMessage={editForm.formState.errors.destinationAccountId?.message}
-                >
-                  <NativeSelect {...field} value={field.value || ''}>
-                    <option value="">Selecione uma conta</option>
-                    {editDestinationAccounts.map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              )}
-            />
-          ) : (
-            <Controller
-              name="categoryId"
-              control={editForm.control}
-              render={({ field }) => (
-                <Field label="Categoria">
-                  <NativeSelect {...field} value={field.value || ''}>
-                    <option value="">Sem categoria</option>
-                    {editCategories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              )}
-            />
-          )}
-          <Controller
-            name="amount"
-            control={editForm.control}
-            render={({ field: { onChange, value } }) => (
-              <Field
-                label="Valor"
-                required
-                validationState={editForm.formState.errors.amount ? 'error' : undefined}
-                validationMessage={editForm.formState.errors.amount?.message}
-              >
-                <CurrencyInput value={value ?? 0} onChange={onChange} />
-              </Field>
-            )}
-          />
-          <Controller
-            name="date"
-            control={editForm.control}
-            render={({ field }) => (
-              <Field
-                label="Data"
-                required
-                validationState={editForm.formState.errors.date ? 'error' : undefined}
-                validationMessage={editForm.formState.errors.date?.message}
-              >
-                <DateInput {...field} />
-              </Field>
-            )}
-          />
-          <Controller
-            name="description"
-            control={editForm.control}
-            render={({ field }) => (
-              <Field label="Descrição">
-                <Input {...field} placeholder="Descrição opcional" />
-              </Field>
-            )}
-          />
-        </div>
-      </ResponsiveDialog>
-
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
-        title={
-          deleteTarget
-            ? `Excluir “${deleteTarget.description || transactionTypeLabels[deleteTarget.type]}” de ${formatBRL(deleteTarget.amount)}?`
-            : ''
-        }
-        message="Você poderá desfazer logo em seguida."
-        confirmText="Excluir"
-        destructive
-        onConfirm={() => {
-          if (!deleteTarget) return
-          navigator.vibrate?.(10)
-          deleteWithUndo(deleteTarget)
-        }}
-      />
-
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,.pdf"
+        accept="image/*,application/pdf"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
@@ -601,16 +264,6 @@ export function TransactionsPage() {
         }}
       />
 
-      {viewReceipt && (
-        <ReceiptViewer
-          open={!!viewReceipt}
-          onClose={() => setViewReceipt(null)}
-          attachmentId={viewReceipt.attachmentId}
-          fileName={viewReceipt.fileName}
-          contentType={viewReceipt.contentType}
-          title={`Comprovante - ${viewReceipt.fileName}`}
-        />
-      )}
     </div>
   )
 }

@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   ArrowRightLeft,
   Wallet,
-  PiggyBank,
   MoreHorizontal,
   Plus,
   Moon,
@@ -30,7 +29,6 @@ const primaryItems: SidebarNavItem[] = [
   { label: 'Início', path: '/dashboard', Icon: LayoutDashboard },
   { label: 'Transações', path: '/transactions', Icon: ArrowRightLeft },
   { label: 'Contas', path: '/accounts', Icon: Wallet },
-  { label: 'Orçamento', path: '/budgets', Icon: PiggyBank },
 ]
 
 const PRIMARY_PATHS = new Set(primaryItems.map((i) => i.path))
