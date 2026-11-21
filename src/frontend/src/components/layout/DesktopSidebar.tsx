@@ -3,6 +3,7 @@ import { Link, NavLink, useMatch } from 'react-router-dom'
 import { ChevronsLeft, ChevronsRight, FoldVertical, LogOut, Moon, Sun, UnfoldVertical, type LucideIcon } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useLogout } from '../../hooks/useAuth'
+import { useUnreadCount } from '../../hooks/useNotifications'
 import { useTheme } from '../../context/ThemeContext'
 import { usePreferences } from '../../context/PreferencesContext'
 import { UserAvatar } from '../UserAvatar'
@@ -25,7 +26,7 @@ export interface SidebarNavItem {
 export const SIDEBAR_WIDTH_EXPANDED = 'md:ml-[240px]'
 export const SIDEBAR_WIDTH_COLLAPSED = 'md:ml-[72px]'
 
-function NavItem({ item, collapsed }: { item: SidebarNavItem; collapsed: boolean }) {
+function NavItem({ item, collapsed, badge = 0 }: { item: SidebarNavItem; collapsed: boolean; badge?: number }) {
   const { label, path, Icon } = item
   // Classe calculada aqui (string), e não pela função do NavLink: o TooltipTrigger (asChild)
   // mescla className como texto e quebraria a função.
@@ -36,7 +37,7 @@ function NavItem({ item, collapsed }: { item: SidebarNavItem; collapsed: boolean
       <TooltipTrigger asChild>
         <NavLink
           to={path}
-          aria-label={collapsed ? label : undefined}
+          aria-label={collapsed ? (badge > 0 ? `${label} (${badge} não lidas)` : label) : undefined}
           className={cn(
             'flex h-[40px] items-center gap-[12px] overflow-hidden rounded-lg px-[10px] text-sm font-medium no-underline transition-colors',
             isActive
@@ -44,15 +45,25 @@ function NavItem({ item, collapsed }: { item: SidebarNavItem; collapsed: boolean
               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
           )}
         >
-          <Icon size={20} className="flex-shrink-0" />
+          <span className="relative flex-shrink-0">
+            <Icon size={20} />
+            {badge > 0 && collapsed && (
+              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-card bg-expense" />
+            )}
+          </span>
           <span
             className={cn(
-              'whitespace-nowrap transition-opacity duration-200',
+              'flex-1 whitespace-nowrap transition-opacity duration-200',
               collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
             )}
           >
             {label}
           </span>
+          {badge > 0 && !collapsed && (
+            <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-expense px-1 text-[10px] font-bold leading-none text-white">
+              {badge > 99 ? '99+' : badge}
+            </span>
+          )}
         </NavLink>
       </TooltipTrigger>
       {collapsed && <TooltipContent side="right">{label}</TooltipContent>}
@@ -107,6 +118,7 @@ export function DesktopSidebar({ items }: { items: SidebarNavItem[] }) {
   const logout = useLogout()
   const { mode, toggle: toggleTheme } = useTheme()
   const { density, toggleDensity, sidebarCollapsed: collapsed, toggleSidebar } = usePreferences()
+  const { data: unread = 0 } = useUnreadCount()
 
   // Atalho Ctrl+B (ou Cmd+B) para recolher/expandir, fora de campos de texto.
   useEffect(() => {
@@ -167,7 +179,12 @@ export function DesktopSidebar({ items }: { items: SidebarNavItem[] }) {
       {/* Navegação */}
       <nav className="flex-1 space-y-[4px] overflow-y-auto overflow-x-hidden px-[16px] py-[12px]">
         {items.map((item) => (
-          <NavItem key={item.path} item={item} collapsed={collapsed} />
+          <NavItem
+            key={item.path}
+            item={item}
+            collapsed={collapsed}
+            badge={item.path === '/notifications' ? unread : 0}
+          />
         ))}
       </nav>
 

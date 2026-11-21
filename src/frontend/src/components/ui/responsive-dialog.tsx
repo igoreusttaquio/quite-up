@@ -119,9 +119,9 @@ export function ResponsiveDialog({
       {headerAside && (
         <div className={cn('flex flex-shrink-0 items-center gap-2', hideTitle && 'mr-auto')}>{headerAside}</div>
       )}
-      {!hideClose && (
-        <CloseTag isDesktop={isDesktop} />
-      )}
+      {/* Título oculto e sem conteúdo extra: empurra o X para a direita. */}
+      {hideTitle && !headerAside && <div className="flex-1" />}
+      {!hideClose && <CloseTag isDesktop={isDesktop} />}
     </div>
   )
 
