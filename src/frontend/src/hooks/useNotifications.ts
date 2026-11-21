@@ -10,10 +10,20 @@ export function useNotifications(unreadOnly?: boolean) {
   })
 }
 
+/** Aceita { count } (formato da API) ou número; qualquer outra coisa vira 0. */
+function toCount(value: unknown): number {
+  const raw = typeof value === 'object' && value !== null ? (value as { count?: unknown }).count : value
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0
+}
+
+/** Quantidade de notificações não lidas (sempre um número). */
 export function useUnreadCount() {
   return useQuery({
     queryKey: [...NOTIFICATIONS_KEY, 'unread-count'] as const,
     queryFn: () => notificationsApi.getUnreadCount().then((r) => r.data),
+    // `select` também normaliza valores antigos restaurados do cache offline.
+    select: toCount,
     refetchInterval: 30000,
   })
 }

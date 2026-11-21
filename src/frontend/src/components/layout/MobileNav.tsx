@@ -37,7 +37,7 @@ const PRIMARY_PATHS = new Set(primaryItems.map((i) => i.path))
 const NOTIFICATIONS_PATH = '/notifications'
 
 function CountBadge({ count, className }: { count: number; className?: string }) {
-  if (count <= 0) return null
+  if (typeof count !== 'number' || !(count > 0)) return null
   return (
     <span
       className={cn(

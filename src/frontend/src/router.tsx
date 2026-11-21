@@ -17,14 +17,17 @@ import { BudgetsPage } from './pages/BudgetsPage'
 import { FinancialGoalsPage } from './pages/FinancialGoalsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { RouteError } from './components/RouteError'
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <Navigate to="/dashboard" replace />,
+    errorElement: <RouteError />,
   },
   {
     element: <AuthLayout />,
+    errorElement: <RouteError />,
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/register', element: <RegisterPage /> },
@@ -35,6 +38,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <ProtectedRoute />,
+    errorElement: <RouteError />,
     children: [
       {
         element: <DashboardLayout />,
