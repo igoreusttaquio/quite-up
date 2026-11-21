@@ -459,23 +459,49 @@ function AccountsStrip({ accounts }: { accounts: Account[] }) {
           Gerenciar
         </Link>
       </div>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden">
+      {/*
+        Celular: rolagem horizontal full-bleed. A margem negativa, o padding e o scroll-padding
+        usam o mesmo valor do padding lateral da página (com safe area), então o 1º card fica
+        alinhado ao título e, com o snap, não encosta na borda da tela.
+        Desktop: lista normal dentro do conteúdo.
+      */}
+      <div
+        className={cn(
+          'flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1',
+          'ml-[calc(-1*max(1rem,env(safe-area-inset-left)))] mr-[calc(-1*max(1rem,env(safe-area-inset-right)))]',
+          'pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]',
+          'scroll-pl-[max(1rem,env(safe-area-inset-left))] scroll-pr-[max(1rem,env(safe-area-inset-right))]',
+          'md:mx-0 md:px-0 md:scroll-px-0',
+          '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+        )}
+      >
         {accounts.map((account) => {
           const { Icon, color } = accountTypeVisual[account.type]
           return (
             <Link
               key={account.id}
               to={`/transactions?account=${account.id}`}
-              className="card group flex min-w-[200px] flex-shrink-0 snap-start items-center gap-3 p-3.5 no-underline transition-colors hover:bg-muted/50"
+              className={cn(
+                'card group flex flex-shrink-0 snap-start no-underline transition-colors hover:bg-muted/50',
+                // Celular: ~2,25 cards visíveis (o parcial indica rolagem); nome e saldo empilhados.
+                'w-[calc((100%-0.75rem)/2.25)] flex-col gap-2 p-3',
+                'md:w-auto md:min-w-[200px] md:flex-row md:items-center md:gap-3 md:p-3.5'
+              )}
             >
-              <IconBadge color={color} size="sm">
-                <Icon size={16} />
-              </IconBadge>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs text-muted-foreground">{account.name}</p>
-                <CurrencyBadge value={account.balance} tone="balance" size="sm" />
+              <div className="flex min-w-0 items-center gap-2 md:contents">
+                <IconBadge color={color} size="sm" className="h-7 w-7 md:h-8 md:w-8">
+                  <Icon size={15} />
+                </IconBadge>
+                <p className="min-w-0 truncate text-xs text-muted-foreground md:hidden">{account.name}</p>
               </div>
-              <ChevronRight size={14} className="flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              <div className="min-w-0 md:flex-1">
+                <p className="hidden truncate text-xs text-muted-foreground md:block">{account.name}</p>
+                <CurrencyBadge value={account.balance} tone="balance" size="sm" className="block truncate" />
+              </div>
+              <ChevronRight
+                size={14}
+                className="hidden flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 md:block"
+              />
             </Link>
           )
         })}
