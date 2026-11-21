@@ -247,13 +247,34 @@ namespace QuiteUp.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<DateOnly>("DueDate")
-                        .HasColumnType("date")
-                        .HasColumnName("due_date");
+                    b.Property<int?>("DueDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("due_day");
 
-                    b.Property<decimal?>("InterestRate")
+                    b.Property<DateOnly?>("FirstInstallmentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("first_installment_date");
+
+                    b.Property<int>("InitialPaidInstallments")
+                        .HasColumnType("integer")
+                        .HasColumnName("initial_paid_installments");
+
+                    b.Property<decimal?>("InstallmentAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
+                        .HasColumnName("installment_amount");
+
+                    b.Property<int?>("InstallmentCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("installment_count");
+
+                    b.Property<int>("InterestPeriod")
+                        .HasColumnType("integer")
+                        .HasColumnName("interest_period");
+
+                    b.Property<decimal?>("InterestRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
                         .HasColumnName("interest_rate");
 
                     b.Property<bool>("IsPaid")
@@ -266,6 +287,10 @@ namespace QuiteUp.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<bool>("NeedsReview")
+                        .HasColumnType("boolean")
+                        .HasColumnName("needs_review");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -275,6 +300,14 @@ namespace QuiteUp.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("paid_amount");
+
+                    b.Property<int>("PaymentMode")
+                        .HasColumnType("integer")
+                        .HasColumnName("payment_mode");
+
+                    b.Property<DateOnly?>("PayoffDate")
+                        .HasColumnType("date")
+                        .HasColumnName("payoff_date");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)

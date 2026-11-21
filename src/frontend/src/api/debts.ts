@@ -1,11 +1,12 @@
 import { api } from '../lib/axios'
-import type { Debt, CreateDebtRequest, UpdateDebtRequest, DebtPayment, RegisterDebtPaymentRequest, UpdateDebtPaymentRequest, SnowballStrategy } from '../types'
+import type { Debt, DebtInput, DebtInstallment, DebtPayment, RegisterDebtPaymentRequest, UpdateDebtPaymentRequest, SnowballStrategy } from '../types'
 
 export const debtsApi = {
   list: (isPaid?: boolean) => api.get<Debt[]>('/debts', { params: { isPaid } }),
   getById: (id: string) => api.get<Debt>(`/debts/${id}`),
-  create: (data: CreateDebtRequest) => api.post<Debt>('/debts', data),
-  update: (id: string, data: UpdateDebtRequest) => api.put<Debt>(`/debts/${id}`, data),
+  create: (data: DebtInput) => api.post<Debt>('/debts', data),
+  update: (id: string, data: DebtInput) => api.put<Debt>(`/debts/${id}`, data),
+  getInstallments: (debtId: string) => api.get<DebtInstallment[]>(`/debts/${debtId}/installments`),
   delete: (id: string) => api.delete<void>(`/debts/${id}`),
   getPayments: (debtId: string) => api.get<DebtPayment[]>(`/debts/${debtId}/payments`),
   registerPayment: (debtId: string, data: RegisterDebtPaymentRequest) =>

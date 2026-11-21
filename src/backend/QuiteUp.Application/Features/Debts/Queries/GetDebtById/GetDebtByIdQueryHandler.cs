@@ -20,18 +20,7 @@ public class GetDebtByIdQueryHandler(
         if (debt is null)
             return Result<DebtDto>.Failure(Error.NotFound);
 
-        var dto = new DebtDto(
-            idEncoder.Encode(debt.Id),
-            debt.Name,
-            debt.Type,
-            debt.TotalAmount,
-            debt.PaidAmount,
-            debt.TotalAmount - debt.PaidAmount,
-            debt.InterestRate,
-            debt.DueDate,
-            debt.IsPaid,
-            debt.Notes,
-            debt.CreatedAt);
+        var dto = DebtMapper.ToDto(debt, idEncoder);
 
         return Result<DebtDto>.Success(dto);
     }

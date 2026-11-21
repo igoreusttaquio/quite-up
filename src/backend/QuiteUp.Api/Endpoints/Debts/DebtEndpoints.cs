@@ -7,7 +7,9 @@ using QuiteUp.Application.Features.Debts.Commands.DeleteDebtPayment;
 using QuiteUp.Application.Features.Debts.Commands.UpdateDebtPayment;
 using QuiteUp.Application.Features.Debts.Commands.RegisterDebtPayment;
 using QuiteUp.Application.Features.Debts.Commands.UpdateDebt;
+using QuiteUp.Application.Features.Debts;
 using QuiteUp.Application.Features.Debts.Queries.GetDebtById;
+using QuiteUp.Application.Features.Debts.Queries.GetDebtInstallments;
 using QuiteUp.Application.Features.Debts.Queries.GetDebtPayments;
 using QuiteUp.Application.Features.Debts.Queries.GetDebts;
 using QuiteUp.Application.Features.Debts.Queries.GetSnowballStrategy;
@@ -44,23 +46,21 @@ public class DebtEndpoints : IEndpoint
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
-        group.MapPost("/", async (CreateDebtRequest req, IMediator sender) =>
+        group.MapPost("/", async (DebtInput req, IMediator sender) =>
         {
-            var result = await sender.Send(new CreateDebtCommand(
-                req.Name, req.Type, req.TotalAmount, req.InterestRate, req.DueDate, req.Notes));
+            var result = await sender.Send(new CreateDebtCommand(req));
 
             return result.IsSuccess
                 ? Results.Created($"/api/debts/{result.Value!.Id}", result.Value)
                 : Results.BadRequest(result.Error);
         });
 
-        group.MapPut("/{externalId}", async (string externalId, UpdateDebtRequest req, IMediator sender, IIdEncoder encoder) =>
+        group.MapPut("/{externalId}", async (string externalId, DebtInput req, IMediator sender, IIdEncoder encoder) =>
         {
             var id = encoder.Decode(externalId);
             if (id is null) return Results.NotFound();
 
-            var result = await sender.Send(new UpdateDebtCommand(
-                id.Value, req.Name, req.Type, req.TotalAmount, req.InterestRate, req.DueDate, req.Notes));
+            var result = await sender.Send(new UpdateDebtCommand(id.Value, req));
 
             return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
@@ -72,6 +72,15 @@ public class DebtEndpoints : IEndpoint
 
             var result = await sender.Send(new DeleteDebtCommand(id.Value));
             return result.IsSuccess ? Results.NoContent() : Results.NotFound(result.Error);
+        });
+
+        group.MapGet("/{externalId}/installments", async (string externalId, IMediator sender, IIdEncoder encoder) =>
+        {
+            var id = encoder.Decode(externalId);
+            if (id is null) return Results.NotFound();
+
+            var result = await sender.Send(new GetDebtInstallmentsQuery(id.Value));
+            return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
         });
 
         group.MapGet("/{externalId}/payments", async (string externalId, IMediator sender, IIdEncoder encoder) =>
@@ -139,22 +148,6 @@ public class DebtEndpoints : IEndpoint
         decimal Discount,
         string? Notes,
         string? AccountId = null);
-
-    private record CreateDebtRequest(
-        string Name,
-        DebtType Type,
-        decimal TotalAmount,
-        decimal? InterestRate,
-        DateOnly DueDate,
-        string? Notes);
-
-    private record UpdateDebtRequest(
-        string Name,
-        DebtType Type,
-        decimal TotalAmount,
-        decimal? InterestRate,
-        DateOnly DueDate,
-        string? Notes);
 
     private record RegisterPaymentRequest(
         decimal Amount,

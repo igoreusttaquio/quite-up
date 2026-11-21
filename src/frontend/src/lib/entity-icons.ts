@@ -1,4 +1,4 @@
-import { Landmark, PiggyBank, Wallet, Folder, HandCoins, Car, CreditCard, type LucideIcon } from 'lucide-react'
+import { Landmark, PiggyBank, Wallet, Folder, HandCoins, Car, CreditCard, Gauge, Users, CircleDollarSign, type LucideIcon } from 'lucide-react'
 import type { AccountType, DebtType } from '../types'
 
 interface EntityVisual {
@@ -18,4 +18,7 @@ export const debtTypeVisual: Record<DebtType, EntityVisual> = {
   Loan: { Icon: HandCoins, color: 'var(--primary)' },
   Financing: { Icon: Car, color: '#8E6FC7' },
   CreditCard: { Icon: CreditCard, color: 'var(--warning)' },
+  Overdraft: { Icon: Gauge, color: 'var(--expense)' },
+  Personal: { Icon: Users, color: '#14b8a6' },
+  Other: { Icon: CircleDollarSign, color: 'var(--muted-foreground)' },
 }

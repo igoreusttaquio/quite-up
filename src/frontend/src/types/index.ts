@@ -4,7 +4,14 @@ export type CategoryType = 'Income' | 'Expense'
 
 export type TransactionType = 'Income' | 'Expense' | 'Transfer'
 
-export type DebtType = 'Loan' | 'Financing' | 'CreditCard'
+export type DebtType = 'Loan' | 'Financing' | 'CreditCard' | 'Overdraft' | 'Personal' | 'Other'
+
+/** Installments = parcelas fixas; Flexible = sem parcelas fixas (cartão, cheque especial, pessoa). */
+export type DebtPaymentMode = 'Installments' | 'Flexible'
+
+export type InterestPeriod = 'Monthly' | 'Yearly'
+
+export type DebtStatusKind = 'onTrack' | 'dueSoon' | 'overdue' | 'paid'
 
 export interface Account {
   id: string
@@ -201,6 +208,14 @@ export interface ValidationErrors {
 
 // === Debts ===
 
+export interface NextInstallment {
+  number: number
+  /** Quanto falta pagar desta parcela. */
+  amount: number
+  dueDate: string
+}
+
+/** Espelha o DebtDto da API. */
 export interface Debt {
   id: string
   name: string
@@ -208,29 +223,52 @@ export interface Debt {
   totalAmount: number
   paidAmount: number
   remainingAmount: number
-  interestRate?: number
-  dueDate: string
+  interestRate?: number | null
+  interestPeriod: InterestPeriod
+  paymentMode: DebtPaymentMode
+  installmentCount?: number | null
+  installmentAmount?: number | null
+  initialPaidInstallments: number
+  dueDay?: number | null
+  firstInstallmentDate?: string | null
+  /** Parcelado: previsão de quitação (calculada). Sem parcelas: "quitar até". */
+  payoffDate?: string | null
   isPaid: boolean
-  notes?: string
+  notes?: string | null
+  /** Migrada do modelo antigo: pedir ao usuário para confirmar as parcelas. */
+  needsReview: boolean
+  status: DebtStatusKind
+  /** Dias em atraso (overdue) ou até o próximo vencimento. */
+  statusDays?: number | null
+  paidInstallments?: number | null
+  nextInstallment?: NextInstallment | null
+  nextDueDate?: string | null
   createdAt: string
 }
 
-export interface CreateDebtRequest {
+/** Corpo de criar/editar dívida (DebtInput da API). */
+export interface DebtInput {
   name: string
   type: DebtType
   totalAmount: number
-  interestRate?: number
-  dueDate: string
-  notes?: string
+  paymentMode: DebtPaymentMode
+  installmentCount: number | null
+  installmentAmount: number | null
+  initialPaidInstallments: number
+  dueDay: number | null
+  firstInstallmentDate: string | null
+  payoffDate: string | null
+  interestRate: number | null
+  interestPeriod: InterestPeriod
+  notes: string | null
 }
 
-export interface UpdateDebtRequest {
-  name: string
-  type: DebtType
-  totalAmount: number
-  interestRate?: number
+export interface DebtInstallment {
+  number: number
+  amount: number
   dueDate: string
-  notes?: string
+  status: 'paid' | 'open' | 'overdue'
+  remainingAmount: number
 }
 
 export interface DebtPayment {
@@ -269,7 +307,8 @@ export interface SnowballStrategyItem {
   type: DebtType
   totalAmount: number
   remainingAmount: number
-  dueDate: string
+  minimumPayment: number
+  payoffDate?: string | null
   order: number
 }
 

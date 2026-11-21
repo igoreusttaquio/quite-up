@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { useForm, Controller, type UseFormReturn } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Trash2, DollarSign, Snowflake, CalendarDays, Paperclip, PartyPopper, AlertTriangle, Clock } from 'lucide-react'
-import { useDebts, useCreateDebt, useUpdateDebt, useDeleteDebt, useDebtPayments, useRegisterDebtPayment, useUpdateDebtPayment, useDeleteDebtPayment, useSnowballStrategy } from '../hooks/useDebts'
+import { Plus, Pencil, Trash2, DollarSign, Snowflake, Paperclip } from 'lucide-react'
+import { useDebts, useDeleteDebt, useDebtPayments, useRegisterDebtPayment, useUpdateDebtPayment, useDeleteDebtPayment, useSnowballStrategy } from '../hooks/useDebts'
 import { useAppToast } from '../hooks/useAppToast'
-import { cn, getApiErrorMessage, toDateParam } from '../lib/utils'
+import { getApiErrorMessage, toDateParam } from '../lib/utils'
 import { useAccounts } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
@@ -14,6 +14,10 @@ import { SkeletonCard } from '../components/Skeleton'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { IconBadge } from '../components/IconBadge'
 import { debtTypeVisual } from '../lib/entity-icons'
+import { debtTypeLabels } from '../lib/debts'
+import { DebtCard } from '../components/debts/DebtCard'
+import { DebtFormDialog } from '../components/debts/DebtFormDialog'
+import { DebtInstallmentsDialog } from '../components/debts/DebtInstallmentsDialog'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
@@ -27,22 +31,7 @@ import { ReceiptViewer } from '../components/ReceiptViewer'
 import { useUploadAttachment } from '../hooks/useAttachment'
 import type { DebtType, Debt, DebtPayment } from '../types'
 
-const debtTypeLabels: Record<DebtType, string> = {
-  Loan: 'Empréstimo',
-  Financing: 'Financiamento',
-  CreditCard: 'Cartão de Crédito',
-}
-
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-
-const debtSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  type: z.enum(['Loan', 'Financing', 'CreditCard']),
-  totalAmount: z.number().min(0.01, 'Valor total é obrigatório'),
-  interestRate: z.number().optional(),
-  dueDate: z.string().min(1, 'Data de vencimento é obrigatória'),
-  notes: z.string().optional(),
-})
 
 const paymentSchema = z.object({
   amount: z.number().min(0.01, 'Valor do pagamento é obrigatório'),
@@ -53,14 +42,11 @@ const paymentSchema = z.object({
   accountId: z.string().optional(),
 })
 
-type DebtFormData = z.infer<typeof debtSchema>
 type PaymentFormData = z.infer<typeof paymentSchema>
 
 export function DebtsPage() {
   const { data: debts, isLoading } = useDebts()
   const { data: accounts } = useAccounts()
-  const createDebt = useCreateDebt()
-  const updateDebt = useUpdateDebt()
   const deleteDebt = useDeleteDebt()
   const registerPayment = useRegisterDebtPayment()
   const updatePayment = useUpdateDebtPayment()
@@ -73,6 +59,7 @@ export function DebtsPage() {
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'paid'>('all')
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Debt | null>(null)
+  const [installmentsDebt, setInstallmentsDebt] = useState<Debt | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Debt | null>(null)
   const [paymentDebtTarget, setPaymentDebtTarget] = useState<Debt | null>(null)
   const [editingPayment, setEditingPayment] = useState<DebtPayment | null>(null)
@@ -86,36 +73,10 @@ export function DebtsPage() {
 
   const { data: paymentsData, isLoading: paymentsLoading } = useDebtPayments(paymentsDebtId ?? '')
 
-  const createForm = useForm<DebtFormData>({
-    resolver: zodResolver(debtSchema),
-    defaultValues: { name: '', type: 'Loan', totalAmount: 0, interestRate: undefined, dueDate: '', notes: '' },
-  })
-
-  const editForm = useForm<DebtFormData>({
-    resolver: zodResolver(debtSchema),
-    defaultValues: { name: '', type: 'Loan', totalAmount: 0, interestRate: undefined, dueDate: '', notes: '' },
-  })
-
   const paymentForm = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: { amount: 0, paymentDate: new Date().toISOString().split('T')[0], isEarlyPayment: false, discount: 0, notes: '' },
   })
-
-  const handleCreate = async (data: DebtFormData) => {
-    try {
-      await createDebt.mutateAsync(data)
-      setCreateOpen(false)
-      createForm.reset()
-    } catch { /* handled by query client */ }
-  }
-
-  const handleEdit = async (data: DebtFormData) => {
-    if (!editTarget) return
-    try {
-      await updateDebt.mutateAsync({ id: editTarget.id, data })
-      setEditTarget(null)
-    } catch { /* handled by query client */ }
-  }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
@@ -184,18 +145,6 @@ export function DebtsPage() {
     })
   }
 
-  const openEdit = (debt: Debt) => {
-    setEditTarget(debt)
-    editForm.reset({
-      name: debt.name,
-      type: debt.type,
-      totalAmount: debt.totalAmount,
-      interestRate: debt.interestRate,
-      dueDate: debt.dueDate.split('T')[0] ?? debt.dueDate,
-      notes: debt.notes ?? '',
-    })
-  }
-
   const openPayments = (debtId: string) => {
     setPaymentsDebtId(debtId)
   }
@@ -204,7 +153,7 @@ export function DebtsPage() {
     setEditingPayment(null)
     setPaymentDebtTarget(debt)
     paymentForm.reset({
-      amount: 0,
+      amount: debt.nextInstallment?.amount ?? 0,
       paymentDate: toDateParam(new Date()),
       isEarlyPayment: false,
       discount: 0,
@@ -277,8 +226,9 @@ export function DebtsPage() {
               key={debt.id}
               debt={debt}
               isSnowballNext={debt.id === snowballNextId}
-              onEdit={() => openEdit(debt)}
+              onEdit={() => setEditTarget(debt)}
               onDelete={() => setDeleteTarget(debt)}
+              onViewInstallments={() => setInstallmentsDebt(debt)}
               onViewPayments={() => openPayments(debt.id)}
               onRegisterPayment={() => openPaymentDialog(debt)}
             />
@@ -286,25 +236,13 @@ export function DebtsPage() {
         </div>
       )}
 
-      <DebtFormDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        title="Nova Dívida"
-        form={createForm}
-        mutation={createDebt}
-        onSubmit={createForm.handleSubmit(handleCreate as () => Promise<void>)}
-        submitLabel="Criar Dívida"
-      />
-
+      <DebtFormDialog open={createOpen} onOpenChange={setCreateOpen} />
       <DebtFormDialog
         open={!!editTarget}
+        debt={editTarget}
         onOpenChange={(open) => { if (!open) setEditTarget(null) }}
-        title="Editar Dívida"
-        form={editForm}
-        mutation={updateDebt}
-        onSubmit={editForm.handleSubmit(handleEdit as () => Promise<void>)}
-        submitLabel="Salvar"
       />
+      <DebtInstallmentsDialog debt={installmentsDebt} onOpenChange={(open) => { if (!open) setInstallmentsDebt(null) }} />
 
       <ConfirmDialog
         open={!!deleteTarget}
@@ -619,281 +557,3 @@ function DebtTypeIcon({ type }: { type: DebtType }) {
   )
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
-function daysUntil(date: string): number {
-  const due = new Date(date + 'T12:00:00')
-  const now = new Date()
-  now.setHours(12, 0, 0, 0)
-  return Math.round((due.getTime() - now.getTime()) / DAY_MS)
-}
-
-function plural(n: number, one: string, many: string) {
-  return n === 1 ? one : many
-}
-
-function DueBadge({ debt }: { debt: Debt }) {
-  const dueDate = new Date(debt.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')
-  const days = daysUntil(debt.dueDate)
-
-  if (!debt.isPaid && days < 0) {
-    return (
-      <Badge variant="expense" className="gap-1">
-        <AlertTriangle size={11} />
-        Vencida há {-days} {plural(-days, 'dia', 'dias')}
-      </Badge>
-    )
-  }
-  if (!debt.isPaid && days <= 7) {
-    return (
-      <Badge variant="warning" className="gap-1">
-        <Clock size={11} />
-        {days === 0 ? 'Vence hoje' : 'Vence em ' + days + ' ' + plural(days, 'dia', 'dias')}
-      </Badge>
-    )
-  }
-  return (
-    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-      <CalendarDays size={12} />
-      Vencimento: {dueDate}
-    </span>
-  )
-}
-
-function DebtCard({
-  debt,
-  isSnowballNext,
-  onEdit,
-  onDelete,
-  onViewPayments,
-  onRegisterPayment,
-}: {
-  debt: Debt
-  isSnowballNext: boolean
-  onEdit: () => void
-  onDelete: () => void
-  onViewPayments: () => void
-  onRegisterPayment: () => void
-}) {
-  const { Icon, color } = debtTypeVisual[debt.type]
-  const label = debtTypeLabels[debt.type]
-  const progress = debt.totalAmount > 0 ? Math.min((debt.paidAmount / debt.totalAmount) * 100, 100) : 0
-  const urgent = !debt.isPaid && daysUntil(debt.dueDate) <= 7
-  const progressColor = debt.isPaid
-    ? 'var(--income)'
-    : progress < 33
-      ? 'var(--warning)'
-      : 'var(--primary)'
-
-  return (
-    <div
-      className={cn(
-        'card p-5 space-y-4 cursor-pointer transition-shadow hover:shadow-md',
-        debt.isPaid && 'border-income/40 bg-income-subtle',
-        isSnowballNext && !debt.isPaid && 'ring-2 ring-primary/40'
-      )}
-      onClick={onViewPayments}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3 min-w-0">
-          <IconBadge color={debt.isPaid ? 'var(--income)' : color} size="lg">
-            {debt.isPaid ? <PartyPopper size={20} /> : <Icon size={20} />}
-          </IconBadge>
-          <div className="min-w-0">
-            <p className="font-semibold text-base truncate">{debt.name}</p>
-            <p className="text-sm text-muted-foreground">{label}</p>
-          </div>
-        </div>
-        <div className="flex gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon-sm" onClick={onEdit} title="Editar">
-            <Pencil size={14} />
-          </Button>
-          <Button variant="ghost" size="icon-sm" onClick={onDelete} title="Excluir">
-            <Trash2 size={14} />
-          </Button>
-        </div>
-      </div>
-
-      {isSnowballNext && !debt.isPaid && (
-        <div className="flex items-center gap-1.5 rounded-lg bg-brand-light px-2.5 py-1.5 text-xs font-medium text-primary">
-          <Snowflake size={13} />
-          Próxima a quitar na Bola de Neve
-        </div>
-      )}
-
-      {debt.isPaid ? (
-        <div className="py-1 text-center">
-          <p className="text-lg font-semibold text-income">Dívida quitada!</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Você pagou <span className="font-medium text-foreground tabular-nums">{brl.format(debt.paidAmount)}</span>
-          </p>
-        </div>
-      ) : (
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Falta pagar</p>
-            <CurrencyBadge value={debt.remainingAmount} tone={urgent ? 'warning' : 'neutral'} size={700} />
-          </div>
-          <span className="text-2xl font-bold tabular-nums" style={{ color: progressColor }}>
-            {Math.round(progress)}%
-          </span>
-        </div>
-      )}
-
-      <div className="space-y-1.5">
-        <div
-          className="h-2.5 w-full overflow-hidden rounded-full bg-muted"
-          role="progressbar"
-          aria-valuenow={Math.round(progress)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Progresso de quitação"
-        >
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: progress + '%', backgroundColor: progressColor }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-          <span>Pago {brl.format(debt.paidAmount)}</span>
-          <span>Total {brl.format(debt.totalAmount)}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-2 pt-1">
-        <DueBadge debt={debt} />
-        {!debt.isPaid && (
-          <div onClick={(e) => e.stopPropagation()}>
-            <Button size="sm" onClick={onRegisterPayment} icon={<DollarSign size={14} />}>
-              Pagar
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function DebtFormDialog({
-  open,
-  onOpenChange,
-  title,
-  form,
-  mutation,
-  onSubmit,
-  submitLabel,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string
-  form: UseFormReturn<DebtFormData>
-  mutation: { isPending: boolean }
-  onSubmit: () => void
-  submitLabel: string
-}) {
-  return (
-    <ResponsiveDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={title}
-      confirmOnClose={form.formState.isDirty}
-      footer={
-        <DialogActions
-          primary={
-            <Button
-              onClick={onSubmit}
-              disabled={mutation.isPending}
-              icon={mutation.isPending ? <Spinner size="tiny" /> : undefined}
-            >
-              {mutation.isPending ? 'Salvando…' : submitLabel}
-            </Button>
-          }
-          secondary={<Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>}
-        />
-      }
-    >
-        <div className="space-y-4">
-          <Controller
-            name="name"
-            control={form.control}
-            render={({ field }) => (
-              <Field
-                label="Nome"
-                required
-                validationState={form.formState.errors.name ? 'error' : undefined}
-                validationMessage={form.formState.errors.name?.message}
-              >
-                <Input {...field} placeholder="Ex: Financiamento Imobiliário" />
-              </Field>
-            )}
-          />
-          <Controller
-            name="type"
-            control={form.control}
-            render={({ field }) => (
-              <Field label="Tipo" required>
-                <NativeSelect {...field}>
-                  {(Object.entries(debtTypeLabels) as [DebtType, string][]).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </NativeSelect>
-              </Field>
-            )}
-          />
-          <Controller
-            name="totalAmount"
-            control={form.control}
-            render={({ field: { onChange, value } }) => (
-              <Field
-                label="Valor Total"
-                required
-                validationState={form.formState.errors.totalAmount ? 'error' : undefined}
-                validationMessage={form.formState.errors.totalAmount?.message}
-              >
-                <CurrencyInput value={value ?? 0} onChange={onChange} />
-              </Field>
-            )}
-          />
-          <Controller
-            name="interestRate"
-            control={form.control}
-            render={({ field: { onChange, value, ...rest } }) => (
-              <Field label="Taxa de Juros (%)">
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="Ex: 2.5"
-                  value={String(value ?? '')}
-                  onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
-                  {...rest}
-                />
-              </Field>
-            )}
-          />
-          <Controller
-            name="dueDate"
-            control={form.control}
-            render={({ field }) => (
-              <Field
-                label="Data de Vencimento"
-                required
-                validationState={form.formState.errors.dueDate ? 'error' : undefined}
-                validationMessage={form.formState.errors.dueDate?.message}
-              >
-                <DateInput {...field} />
-              </Field>
-            )}
-          />
-          <Controller
-            name="notes"
-            control={form.control}
-            render={({ field }) => (
-              <Field label="Observações">
-                <Input {...field} placeholder="Observações opcionais" />
-              </Field>
-            )}
-          />
-        </div>
-    </ResponsiveDialog>
-  )
-}

@@ -9,7 +9,7 @@ public record SnowballStrategyItemDto(
     decimal TotalAmount,
     decimal RemainingAmount,
     decimal MinimumPayment,
-    DateOnly DueDate,
+    DateOnly? PayoffDate,
     int Order
 );
 

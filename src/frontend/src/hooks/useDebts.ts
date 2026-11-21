@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { debtsApi } from '../api/debts'
-import type { CreateDebtRequest, UpdateDebtRequest, RegisterDebtPaymentRequest, UpdateDebtPaymentRequest } from '../types'
+import type { DebtInput, RegisterDebtPaymentRequest, UpdateDebtPaymentRequest } from '../types'
 
 const DEBTS_KEY = ['debts'] as const
 
@@ -22,7 +22,7 @@ export function useDebt(id: string) {
 export function useCreateDebt() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: CreateDebtRequest) => debtsApi.create(data).then((r) => r.data),
+    mutationFn: (data: DebtInput) => debtsApi.create(data).then((r) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: DEBTS_KEY }),
   })
 }
@@ -30,7 +30,7 @@ export function useCreateDebt() {
 export function useUpdateDebt() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateDebtRequest }) =>
+    mutationFn: ({ id, data }: { id: string; data: DebtInput }) =>
       debtsApi.update(id, data).then((r) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: DEBTS_KEY }),
   })
@@ -91,5 +91,13 @@ export function useSnowballStrategy() {
   return useQuery({
     queryKey: [...DEBTS_KEY, 'snowball'] as const,
     queryFn: () => debtsApi.getSnowball().then((r) => r.data),
+  })
+}
+
+export function useDebtInstallments(debtId: string | null) {
+  return useQuery({
+    queryKey: [...DEBTS_KEY, debtId, 'installments'] as const,
+    queryFn: () => debtsApi.getInstallments(debtId!).then((r) => r.data),
+    enabled: !!debtId,
   })
 }

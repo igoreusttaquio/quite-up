@@ -22,23 +22,15 @@ public class GetDebtsQueryHandler(
         if (request.IsPaid.HasValue)
             query = query.Where(d => d.IsPaid == request.IsPaid.Value);
 
-        var debts = await query
-            .OrderBy(d => d.DueDate)
-            .ToListAsync(cancellationToken);
+        var debts = await query.ToListAsync(cancellationToken);
 
-        var dtos = debts.Select(d => new DebtDto(
-            idEncoder.Encode(d.Id),
-            d.Name,
-            d.Type,
-            d.TotalAmount,
-            d.PaidAmount,
-            d.TotalAmount - d.PaidAmount,
-            d.InterestRate,
-            d.DueDate,
-            d.IsPaid,
-            d.Notes,
-            d.CreatedAt
-        )).ToList();
+        // Pendentes primeiro, pelo próximo vencimento (atrasadas no topo); quitadas por último.
+        var dtos = debts
+            .Select(d => DebtMapper.ToDto(d, idEncoder))
+            .OrderBy(d => d.IsPaid)
+            .ThenBy(d => d.Status == "overdue" ? 0 : 1)
+            .ThenBy(d => d.NextDueDate ?? d.PayoffDate ?? DateOnly.MaxValue)
+            .ToList();
 
         return Result<IReadOnlyList<DebtDto>>.Success(dtos);
     }

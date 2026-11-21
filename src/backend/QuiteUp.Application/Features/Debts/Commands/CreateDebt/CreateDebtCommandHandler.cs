@@ -13,33 +13,14 @@ public class CreateDebtCommandHandler(
 {
     public async Task<Result<DebtDto>> Handle(CreateDebtCommand request, CancellationToken cancellationToken)
     {
-        var debt = new Debt
-        {
-            UserId = currentUser.UserId!.Value,
-            Name = request.Name,
-            Type = request.Type,
-            TotalAmount = request.TotalAmount,
-            InterestRate = request.InterestRate,
-            DueDate = request.DueDate,
-            Notes = request.Notes
-        };
+        var debt = new Debt { UserId = currentUser.UserId!.Value };
+        request.Input.ApplyTo(debt);
+        // Parcelas pagas antes do app geram o "Pago" inicial.
+        DebtInput.RecomputePaid(debt, paymentsTotal: 0);
 
         context.Debts.Add(debt);
         await context.SaveChangesAsync(cancellationToken);
 
-        var dto = new DebtDto(
-            idEncoder.Encode(debt.Id),
-            debt.Name,
-            debt.Type,
-            debt.TotalAmount,
-            debt.PaidAmount,
-            debt.TotalAmount - debt.PaidAmount,
-            debt.InterestRate,
-            debt.DueDate,
-            debt.IsPaid,
-            debt.Notes,
-            debt.CreatedAt);
-
-        return Result<DebtDto>.Success(dto);
+        return Result<DebtDto>.Success(DebtMapper.ToDto(debt, idEncoder));
     }
 }

@@ -14,33 +14,17 @@ public class UpdateDebtCommandHandler(
     public async Task<Result<DebtDto>> Handle(UpdateDebtCommand request, CancellationToken cancellationToken)
     {
         var debt = await context.Debts
+            .Include(d => d.Payments)
             .FirstOrDefaultAsync(d => d.Id == request.Id && d.UserId == currentUser.UserId, cancellationToken);
 
         if (debt is null)
             return Result<DebtDto>.Failure(Error.NotFound);
 
-        debt.Name = request.Name;
-        debt.Type = request.Type;
-        debt.TotalAmount = request.TotalAmount;
-        debt.InterestRate = request.InterestRate;
-        debt.DueDate = request.DueDate;
-        debt.Notes = request.Notes;
+        // Salvar o formulário confirma os dados (limpa "revisar dados" de dívidas migradas).
+        request.Input.ApplyTo(debt);
+        DebtInput.RecomputePaid(debt, debt.Payments.Sum(p => p.Amount));
 
         await context.SaveChangesAsync(cancellationToken);
-
-        var dto = new DebtDto(
-            idEncoder.Encode(debt.Id),
-            debt.Name,
-            debt.Type,
-            debt.TotalAmount,
-            debt.PaidAmount,
-            debt.TotalAmount - debt.PaidAmount,
-            debt.InterestRate,
-            debt.DueDate,
-            debt.IsPaid,
-            debt.Notes,
-            debt.CreatedAt);
-
-        return Result<DebtDto>.Success(dto);
+        return Result<DebtDto>.Success(DebtMapper.ToDto(debt, idEncoder));
     }
 }

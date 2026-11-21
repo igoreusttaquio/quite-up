@@ -20,8 +20,16 @@ public class DebtConfiguration : IEntityTypeConfiguration<Debt>
         builder.Property(d => d.Type).HasColumnName("type");
         builder.Property(d => d.TotalAmount).HasColumnName("total_amount").HasPrecision(18, 2);
         builder.Property(d => d.PaidAmount).HasColumnName("paid_amount").HasPrecision(18, 2);
-        builder.Property(d => d.InterestRate).HasColumnName("interest_rate").HasPrecision(18, 2);
-        builder.Property(d => d.DueDate).HasColumnName("due_date");
+        builder.Property(d => d.InterestRate).HasColumnName("interest_rate").HasPrecision(18, 4);
+        builder.Property(d => d.InterestPeriod).HasColumnName("interest_period");
+        builder.Property(d => d.PaymentMode).HasColumnName("payment_mode");
+        builder.Property(d => d.InstallmentCount).HasColumnName("installment_count");
+        builder.Property(d => d.InstallmentAmount).HasColumnName("installment_amount").HasPrecision(18, 2);
+        builder.Property(d => d.InitialPaidInstallments).HasColumnName("initial_paid_installments");
+        builder.Property(d => d.DueDay).HasColumnName("due_day");
+        builder.Property(d => d.FirstInstallmentDate).HasColumnName("first_installment_date");
+        builder.Property(d => d.PayoffDate).HasColumnName("payoff_date");
+        builder.Property(d => d.NeedsReview).HasColumnName("needs_review");
         builder.Property(d => d.IsPaid).HasColumnName("is_paid");
         builder.Property(d => d.Notes).HasColumnName("notes").HasMaxLength(500);
 
