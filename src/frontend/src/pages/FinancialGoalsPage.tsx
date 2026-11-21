@@ -14,17 +14,15 @@ import {
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
-import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { IconBadge } from '../components/IconBadge'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
+import { ResponsiveDialog, DialogActions, ConfirmDialog } from '../components/ui/responsive-dialog'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
 import { Badge } from '../components/ui/badge'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
 import { useAppToast } from '../hooks/useAppToast'
 import type { FinancialGoal, GoalContribution } from '../types'
@@ -201,226 +199,241 @@ export function FinancialGoalsPage() {
       )}
 
       {/* Create sheet */}
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Nova Meta</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            <div className="space-y-4">
-              <Controller
-                name="name"
-                control={createForm.control}
-                render={({ field }) => (
-                  <Field
-                    label="Nome"
-                    required
-                    validationState={createForm.formState.errors.name ? 'error' : undefined}
-                    validationMessage={createForm.formState.errors.name?.message}
-                  >
-                    <Input {...field} placeholder="Ex: Viagem para Europa" />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="targetAmount"
-                control={createForm.control}
-                render={({ field: { onChange, value } }) => (
-                  <Field
-                    label="Valor Alvo"
-                    required
-                    validationState={createForm.formState.errors.targetAmount ? 'error' : undefined}
-                    validationMessage={createForm.formState.errors.targetAmount?.message}
-                  >
-                    <CurrencyInput value={value ?? 0} onChange={onChange} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="targetDate"
-                control={createForm.control}
-                render={({ field }) => (
-                  <Field label="Data Alvo">
-                    <DateInput {...field} />
-                  </Field>
-                )}
-              />
-            </div>
-            <div className="flex gap-2 pt-5">
+      <ResponsiveDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        confirmOnClose={createForm.formState.isDirty}
+        title="Nova Meta"
+        footer={
+          <DialogActions
+            primary={
               <Button
-                className="flex-1"
                 onClick={createForm.handleSubmit(handleCreate as () => Promise<void>)}
                 disabled={createGoal.isPending}
                 icon={createGoal.isPending ? <Spinner size="tiny" /> : undefined}
               >
                 {createGoal.isPending ? 'Salvando…' : 'Criar Meta'}
               </Button>
+            }
+            secondary={
               <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-            </div>
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+            }
+          />
+        }
+      >
+        <div className="space-y-4">
+          <Controller
+            name="name"
+            control={createForm.control}
+            render={({ field }) => (
+              <Field
+                label="Nome"
+                required
+                validationState={createForm.formState.errors.name ? 'error' : undefined}
+                validationMessage={createForm.formState.errors.name?.message}
+              >
+                <Input {...field} placeholder="Ex: Viagem para Europa" />
+              </Field>
+            )}
+          />
+          <Controller
+            name="targetAmount"
+            control={createForm.control}
+            render={({ field: { onChange, value } }) => (
+              <Field
+                label="Valor Alvo"
+                required
+                validationState={createForm.formState.errors.targetAmount ? 'error' : undefined}
+                validationMessage={createForm.formState.errors.targetAmount?.message}
+              >
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="targetDate"
+            control={createForm.control}
+            render={({ field }) => (
+              <Field label="Data Alvo">
+                <DateInput {...field} />
+              </Field>
+            )}
+          />
+        </div>
+      </ResponsiveDialog>
 
       {/* Edit sheet */}
-      <Sheet open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null) }}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Editar Meta</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            <div className="space-y-4">
-              <Controller
-                name="name"
-                control={editForm.control}
-                render={({ field }) => (
-                  <Field
-                    label="Nome"
-                    required
-                    validationState={editForm.formState.errors.name ? 'error' : undefined}
-                    validationMessage={editForm.formState.errors.name?.message}
-                  >
-                    <Input {...field} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="targetAmount"
-                control={editForm.control}
-                render={({ field: { onChange, value } }) => (
-                  <Field
-                    label="Valor Alvo"
-                    required
-                    validationState={editForm.formState.errors.targetAmount ? 'error' : undefined}
-                    validationMessage={editForm.formState.errors.targetAmount?.message}
-                  >
-                    <CurrencyInput value={value ?? 0} onChange={onChange} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="targetDate"
-                control={editForm.control}
-                render={({ field }) => (
-                  <Field label="Data Alvo">
-                    <DateInput {...field} />
-                  </Field>
-                )}
-              />
-            </div>
-            <div className="flex gap-2 pt-5">
+      <ResponsiveDialog
+        open={!!editTarget}
+        onOpenChange={(open) => { if (!open) setEditTarget(null) }}
+        confirmOnClose={editForm.formState.isDirty}
+        title="Editar Meta"
+        footer={
+          <DialogActions
+            primary={
               <Button
-                className="flex-1"
                 onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
                 disabled={updateGoal.isPending}
                 icon={updateGoal.isPending ? <Spinner size="tiny" /> : undefined}
               >
                 {updateGoal.isPending ? 'Salvando…' : 'Salvar'}
               </Button>
+            }
+            secondary={
               <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
-            </div>
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+            }
+          />
+        }
+      >
+        <div className="space-y-4">
+          <Controller
+            name="name"
+            control={editForm.control}
+            render={({ field }) => (
+              <Field
+                label="Nome"
+                required
+                validationState={editForm.formState.errors.name ? 'error' : undefined}
+                validationMessage={editForm.formState.errors.name?.message}
+              >
+                <Input {...field} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="targetAmount"
+            control={editForm.control}
+            render={({ field: { onChange, value } }) => (
+              <Field
+                label="Valor Alvo"
+                required
+                validationState={editForm.formState.errors.targetAmount ? 'error' : undefined}
+                validationMessage={editForm.formState.errors.targetAmount?.message}
+              >
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="targetDate"
+            control={editForm.control}
+            render={({ field }) => (
+              <Field label="Data Alvo">
+                <DateInput {...field} />
+              </Field>
+            )}
+          />
+        </div>
+      </ResponsiveDialog>
 
       {/* Add contribution dialog */}
-      <Dialog open={!!contributionGoal} onOpenChange={(open) => { if (!open) setContributionGoal(null) }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adicionar Contribuição</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="text-sm text-muted-foreground">
-              Meta: <span className="font-semibold text-foreground">{contributionGoal?.name}</span>
-            </div>
-            <Controller
-              name="amount"
-              control={contributionForm.control}
-              render={({ field: { onChange, value } }) => (
-                <Field
-                  label="Valor"
-                  required
-                  validationState={contributionForm.formState.errors.amount ? 'error' : undefined}
-                  validationMessage={contributionForm.formState.errors.amount?.message}
-                >
-                  <CurrencyInput value={value ?? 0} onChange={onChange} />
-                </Field>
-              )}
-            />
-            <Controller
-              name="date"
-              control={contributionForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Data"
-                  required
-                  validationState={contributionForm.formState.errors.date ? 'error' : undefined}
-                  validationMessage={contributionForm.formState.errors.date?.message}
-                >
-                  <DateInput {...field} />
-                </Field>
-              )}
-            />
-            <Controller
-              name="notes"
-              control={contributionForm.control}
-              render={({ field }) => (
-                <Field label="Observações">
-                  <Input {...field} placeholder="Opcional" />
-                </Field>
-              )}
-            />
+      <ResponsiveDialog
+        open={!!contributionGoal}
+        onOpenChange={(open) => { if (!open) setContributionGoal(null) }}
+        confirmOnClose={contributionForm.formState.isDirty}
+        title="Adicionar Contribuição"
+        footer={
+          <DialogActions
+            primary={
+              <Button
+                onClick={contributionForm.handleSubmit(handleAddContribution as () => Promise<void>)}
+                disabled={addContribution.isPending}
+                icon={addContribution.isPending ? <Spinner size="tiny" /> : undefined}
+              >
+                {addContribution.isPending ? 'Salvando…' : 'Adicionar'}
+              </Button>
+            }
+            secondary={
+              <Button variant="outline" onClick={() => setContributionGoal(null)}>Cancelar</Button>
+            }
+          />
+        }
+      >
+        <div className="space-y-4 py-2">
+          <div className="text-sm text-muted-foreground">
+            Meta: <span className="font-semibold text-foreground">{contributionGoal?.name}</span>
           </div>
-          <DialogFooter>
-            <Button
-              onClick={contributionForm.handleSubmit(handleAddContribution as () => Promise<void>)}
-              disabled={addContribution.isPending}
-              icon={addContribution.isPending ? <Spinner size="tiny" /> : undefined}
-            >
-              {addContribution.isPending ? 'Salvando…' : 'Adicionar'}
-            </Button>
-            <Button variant="outline" onClick={() => setContributionGoal(null)}>Cancelar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <Controller
+            name="amount"
+            control={contributionForm.control}
+            render={({ field: { onChange, value } }) => (
+              <Field
+                label="Valor"
+                required
+                validationState={contributionForm.formState.errors.amount ? 'error' : undefined}
+                validationMessage={contributionForm.formState.errors.amount?.message}
+              >
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="date"
+            control={contributionForm.control}
+            render={({ field }) => (
+              <Field
+                label="Data"
+                required
+                validationState={contributionForm.formState.errors.date ? 'error' : undefined}
+                validationMessage={contributionForm.formState.errors.date?.message}
+              >
+                <DateInput {...field} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="notes"
+            control={contributionForm.control}
+            render={({ field }) => (
+              <Field label="Observações">
+                <Input {...field} placeholder="Opcional" />
+              </Field>
+            )}
+          />
+        </div>
+      </ResponsiveDialog>
 
       {/* Contributions history dialog */}
-      <Dialog open={!!historyGoalId} onOpenChange={(open) => { if (!open) setHistoryGoalId(null) }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Histórico de Contribuições</DialogTitle>
-          </DialogHeader>
-          <div className="py-2 max-h-80 overflow-y-auto">
-            {loadingContributions ? (
-              <div className="flex justify-center py-8">
-                <Spinner />
-              </div>
-            ) : !contributions || contributions.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Nenhuma contribuição registrada.</p>
-            ) : (
-              <div className="space-y-2">
-                {contributions.map((c: GoalContribution) => (
-                  <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div>
-                      <p className="text-sm font-medium">
-                        <CurrencyBadge value={c.amount} size="sm" tone="neutral" />
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(c.date + 'T12:00:00').toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                    {c.notes && (
-                      <p className="text-xs text-muted-foreground text-right max-w-[140px] truncate">{c.notes}</p>
-                    )}
+      <ResponsiveDialog
+        open={!!historyGoalId}
+        onOpenChange={(open) => { if (!open) setHistoryGoalId(null) }}
+        title="Histórico de Contribuições"
+        footer={
+          <DialogActions
+            secondary={
+              <Button variant="outline" onClick={() => setHistoryGoalId(null)}>Fechar</Button>
+            }
+          />
+        }
+      >
+        <div className="py-2 max-h-80 overflow-y-auto">
+          {loadingContributions ? (
+            <div className="flex justify-center py-8">
+              <Spinner />
+            </div>
+          ) : !contributions || contributions.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Nenhuma contribuição registrada.</p>
+          ) : (
+            <div className="space-y-2">
+              {contributions.map((c: GoalContribution) => (
+                <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div>
+                    <p className="text-sm font-medium">
+                      <CurrencyBadge value={c.amount} size="sm" tone="neutral" />
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(c.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setHistoryGoalId(null)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  {c.notes && (
+                    <p className="text-xs text-muted-foreground text-right max-w-[140px] truncate">{c.notes}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </ResponsiveDialog>
 
       <ConfirmDialog
         open={!!deleteTarget}

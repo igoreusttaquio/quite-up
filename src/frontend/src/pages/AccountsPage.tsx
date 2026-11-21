@@ -7,16 +7,15 @@ import { useAccounts, useCreateAccount, useUpdateAccount, useDeactivateAccount }
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
-import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { IconBadge } from '../components/IconBadge'
 import { accountTypeVisual } from '../lib/entity-icons'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { Button } from '../components/ui/button'
+import { ResponsiveDialog, DialogActions, ConfirmDialog } from '../components/ui/responsive-dialog'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
 import { Spinner } from '../components/ui/spinner'
 import type { AccountType, Account } from '../types'
 
@@ -133,115 +132,121 @@ export function AccountsPage() {
       )}
 
       {/* Create sheet */}
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Nova Conta</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            <div className="space-y-4">
-              <Controller
-                name="name"
-                control={createForm.control}
-                render={({ field }) => (
-                  <Field
-                    label="Nome"
-                    required
-                    validationState={createForm.formState.errors.name ? 'error' : undefined}
-                    validationMessage={createForm.formState.errors.name?.message}
-                  >
-                    <Input {...field} placeholder="Ex: Conta Bradesco" />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="type"
-                control={createForm.control}
-                render={({ field }) => (
-                  <Field label="Tipo" required>
-                    <NativeSelect {...field}>
-                      {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-              <Controller
-                name="initialBalance"
-                control={createForm.control}
-                render={({ field: { onChange, value } }) => (
-                  <Field label="Saldo Inicial" required>
-                    <CurrencyInput value={value ?? 0} onChange={onChange} />
-                  </Field>
-                )}
-              />
-            </div>
-            <div className="flex gap-2 pt-5">
+      <ResponsiveDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        confirmOnClose={createForm.formState.isDirty}
+        title="Nova Conta"
+        footer={
+          <DialogActions
+            primary={
               <Button
-                className="flex-1"
                 onClick={createForm.handleSubmit(handleCreate as () => Promise<void>)}
                 disabled={createAccount.isPending}
                 icon={createAccount.isPending ? <Spinner size="tiny" /> : undefined}
               >
                 {createAccount.isPending ? 'Salvando…' : 'Criar Conta'}
               </Button>
+            }
+            secondary={
               <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-            </div>
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+            }
+          />
+        }
+      >
+        <div className="space-y-4">
+          <Controller
+            name="name"
+            control={createForm.control}
+            render={({ field }) => (
+              <Field
+                label="Nome"
+                required
+                validationState={createForm.formState.errors.name ? 'error' : undefined}
+                validationMessage={createForm.formState.errors.name?.message}
+              >
+                <Input {...field} placeholder="Ex: Conta Bradesco" />
+              </Field>
+            )}
+          />
+          <Controller
+            name="type"
+            control={createForm.control}
+            render={({ field }) => (
+              <Field label="Tipo" required>
+                <NativeSelect {...field}>
+                  {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+          <Controller
+            name="initialBalance"
+            control={createForm.control}
+            render={({ field: { onChange, value } }) => (
+              <Field label="Saldo Inicial" required>
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+        </div>
+      </ResponsiveDialog>
 
       {/* Edit sheet */}
-      <Sheet open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null) }}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Editar Conta</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            <div className="space-y-4">
-              <Controller
-                name="name"
-                control={editForm.control}
-                render={({ field }) => (
-                  <Field
-                    label="Nome"
-                    required
-                    validationState={editForm.formState.errors.name ? 'error' : undefined}
-                    validationMessage={editForm.formState.errors.name?.message}
-                  >
-                    <Input {...field} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="type"
-                control={editForm.control}
-                render={({ field }) => (
-                  <Field label="Tipo" required>
-                    <NativeSelect {...field}>
-                      {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            </div>
-            <div className="flex gap-2 pt-5">
+      <ResponsiveDialog
+        open={!!editTarget}
+        onOpenChange={(open) => { if (!open) setEditTarget(null) }}
+        confirmOnClose={editForm.formState.isDirty}
+        title="Editar Conta"
+        footer={
+          <DialogActions
+            primary={
               <Button
-                className="flex-1"
                 onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
                 disabled={updateAccount.isPending}
                 icon={updateAccount.isPending ? <Spinner size="tiny" /> : undefined}
               >
                 {updateAccount.isPending ? 'Salvando…' : 'Salvar'}
               </Button>
+            }
+            secondary={
               <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
-            </div>
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+            }
+          />
+        }
+      >
+        <div className="space-y-4">
+          <Controller
+            name="name"
+            control={editForm.control}
+            render={({ field }) => (
+              <Field
+                label="Nome"
+                required
+                validationState={editForm.formState.errors.name ? 'error' : undefined}
+                validationMessage={editForm.formState.errors.name?.message}
+              >
+                <Input {...field} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="type"
+            control={editForm.control}
+            render={({ field }) => (
+              <Field label="Tipo" required>
+                <NativeSelect {...field}>
+                  {(Object.entries(accountTypeLabels) as [AccountType, string][]).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+        </div>
+      </ResponsiveDialog>
 
       <ConfirmDialog
         open={!!deleteTarget}

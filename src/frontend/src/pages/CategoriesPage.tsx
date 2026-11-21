@@ -8,13 +8,12 @@ import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory 
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
-import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Button } from '../components/ui/button'
+import { ResponsiveDialog, DialogActions, ConfirmDialog } from '../components/ui/responsive-dialog'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
 import { Badge } from '../components/ui/badge'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
 import { Spinner } from '../components/ui/spinner'
 import type { CategoryType, Category } from '../types'
 
@@ -129,66 +128,15 @@ export function CategoriesPage() {
       )}
 
       {/* Create / Edit sheet */}
-      <Sheet open={sheetOpen} onOpenChange={(open) => { if (!open) { setCreateOpen(false); setEditTarget(null) } }}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editTarget ? 'Editar Categoria' : 'Nova Categoria'}</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            <div className="space-y-5">
-              <Controller
-                name="name"
-                control={form.control}
-                render={({ field }) => (
-                  <Field
-                    label="Nome"
-                    required
-                    validationState={form.formState.errors.name ? 'error' : undefined}
-                    validationMessage={form.formState.errors.name?.message}
-                  >
-                    <Input {...field} placeholder="Ex: Alimentação" />
-                  </Field>
-                )}
-              />
-
-              <Controller
-                name="type"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Tipo" required>
-                    <NativeSelect {...field} disabled={!!editTarget}>
-                      {(Object.entries(categoryTypeLabels) as [CategoryType, string][]).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-
-              <Controller
-                name="icon"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Ícone">
-                    <IconPicker value={field.value} onChange={field.onChange} />
-                  </Field>
-                )}
-              />
-
-              <Controller
-                name="color"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Cor">
-                    <ColorPicker value={field.value} onChange={field.onChange} />
-                  </Field>
-                )}
-              />
-            </div>
-
-            <div className="flex gap-2 pt-5">
+      <ResponsiveDialog
+        open={sheetOpen}
+        onOpenChange={(open) => { if (!open) { setCreateOpen(false); setEditTarget(null) } }}
+        confirmOnClose={form.formState.isDirty}
+        title={editTarget ? 'Editar Categoria' : 'Nova Categoria'}
+        footer={
+          <DialogActions
+            primary={
               <Button
-                className="flex-1"
                 onClick={
                   editTarget
                     ? form.handleSubmit(handleEdit as () => Promise<void>)
@@ -199,13 +147,66 @@ export function CategoriesPage() {
               >
                 {isSaving ? 'Salvando…' : 'Salvar'}
               </Button>
+            }
+            secondary={
               <Button variant="outline" onClick={() => { setCreateOpen(false); setEditTarget(null) }}>
                 Cancelar
               </Button>
-            </div>
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+            }
+          />
+        }
+      >
+        <div className="space-y-5">
+          <Controller
+            name="name"
+            control={form.control}
+            render={({ field }) => (
+              <Field
+                label="Nome"
+                required
+                validationState={form.formState.errors.name ? 'error' : undefined}
+                validationMessage={form.formState.errors.name?.message}
+              >
+                <Input {...field} placeholder="Ex: Alimentação" />
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="type"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Tipo" required>
+                <NativeSelect {...field} disabled={!!editTarget}>
+                  {(Object.entries(categoryTypeLabels) as [CategoryType, string][]).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="icon"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Ícone">
+                <IconPicker value={field.value} onChange={field.onChange} />
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="color"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Cor">
+                <ColorPicker value={field.value} onChange={field.onChange} />
+              </Field>
+            )}
+          />
+        </div>
+      </ResponsiveDialog>
 
       <ConfirmDialog
         open={!!deleteTarget}

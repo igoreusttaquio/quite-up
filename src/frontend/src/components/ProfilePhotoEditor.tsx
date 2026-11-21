@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, Minus, Plus, RotateCcw } from 'lucide-react'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog'
+import { ResponsiveDialog, DialogActions } from './ui/responsive-dialog'
 import { Button } from './ui/button'
 
 const OUTPUT_SIZE = 512
@@ -181,98 +181,104 @@ export function ProfilePhotoEditor({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent showClose={false} className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Ajustar foto</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex flex-col items-center gap-4">
-          <div
-            ref={viewportRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            className="relative aspect-square w-full max-w-[288px] touch-none select-none overflow-hidden rounded-full border border-border bg-muted cursor-grab active:cursor-grabbing"
-          >
-            {image ? (
-              <img
-                src={image.src}
-                alt="Pré-visualização da foto"
-                draggable={false}
-                className="absolute left-1/2 top-1/2 max-w-none select-none"
-                style={{
-                  width: displayWidth,
-                  height: displayHeight,
-                  transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`,
-                }}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Carregando…
-              </div>
-            )}
-          </div>
-
-          <div className="flex w-full max-w-[288px] items-center gap-2">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Ajustar foto"
+      size="sm"
+      hideClose
+      footer={
+        <DialogActions
+          primary={
             <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => updateZoom(zoom - 0.15)}
-              aria-label="Diminuir zoom"
+              onClick={handleConfirm}
+              disabled={!image || busy || uploading}
+              icon={busy || uploading ? <Loader2 size={14} className="animate-spin" /> : undefined}
             >
-              <Minus size={14} />
+              {uploading ? 'Salvando…' : 'Salvar foto'}
             </Button>
-            <input
-              type="range"
-              min={MIN_ZOOM}
-              max={MAX_ZOOM}
-              step={0.01}
-              value={zoom}
-              onChange={(e) => updateZoom(Number(e.target.value))}
-              className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-muted accent-primary"
-              aria-label="Zoom"
-            />
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => updateZoom(zoom + 0.15)}
-              aria-label="Aumentar zoom"
-            >
-              <Plus size={14} />
+          }
+          secondary={
+            <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={busy || uploading}>
+              Cancelar
             </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => {
-                setZoom(1)
-                setOffset({ x: 0, y: 0 })
+          }
+        />
+      }
+    >
+      <div className="flex flex-col items-center gap-4">
+        <div
+          ref={viewportRef}
+          data-vaul-no-drag
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="relative aspect-square w-full max-w-[288px] touch-none select-none overflow-hidden rounded-full border border-border bg-muted cursor-grab active:cursor-grabbing"
+        >
+          {image ? (
+            <img
+              src={image.src}
+              alt="Pré-visualização da foto"
+              draggable={false}
+              className="absolute left-1/2 top-1/2 max-w-none select-none"
+              style={{
+                width: displayWidth,
+                height: displayHeight,
+                transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`,
               }}
-              aria-label="Restaurar ajuste"
-            >
-              <RotateCcw size={14} />
-            </Button>
-          </div>
-
-          <p className="text-center text-xs text-muted-foreground">
-            Arraste para posicionar e use o zoom para ajustar o enquadramento.
-          </p>
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              Carregando…
+            </div>
+          )}
         </div>
 
-        <DialogFooter>
+        <div className="flex w-full max-w-[288px] items-center gap-2">
           <Button
-            onClick={handleConfirm}
-            disabled={!image || busy || uploading}
-            icon={busy || uploading ? <Loader2 size={14} className="animate-spin" /> : undefined}
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => updateZoom(zoom - 0.15)}
+            aria-label="Diminuir zoom"
           >
-            {uploading ? 'Salvando…' : 'Salvar foto'}
+            <Minus size={14} />
           </Button>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={busy || uploading}>
-            Cancelar
+          <input
+            type="range"
+            min={MIN_ZOOM}
+            max={MAX_ZOOM}
+            step={0.01}
+            value={zoom}
+            onChange={(e) => updateZoom(Number(e.target.value))}
+            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-muted accent-primary"
+            aria-label="Zoom"
+          />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => updateZoom(zoom + 0.15)}
+            aria-label="Aumentar zoom"
+          >
+            <Plus size={14} />
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => {
+              setZoom(1)
+              setOffset({ x: 0, y: 0 })
+            }}
+            aria-label="Restaurar ajuste"
+          >
+            <RotateCcw size={14} />
+          </Button>
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground">
+          Arraste para posicionar e use o zoom para ajustar o enquadramento.
+        </p>
+      </div>
+    </ResponsiveDialog>
   )
 }

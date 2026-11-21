@@ -45,7 +45,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.905 0.012 298);
   --input: oklch(0.88 0.014 298);
-  --ring: oklch(0.722 0.188 48.8);
+  --ring: oklch(0.465 0.136 295.4);
   --income: oklch(0.56 0.15 145);
   --expense: oklch(0.577 0.245 27.325);
   --warning: oklch(0.62 0.17 50);
@@ -72,7 +72,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.28 0.02 298);
   --input: oklch(0.28 0.02 298);
-  --ring: oklch(0.722 0.188 48.8);
+  --ring: oklch(0.708 0.107 298.1);
   --income: oklch(0.64 0.15 145);
   --expense: oklch(0.65 0.22 27);
   --warning: oklch(0.74 0.16 55);
@@ -133,6 +133,17 @@
 .radix-dialog-overlay[data-state="closed"] { animation: overlay-hide 0.12s ease-in; }
 .radix-dialog-content[data-state="open"]   { animation: dialog-show 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .radix-dialog-content[data-state="closed"] { animation: dialog-hide 0.15s ease-in; }
+
+/* Sem animações para quem pede menos movimento (inclui o slide do bottom sheet do vaul). */
+@media (prefers-reduced-motion: reduce) {
+  .radix-dialog-overlay,
+  .radix-dialog-content,
+  [data-vaul-drawer],
+  [data-vaul-overlay] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 
 @layer utilities {
   /* Finance colors */

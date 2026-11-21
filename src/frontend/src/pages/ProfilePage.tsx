@@ -19,10 +19,10 @@ import { useAuthStore } from '../store/authStore'
 import { UserAvatar } from '../components/UserAvatar'
 import { ProfilePhotoEditor } from '../components/ProfilePhotoEditor'
 import { Button } from '../components/ui/button'
+import { ResponsiveDialog, DialogActions } from '../components/ui/responsive-dialog'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
 import { Alert, AlertDescription } from '../components/ui/alert'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
 import { cn } from '../lib/utils'
 
@@ -428,46 +428,49 @@ function DeleteAccountDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) close() }}>
-      <DialogContent showClose={false}>
-        <DialogHeader>
-          <DialogTitle>Excluir conta permanentemente</DialogTitle>
-        </DialogHeader>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={(isOpen) => { if (!isOpen) close() }}
+      title="Excluir conta permanentemente"
+      footer={
+        <DialogActions
+          secondary={
+            <Button variant="outline" onClick={close} disabled={loading}>Cancelar</Button>
+          }
+          destructive={
+            <Button
+              variant="destructive"
+              onClick={() => onConfirm(password)}
+              disabled={loading || !password || confirmText.toLowerCase() !== 'excluir'}
+              icon={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}
+            >
+              {loading ? 'Excluindo…' : 'Excluir minha conta'}
+            </Button>
+          }
+        />
+      }
+    >
+      <Alert intent="warning">
+        <AlertDescription>Esta ação é irreversível. Todos os seus dados serão apagados.</AlertDescription>
+      </Alert>
 
-        <Alert intent="warning">
-          <AlertDescription>Esta ação é irreversível. Todos os seus dados serão apagados.</AlertDescription>
-        </Alert>
-
-        <div className="space-y-4">
-          <Field label='Digite "excluir" para confirmar'>
-            <Input
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="excluir"
-            />
-          </Field>
-          <Field label="Sua senha atual">
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Senha atual"
-            />
-          </Field>
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="destructive"
-            onClick={() => onConfirm(password)}
-            disabled={loading || !password || confirmText.toLowerCase() !== 'excluir'}
-            icon={loading ? <Loader2 size={14} className="animate-spin" /> : undefined}
-          >
-            {loading ? 'Excluindo…' : 'Excluir minha conta'}
-          </Button>
-          <Button variant="outline" onClick={close} disabled={loading}>Cancelar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <div className="space-y-4">
+        <Field label='Digite "excluir" para confirmar'>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="excluir"
+          />
+        </Field>
+        <Field label="Sua senha atual">
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Senha atual"
+          />
+        </Field>
+      </div>
+    </ResponsiveDialog>
   )
 }

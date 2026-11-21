@@ -34,16 +34,15 @@ import { useCategories } from '../hooks/useCategories'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonTable } from '../components/Skeleton'
-import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { TransactionIcon } from '../components/TransactionIcon'
 import { Button } from '../components/ui/button'
+import { ResponsiveDialog, DialogActions, ConfirmDialog } from '../components/ui/responsive-dialog'
 import { Input } from '../components/ui/input'
 import { DateInput } from '../components/ui/date-input'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
 import { CurrencyInput } from '../components/ui/currency-input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
 import { getApiErrorMessage, toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
 import { describeAmount, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
@@ -423,249 +422,166 @@ export function TransactionsPage() {
       )}
 
       {/* Detail / actions dialog */}
-      <Dialog open={!!detailTarget} onOpenChange={(open) => { if (!open) setDetailTarget(null) }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{detailTarget ? transactionTypeLabels[detailTarget.type] : ''}</DialogTitle>
-          </DialogHeader>
-          {detailTarget && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <TransactionIcon
-                  transaction={detailTarget}
-                  category={detailTarget.categoryId ? categoriesById.get(detailTarget.categoryId) : undefined}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">
-                    {detailTarget.description || transactionTypeLabels[detailTarget.type]}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {dateFormatter.format(new Date(detailTarget.date + 'T12:00:00'))}
-                  </p>
-                </div>
-                <CurrencyBadge
-                  value={signedAmount(detailTarget, filterAccountId || undefined)}
-                  className={detailTarget.type === 'Transfer' && !filterAccountId ? 'text-muted-foreground' : undefined}
-                />
+      <ResponsiveDialog
+        open={!!detailTarget}
+        onOpenChange={(open) => { if (!open) setDetailTarget(null) }}
+        title={detailTarget ? transactionTypeLabels[detailTarget.type] : ''}
+        footer={
+          <DialogActions
+            primary={
+              <Button onClick={() => detailTarget && openRepeat(detailTarget)} icon={<Repeat size={14} />}>
+                Repetir
+              </Button>
+            }
+            secondary={
+              <Button variant="outline" onClick={() => detailTarget && openEdit(detailTarget)} icon={<Pencil size={14} />}>
+                Editar
+              </Button>
+            }
+            destructive={
+              <Button
+                variant="ghost"
+                onClick={() => detailTarget && openDelete(detailTarget)}
+                icon={<Trash2 size={14} />}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                Excluir
+              </Button>
+            }
+          />
+        }
+      >
+        {detailTarget && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <TransactionIcon
+                transaction={detailTarget}
+                category={detailTarget.categoryId ? categoriesById.get(detailTarget.categoryId) : undefined}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">
+                  {detailTarget.description || transactionTypeLabels[detailTarget.type]}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {dateFormatter.format(new Date(detailTarget.date + 'T12:00:00'))}
+                </p>
               </div>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-lg border border-border p-3 text-sm">
-                {detailTarget.type === 'Transfer' ? (
-                  <>
-                    <dt className="text-muted-foreground">Sai de</dt>
-                    <dd className="truncate font-medium">{detailTarget.accountName}</dd>
-                    <dt className="text-muted-foreground">Entra em</dt>
-                    <dd className="truncate font-medium">{detailTarget.destinationAccountName ?? '—'}</dd>
-                  </>
-                ) : (
-                  <>
-                    <dt className="text-muted-foreground">Conta</dt>
-                    <dd className="truncate font-medium">{detailTarget.accountName}</dd>
-                    <dt className="text-muted-foreground">Categoria</dt>
-                    <dd className="truncate font-medium">{detailTarget.categoryName || '—'}</dd>
-                  </>
-                )}
-                {detailTarget.debtName && (
-                  <>
-                    <dt className="text-muted-foreground">Dívida</dt>
-                    <dd className="truncate font-medium">{detailTarget.debtName}</dd>
-                  </>
-                )}
-              </dl>
-              {detailTarget.attachmentId ? (
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-                  onClick={() => {
-                    const t = detailTarget
-                    setDetailTarget(null)
-                    if (t.attachmentId && t.attachmentFileName && t.attachmentContentType) {
-                      setViewReceipt({
-                        transactionId: t.id,
-                        attachmentId: t.attachmentId,
-                        fileName: t.attachmentFileName,
-                        contentType: t.attachmentContentType,
-                      })
-                    }
-                  }}
-                >
-                  <Paperclip size={14} />
-                  {detailTarget.attachmentFileName || 'Ver comprovante'}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    const id = detailTarget.id
-                    setDetailTarget(null)
-                    setUploadingId(id)
-                    fileInputRef.current?.click()
-                  }}
-                >
-                  <Upload size={14} />
-                  Anexar comprovante
-                </button>
-              )}
+              <CurrencyBadge
+                value={signedAmount(detailTarget, filterAccountId || undefined)}
+                className={detailTarget.type === 'Transfer' && !filterAccountId ? 'text-muted-foreground' : undefined}
+              />
             </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => detailTarget && openDelete(detailTarget)}
-              icon={<Trash2 size={14} />}
-              className="text-destructive hover:text-destructive"
-            >
-              Excluir
-            </Button>
-            <Button variant="outline" onClick={() => detailTarget && openEdit(detailTarget)} icon={<Pencil size={14} />}>
-              Editar
-            </Button>
-            <Button onClick={() => detailTarget && openRepeat(detailTarget)} icon={<Repeat size={14} />}>
-              Repetir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-lg border border-border p-3 text-sm">
+              {detailTarget.type === 'Transfer' ? (
+                <>
+                  <dt className="text-muted-foreground">Sai de</dt>
+                  <dd className="truncate font-medium">{detailTarget.accountName}</dd>
+                  <dt className="text-muted-foreground">Entra em</dt>
+                  <dd className="truncate font-medium">{detailTarget.destinationAccountName ?? '—'}</dd>
+                </>
+              ) : (
+                <>
+                  <dt className="text-muted-foreground">Conta</dt>
+                  <dd className="truncate font-medium">{detailTarget.accountName}</dd>
+                  <dt className="text-muted-foreground">Categoria</dt>
+                  <dd className="truncate font-medium">{detailTarget.categoryName || '—'}</dd>
+                </>
+              )}
+              {detailTarget.debtName && (
+                <>
+                  <dt className="text-muted-foreground">Dívida</dt>
+                  <dd className="truncate font-medium">{detailTarget.debtName}</dd>
+                </>
+              )}
+            </dl>
+            {detailTarget.attachmentId ? (
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                onClick={() => {
+                  const t = detailTarget
+                  setDetailTarget(null)
+                  if (t.attachmentId && t.attachmentFileName && t.attachmentContentType) {
+                    setViewReceipt({
+                      transactionId: t.id,
+                      attachmentId: t.attachmentId,
+                      fileName: t.attachmentFileName,
+                      contentType: t.attachmentContentType,
+                    })
+                  }
+                }}
+              >
+                <Paperclip size={14} />
+                {detailTarget.attachmentFileName || 'Ver comprovante'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  const id = detailTarget.id
+                  setDetailTarget(null)
+                  setUploadingId(id)
+                  fileInputRef.current?.click()
+                }}
+              >
+                <Upload size={14} />
+                Anexar comprovante
+              </button>
+            )}
+          </div>
+        )}
+      </ResponsiveDialog>
 
       {/* Repeat dialog */}
-      <Dialog open={!!repeatTarget} onOpenChange={(open) => { if (!open) setRepeatTarget(null) }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Repetir Transação</DialogTitle>
-          </DialogHeader>
-          {repeatTarget && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                <TransactionIcon
-                  transaction={repeatTarget}
-                  category={repeatTarget.categoryId ? categoriesById.get(repeatTarget.categoryId) : undefined}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">
-                    {repeatTarget.description || transactionTypeLabels[repeatTarget.type]}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {repeatTarget.type === 'Transfer'
-                      ? `${repeatTarget.accountName} → ${repeatTarget.destinationAccountName ?? '—'}`
-                      : [repeatTarget.accountName, repeatTarget.categoryName].filter(Boolean).join(' · ')}
-                  </p>
-                </div>
-              </div>
-              <Controller
-                name="amount"
-                control={repeatForm.control}
-                render={({ field: { onChange, value } }) => (
-                  <Field
-                    label="Valor"
-                    required
-                    validationState={repeatForm.formState.errors.amount ? 'error' : undefined}
-                    validationMessage={repeatForm.formState.errors.amount?.message}
-                  >
-                    <CurrencyInput value={value ?? 0} onChange={onChange} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="date"
-                control={repeatForm.control}
-                render={({ field }) => (
-                  <Field
-                    label="Data"
-                    required
-                    validationState={repeatForm.formState.errors.date ? 'error' : undefined}
-                    validationMessage={repeatForm.formState.errors.date?.message}
-                  >
-                    <DateInput {...field} />
-                  </Field>
-                )}
-              />
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              onClick={repeatForm.handleSubmit(handleRepeat as () => Promise<void>)}
-              disabled={createTransaction.isPending}
-              icon={createTransaction.isPending ? <Loader2 size={14} className="animate-spin" /> : <Repeat size={14} />}
-            >
-              {createTransaction.isPending ? 'Salvando…' : 'Repetir'}
-            </Button>
-            <Button variant="outline" onClick={() => setRepeatTarget(null)}>Cancelar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit dialog */}
-      <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null) }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editTarget?.type === 'Transfer' ? 'Editar Transferência' : 'Editar Transação'}
-            </DialogTitle>
-          </DialogHeader>
+      <ResponsiveDialog
+        open={!!repeatTarget}
+        onOpenChange={(open) => { if (!open) setRepeatTarget(null) }}
+        title="Repetir Transação"
+        footer={
+          <DialogActions
+            primary={
+              <Button
+                onClick={repeatForm.handleSubmit(handleRepeat as () => Promise<void>)}
+                disabled={createTransaction.isPending}
+                icon={createTransaction.isPending ? <Loader2 size={14} className="animate-spin" /> : <Repeat size={14} />}
+              >
+                {createTransaction.isPending ? 'Salvando…' : 'Repetir'}
+              </Button>
+            }
+            secondary={
+              <Button variant="outline" onClick={() => setRepeatTarget(null)}>Cancelar</Button>
+            }
+          />
+        }
+      >
+        {repeatTarget && (
           <div className="space-y-4">
-            <Controller
-              name="accountId"
-              control={editForm.control}
-              render={({ field }) => (
-                <Field
-                  label={editTarget?.type === 'Transfer' ? 'Conta de Origem (sai)' : 'Conta'}
-                  required
-                  validationState={editForm.formState.errors.accountId ? 'error' : undefined}
-                  validationMessage={editForm.formState.errors.accountId?.message}
-                >
-                  <NativeSelect {...field} value={field.value || ''}>
-                    {editAccounts.map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              )}
-            />
-            {editTarget?.type === 'Transfer' ? (
-              <Controller
-                name="destinationAccountId"
-                control={editForm.control}
-                render={({ field }) => (
-                  <Field
-                    label="Conta de Destino (entra)"
-                    required
-                    validationState={editForm.formState.errors.destinationAccountId ? 'error' : undefined}
-                    validationMessage={editForm.formState.errors.destinationAccountId?.message}
-                  >
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Selecione uma conta</option>
-                      {editDestinationAccounts.map((a) => (
-                        <option key={a.id} value={a.id}>{a.name}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
+            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <TransactionIcon
+                transaction={repeatTarget}
+                category={repeatTarget.categoryId ? categoriesById.get(repeatTarget.categoryId) : undefined}
               />
-            ) : (
-              <Controller
-                name="categoryId"
-                control={editForm.control}
-                render={({ field }) => (
-                  <Field label="Categoria">
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Sem categoria</option>
-                      {editCategories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">
+                  {repeatTarget.description || transactionTypeLabels[repeatTarget.type]}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {repeatTarget.type === 'Transfer'
+                    ? `${repeatTarget.accountName} → ${repeatTarget.destinationAccountName ?? '—'}`
+                    : [repeatTarget.accountName, repeatTarget.categoryName].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            </div>
             <Controller
               name="amount"
-              control={editForm.control}
+              control={repeatForm.control}
               render={({ field: { onChange, value } }) => (
                 <Field
                   label="Valor"
                   required
-                  validationState={editForm.formState.errors.amount ? 'error' : undefined}
-                  validationMessage={editForm.formState.errors.amount?.message}
+                  validationState={repeatForm.formState.errors.amount ? 'error' : undefined}
+                  validationMessage={repeatForm.formState.errors.amount?.message}
                 >
                   <CurrencyInput value={value ?? 0} onChange={onChange} />
                 </Field>
@@ -673,40 +589,138 @@ export function TransactionsPage() {
             />
             <Controller
               name="date"
-              control={editForm.control}
+              control={repeatForm.control}
               render={({ field }) => (
                 <Field
                   label="Data"
                   required
-                  validationState={editForm.formState.errors.date ? 'error' : undefined}
-                  validationMessage={editForm.formState.errors.date?.message}
+                  validationState={repeatForm.formState.errors.date ? 'error' : undefined}
+                  validationMessage={repeatForm.formState.errors.date?.message}
                 >
                   <DateInput {...field} />
                 </Field>
               )}
             />
+          </div>
+        )}
+      </ResponsiveDialog>
+
+      {/* Edit dialog */}
+      <ResponsiveDialog
+        open={!!editTarget}
+        onOpenChange={(open) => { if (!open) setEditTarget(null) }}
+        title={editTarget?.type === 'Transfer' ? 'Editar Transferência' : 'Editar Transação'}
+        footer={
+          <DialogActions
+            primary={
+              <Button
+                onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
+                disabled={updateTransaction.isPending}
+                icon={updateTransaction.isPending ? <Loader2 size={14} className="animate-spin" /> : undefined}
+              >
+                {updateTransaction.isPending ? 'Salvando…' : 'Salvar'}
+              </Button>
+            }
+            secondary={
+              <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
+            }
+          />
+        }
+      >
+        <div className="space-y-4">
+          <Controller
+            name="accountId"
+            control={editForm.control}
+            render={({ field }) => (
+              <Field
+                label={editTarget?.type === 'Transfer' ? 'Conta de Origem (sai)' : 'Conta'}
+                required
+                validationState={editForm.formState.errors.accountId ? 'error' : undefined}
+                validationMessage={editForm.formState.errors.accountId?.message}
+              >
+                <NativeSelect {...field} value={field.value || ''}>
+                  {editAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+          {editTarget?.type === 'Transfer' ? (
             <Controller
-              name="description"
+              name="destinationAccountId"
               control={editForm.control}
               render={({ field }) => (
-                <Field label="Descrição">
-                  <Input {...field} placeholder="Descrição opcional" />
+                <Field
+                  label="Conta de Destino (entra)"
+                  required
+                  validationState={editForm.formState.errors.destinationAccountId ? 'error' : undefined}
+                  validationMessage={editForm.formState.errors.destinationAccountId?.message}
+                >
+                  <NativeSelect {...field} value={field.value || ''}>
+                    <option value="">Selecione uma conta</option>
+                    {editDestinationAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </NativeSelect>
                 </Field>
               )}
             />
-          </div>
-          <DialogFooter>
-            <Button
-              onClick={editForm.handleSubmit(handleEdit as () => Promise<void>)}
-              disabled={updateTransaction.isPending}
-              icon={updateTransaction.isPending ? <Loader2 size={14} className="animate-spin" /> : undefined}
-            >
-              {updateTransaction.isPending ? 'Salvando…' : 'Salvar'}
-            </Button>
-            <Button variant="outline" onClick={() => setEditTarget(null)}>Cancelar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          ) : (
+            <Controller
+              name="categoryId"
+              control={editForm.control}
+              render={({ field }) => (
+                <Field label="Categoria">
+                  <NativeSelect {...field} value={field.value || ''}>
+                    <option value="">Sem categoria</option>
+                    {editCategories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+              )}
+            />
+          )}
+          <Controller
+            name="amount"
+            control={editForm.control}
+            render={({ field: { onChange, value } }) => (
+              <Field
+                label="Valor"
+                required
+                validationState={editForm.formState.errors.amount ? 'error' : undefined}
+                validationMessage={editForm.formState.errors.amount?.message}
+              >
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="date"
+            control={editForm.control}
+            render={({ field }) => (
+              <Field
+                label="Data"
+                required
+                validationState={editForm.formState.errors.date ? 'error' : undefined}
+                validationMessage={editForm.formState.errors.date?.message}
+              >
+                <DateInput {...field} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="description"
+            control={editForm.control}
+            render={({ field }) => (
+              <Field label="Descrição">
+                <Input {...field} placeholder="Descrição opcional" />
+              </Field>
+            )}
+          />
+        </div>
+      </ResponsiveDialog>
 
       <ConfirmDialog
         open={!!deleteTarget}

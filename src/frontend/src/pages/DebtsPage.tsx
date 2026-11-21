@@ -11,19 +11,17 @@ import { useAccounts } from '../hooks/useAccounts'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
-import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { IconBadge } from '../components/IconBadge'
 import { debtTypeVisual } from '../lib/entity-icons'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { DateInput } from '../components/ui/date-input'
 import { Button } from '../components/ui/button'
+import { ResponsiveDialog, DialogActions, ConfirmDialog } from '../components/ui/responsive-dialog'
 import { Input } from '../components/ui/input'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
 import { Badge } from '../components/ui/badge'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog'
 import { Spinner } from '../components/ui/spinner'
 import { ReceiptViewer } from '../components/ReceiptViewer'
 import { useUploadAttachment } from '../hooks/useAttachment'
@@ -294,43 +292,25 @@ export function DebtsPage() {
         </div>
       )}
 
-      {/* Create sheet */}
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Nova Dívida</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            <DebtFormContent
-              form={createForm}
-              mutation={createDebt}
-              onSubmit={createForm.handleSubmit(handleCreate as () => Promise<void>)}
-              onCancel={() => setCreateOpen(false)}
-              submitLabel="Criar Dívida"
-              savingLabel="Salvando…"
-            />
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+      <DebtFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="Nova Dívida"
+        form={createForm}
+        mutation={createDebt}
+        onSubmit={createForm.handleSubmit(handleCreate as () => Promise<void>)}
+        submitLabel="Criar Dívida"
+      />
 
-      {/* Edit sheet */}
-      <Sheet open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null) }}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Editar Dívida</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            <DebtFormContent
-              form={editForm}
-              mutation={updateDebt}
-              onSubmit={editForm.handleSubmit(handleEdit as () => Promise<void>)}
-              onCancel={() => setEditTarget(null)}
-              submitLabel="Salvar"
-              savingLabel="Salvando…"
-            />
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+      <DebtFormDialog
+        open={!!editTarget}
+        onOpenChange={(open) => { if (!open) setEditTarget(null) }}
+        title="Editar Dívida"
+        form={editForm}
+        mutation={updateDebt}
+        onSubmit={editForm.handleSubmit(handleEdit as () => Promise<void>)}
+        submitLabel="Salvar"
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}
@@ -344,206 +324,211 @@ export function DebtsPage() {
       />
 
       {/* Payment registration dialog */}
-      <Dialog open={!!paymentDebtTarget} onOpenChange={(open) => { if (!open) closePaymentDialog() }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingPayment ? 'Editar Pagamento' : 'Registrar Pagamento'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {paymentDebtTarget && (
-              <div className="flex items-center gap-2 pb-2 border-b border-border">
-                <DebtTypeIcon type={paymentDebtTarget.type} />
-                <span className="font-semibold">{paymentDebtTarget.name}</span>
-              </div>
-            )}
-            {editingPayment && (
-              <p className="text-xs text-muted-foreground">
-                Alterar o valor atualiza o total pago da dívida e o lançamento na conta vinculada.
-              </p>
-            )}
-            {!editingPayment?.attachmentId && (
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
-                <input
-                  ref={paymentFileInputRef}
-                  type="file"
-                  accept="image/*,.pdf"
-                  className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
-                />
-              </div>
-            )}
-            {(activeAccounts.length > 0 || !!editingPayment?.accountId) && (
-              <Controller
-                name="accountId"
-                control={paymentForm.control}
-                render={({ field }) => (
-                  <Field label="Pagar com a conta">
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Não vincular conta</option>
-                      {activeAccounts.map((a) => (
-                        <option key={a.id} value={a.id}>{a.name}</option>
-                      ))}
-                      {editingPayment?.accountId && !activeAccounts.some((a) => a.id === editingPayment.accountId) && (
-                        <option value={editingPayment.accountId}>{editingPayment.accountName ?? 'Conta'} (inativa)</option>
-                      )}
-                    </NativeSelect>
-                  </Field>
-                )}
+      <ResponsiveDialog
+        open={!!paymentDebtTarget}
+        onOpenChange={(open) => { if (!open) closePaymentDialog() }}
+        confirmOnClose={paymentForm.formState.isDirty}
+        title={editingPayment ? 'Editar Pagamento' : 'Registrar Pagamento'}
+        footer={
+          <DialogActions
+            primary={
+              <Button
+                onClick={paymentForm.handleSubmit(handlePayment as () => Promise<void>)}
+                disabled={registerPayment.isPending || updatePayment.isPending}
+                icon={registerPayment.isPending || updatePayment.isPending ? <Spinner size="tiny" /> : undefined}
+              >
+                {registerPayment.isPending || updatePayment.isPending ? 'Salvando…' : editingPayment ? 'Salvar' : 'Registrar'}
+              </Button>
+            }
+            secondary={
+              <Button variant="outline" onClick={closePaymentDialog}>
+                Cancelar
+              </Button>
+            }
+          />
+        }
+      >
+        <div className="space-y-4">
+          {paymentDebtTarget && (
+            <div className="flex items-center gap-2 pb-2 border-b border-border">
+              <DebtTypeIcon type={paymentDebtTarget.type} />
+              <span className="font-semibold">{paymentDebtTarget.name}</span>
+            </div>
+          )}
+          {editingPayment && (
+            <p className="text-xs text-muted-foreground">
+              Alterar o valor atualiza o total pago da dívida e o lançamento na conta vinculada.
+            </p>
+          )}
+          {!editingPayment?.attachmentId && (
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
+              <input
+                ref={paymentFileInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
               />
-            )}
+            </div>
+          )}
+          {(activeAccounts.length > 0 || !!editingPayment?.accountId) && (
             <Controller
-              name="amount"
+              name="accountId"
+              control={paymentForm.control}
+              render={({ field }) => (
+                <Field label="Pagar com a conta">
+                  <NativeSelect {...field} value={field.value || ''}>
+                    <option value="">Não vincular conta</option>
+                    {activeAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                    {editingPayment?.accountId && !activeAccounts.some((a) => a.id === editingPayment.accountId) && (
+                      <option value={editingPayment.accountId}>{editingPayment.accountName ?? 'Conta'} (inativa)</option>
+                    )}
+                  </NativeSelect>
+                </Field>
+              )}
+            />
+          )}
+          <Controller
+            name="amount"
+            control={paymentForm.control}
+            render={({ field: { onChange, value } }) => (
+              <Field
+                label="Valor do Pagamento"
+                required
+                validationState={paymentForm.formState.errors.amount ? 'error' : undefined}
+                validationMessage={paymentForm.formState.errors.amount?.message}
+              >
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="paymentDate"
+            control={paymentForm.control}
+            render={({ field }) => (
+              <Field
+                label="Data do Pagamento"
+                required
+                validationState={paymentForm.formState.errors.paymentDate ? 'error' : undefined}
+                validationMessage={paymentForm.formState.errors.paymentDate?.message}
+              >
+                <DateInput {...field} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="isEarlyPayment"
+            control={paymentForm.control}
+            render={({ field: { value, onChange, ...rest } }) => (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  checked={value}
+                  onChange={(e) => onChange(e.target.checked)}
+                  {...rest}
+                />
+                <span className="text-sm">Pagamento Antecipado</span>
+              </label>
+            )}
+          />
+          {paymentForm.watch('isEarlyPayment') && (
+            <Controller
+              name="discount"
               control={paymentForm.control}
               render={({ field: { onChange, value } }) => (
-                <Field
-                  label="Valor do Pagamento"
-                  required
-                  validationState={paymentForm.formState.errors.amount ? 'error' : undefined}
-                  validationMessage={paymentForm.formState.errors.amount?.message}
-                >
+                <Field label="Desconto">
                   <CurrencyInput value={value ?? 0} onChange={onChange} />
                 </Field>
               )}
             />
-            <Controller
-              name="paymentDate"
-              control={paymentForm.control}
-              render={({ field }) => (
-                <Field
-                  label="Data do Pagamento"
-                  required
-                  validationState={paymentForm.formState.errors.paymentDate ? 'error' : undefined}
-                  validationMessage={paymentForm.formState.errors.paymentDate?.message}
-                >
-                  <DateInput {...field} />
-                </Field>
-              )}
-            />
-            <Controller
-              name="isEarlyPayment"
-              control={paymentForm.control}
-              render={({ field: { value, onChange, ...rest } }) => (
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                    checked={value}
-                    onChange={(e) => onChange(e.target.checked)}
-                    {...rest}
-                  />
-                  <span className="text-sm">Pagamento Antecipado</span>
-                </label>
-              )}
-            />
-            {paymentForm.watch('isEarlyPayment') && (
-              <Controller
-                name="discount"
-                control={paymentForm.control}
-                render={({ field: { onChange, value } }) => (
-                  <Field label="Desconto">
-                    <CurrencyInput value={value ?? 0} onChange={onChange} />
-                  </Field>
-                )}
-              />
+          )}
+          <Controller
+            name="notes"
+            control={paymentForm.control}
+            render={({ field }) => (
+              <Field label="Observações">
+                <Input {...field} placeholder="Observações sobre o pagamento" />
+              </Field>
             )}
-            <Controller
-              name="notes"
-              control={paymentForm.control}
-              render={({ field }) => (
-                <Field label="Observações">
-                  <Input {...field} placeholder="Observações sobre o pagamento" />
-                </Field>
-              )}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={closePaymentDialog}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={paymentForm.handleSubmit(handlePayment as () => Promise<void>)}
-              disabled={registerPayment.isPending || updatePayment.isPending}
-              icon={registerPayment.isPending || updatePayment.isPending ? <Spinner size="tiny" /> : undefined}
-            >
-              {registerPayment.isPending || updatePayment.isPending ? 'Salvando…' : editingPayment ? 'Salvar' : 'Registrar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          />
+        </div>
+      </ResponsiveDialog>
 
       {/* Payments list dialog */}
-      <Dialog
-        open={!!paymentsDebtId && !paymentDebtTarget && !deletePaymentTarget && !viewReceipt}
+      <ResponsiveDialog
+        open={!!paymentsDebtId}
         onOpenChange={(open) => { if (!open) setPaymentsDebtId(null) }}
+        title="Pagamentos"
+        description={debts?.find((d) => d.id === paymentsDebtId)?.name}
+        footer={
+          <DialogActions
+            secondary={<Button variant="outline" onClick={() => setPaymentsDebtId(null)}>Fechar</Button>}
+          />
+        }
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Pagamentos</DialogTitle>
-          </DialogHeader>
-          {paymentsLoading ? (
-            <div className="flex justify-center py-8"><Spinner /></div>
-          ) : !paymentsData || paymentsData.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              Nenhum pagamento registrado.
-            </div>
-          ) : (
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {paymentsData.map((payment: DebtPayment) => (
-                <div key={payment.id} className="border border-border rounded-lg p-3 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <CurrencyBadge value={payment.amount} tone="neutral" />
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground mr-1">
-                        {new Date(payment.paymentDate + 'T12:00:00').toLocaleDateString('pt-BR')}
-                      </span>
-                      <Button variant="ghost" size="icon-sm" onClick={() => openEditPayment(payment)} title="Editar pagamento">
-                        <Pencil size={13} />
-                      </Button>
-                      <Button variant="ghost" size="icon-sm" onClick={() => setDeletePaymentTarget(payment)} title="Excluir pagamento">
-                        <Trash2 size={13} />
-                      </Button>
-                    </div>
+        {paymentsLoading ? (
+          <div className="flex justify-center py-8"><Spinner /></div>
+        ) : !paymentsData || paymentsData.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            Nenhum pagamento registrado.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {paymentsData.map((payment: DebtPayment) => (
+              <div key={payment.id} className="border border-border rounded-lg p-3 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <CurrencyBadge value={payment.amount} tone="neutral" />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground mr-1">
+                      {new Date(payment.paymentDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+                    </span>
+                    <Button variant="ghost" size="icon-sm" onClick={() => openEditPayment(payment)} title="Editar pagamento">
+                      <Pencil size={13} />
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => setDeletePaymentTarget(payment)} title="Excluir pagamento">
+                      <Trash2 size={13} />
+                    </Button>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {payment.isEarlyPayment && (
-                      <Badge variant="income">Antecipado</Badge>
-                    )}
-                    {payment.discount > 0 && (
-                      <Badge variant="secondary">Desconto: {payment.discount.toFixed(2)}</Badge>
-                    )}
-                    {payment.accountName && (
-                      <Badge variant="secondary">{payment.accountName}</Badge>
-                    )}
-                  </div>
-                  {payment.attachmentId && (
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 text-xs text-primary hover:underline"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setViewReceipt({
-                          attachmentId: payment.attachmentId!,
-                          fileName: payment.attachmentFileName || 'Comprovante',
-                          contentType: payment.attachmentContentType || 'application/octet-stream',
-                        })
-                      }}
-                    >
-                      <Paperclip size={12} />
-                      {payment.attachmentFileName || 'Ver comprovante'}
-                    </button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {payment.isEarlyPayment && (
+                    <Badge variant="income">Antecipado</Badge>
                   )}
-                  {payment.notes && (
-                    <p className="text-xs text-muted-foreground">{payment.notes}</p>
+                  {payment.discount > 0 && (
+                    <Badge variant="secondary">Desconto: {payment.discount.toFixed(2)}</Badge>
+                  )}
+                  {payment.accountName && (
+                    <Badge variant="secondary">{payment.accountName}</Badge>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPaymentsDebtId(null)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                {payment.attachmentId && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setViewReceipt({
+                        attachmentId: payment.attachmentId!,
+                        fileName: payment.attachmentFileName || 'Comprovante',
+                        contentType: payment.attachmentContentType || 'application/octet-stream',
+                      })
+                    }}
+                  >
+                    <Paperclip size={12} />
+                    {payment.attachmentFileName || 'Ver comprovante'}
+                  </button>
+                )}
+                {payment.notes && (
+                  <p className="text-xs text-muted-foreground">{payment.notes}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </ResponsiveDialog>
 
       <ConfirmDialog
         open={!!deletePaymentTarget}
@@ -572,58 +557,61 @@ export function DebtsPage() {
         />
       )}
 
-      <Dialog open={snowballOpen} onOpenChange={setSnowballOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Estratégia Bola de Neve</DialogTitle>
-          </DialogHeader>
-          {snowballLoading ? (
-            <div className="flex justify-center py-8"><Spinner /></div>
-          ) : !snowball ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              Nenhuma dívida para calcular a estratégia.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex gap-4 text-sm">
-                <div className="flex-1 bg-muted rounded-lg p-3 text-center">
-                  <p className="text-muted-foreground text-xs">Total Restante</p>
-                  <CurrencyBadge value={snowball.totalRemaining} size="sm" tone="neutral" />
-                </div>
-                <div className="flex-1 bg-muted rounded-lg p-3 text-center">
-                  <p className="text-muted-foreground text-xs">Meses Estimados</p>
-                  <p className="font-semibold text-base">{snowball.estimatedMonthsToPayOff} meses</p>
-                </div>
+      <ResponsiveDialog
+        open={snowballOpen}
+        onOpenChange={setSnowballOpen}
+        title="Estratégia Bola de Neve"
+        footer={
+          <DialogActions
+            secondary={
+              <Button variant="outline" onClick={() => setSnowballOpen(false)}>Fechar</Button>
+            }
+          />
+        }
+      >
+        {snowballLoading ? (
+          <div className="flex justify-center py-8"><Spinner /></div>
+        ) : !snowball ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            Nenhuma dívida para calcular a estratégia.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex gap-4 text-sm">
+              <div className="flex-1 bg-muted rounded-lg p-3 text-center">
+                <p className="text-muted-foreground text-xs">Total Restante</p>
+                <CurrencyBadge value={snowball.totalRemaining} size="sm" tone="neutral" />
               </div>
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {snowball.debts.map((item, index) => (
-                  <motion.div
-                    key={item.debtId}
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.06, duration: 0.25, ease: 'easeOut' }}
-                    className="flex items-center justify-between border border-border rounded-lg p-3"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <DebtTypeIcon type={item.type} />
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{debtTypeLabels[item.type]}</p>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0 ml-3">
-                      <CurrencyBadge value={item.remainingAmount} size="sm" tone="neutral" />
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="flex-1 bg-muted rounded-lg p-3 text-center">
+                <p className="text-muted-foreground text-xs">Meses Estimados</p>
+                <p className="font-semibold text-base">{snowball.estimatedMonthsToPayOff} meses</p>
               </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSnowballOpen(false)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {snowball.debts.map((item, index) => (
+                <motion.div
+                  key={item.debtId}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.06, duration: 0.25, ease: 'easeOut' }}
+                  className="flex items-center justify-between border border-border rounded-lg p-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <DebtTypeIcon type={item.type} />
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">{debtTypeLabels[item.type]}</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-3">
+                    <CurrencyBadge value={item.remainingAmount} size="sm" tone="neutral" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+      </ResponsiveDialog>
     </div>
   )
 }
@@ -792,116 +780,126 @@ function DebtCard({
   )
 }
 
-function DebtFormContent({
+function DebtFormDialog({
+  open,
+  onOpenChange,
+  title,
   form,
   mutation,
   onSubmit,
-  onCancel,
   submitLabel,
-  savingLabel,
 }: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
   form: UseFormReturn<DebtFormData>
   mutation: { isPending: boolean }
   onSubmit: () => void
-  onCancel: () => void
   submitLabel: string
-  savingLabel: string
 }) {
   return (
-    <>
-      <div className="space-y-4">
-        <Controller
-          name="name"
-          control={form.control}
-          render={({ field }) => (
-            <Field
-              label="Nome"
-              required
-              validationState={form.formState.errors.name ? 'error' : undefined}
-              validationMessage={form.formState.errors.name?.message}
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      confirmOnClose={form.formState.isDirty}
+      footer={
+        <DialogActions
+          primary={
+            <Button
+              onClick={onSubmit}
+              disabled={mutation.isPending}
+              icon={mutation.isPending ? <Spinner size="tiny" /> : undefined}
             >
-              <Input {...field} placeholder="Ex: Financiamento Imobiliário" />
-            </Field>
-          )}
+              {mutation.isPending ? 'Salvando…' : submitLabel}
+            </Button>
+          }
+          secondary={<Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>}
         />
-        <Controller
-          name="type"
-          control={form.control}
-          render={({ field }) => (
-            <Field label="Tipo" required>
-              <NativeSelect {...field}>
-                {(Object.entries(debtTypeLabels) as [DebtType, string][]).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </NativeSelect>
-            </Field>
-          )}
-        />
-        <Controller
-          name="totalAmount"
-          control={form.control}
-          render={({ field: { onChange, value } }) => (
-            <Field
-              label="Valor Total"
-              required
-              validationState={form.formState.errors.totalAmount ? 'error' : undefined}
-              validationMessage={form.formState.errors.totalAmount?.message}
-            >
-              <CurrencyInput value={value ?? 0} onChange={onChange} />
-            </Field>
-          )}
-        />
-        <Controller
-          name="interestRate"
-          control={form.control}
-          render={({ field: { onChange, value, ...rest } }) => (
-            <Field label="Taxa de Juros (%)">
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Ex: 2.5"
-                value={String(value ?? '')}
-                onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
-                {...rest}
-              />
-            </Field>
-          )}
-        />
-        <Controller
-          name="dueDate"
-          control={form.control}
-          render={({ field }) => (
-            <Field
-              label="Data de Vencimento"
-              required
-              validationState={form.formState.errors.dueDate ? 'error' : undefined}
-              validationMessage={form.formState.errors.dueDate?.message}
-            >
-              <DateInput {...field} />
-            </Field>
-          )}
-        />
-        <Controller
-          name="notes"
-          control={form.control}
-          render={({ field }) => (
-            <Field label="Observações">
-              <Input {...field} placeholder="Observações opcionais" />
-            </Field>
-          )}
-        />
-      </div>
-      <div className="flex gap-2 pt-5">
-        <Button
-          className="flex-1"
-          onClick={onSubmit}
-          disabled={mutation.isPending}
-          icon={mutation.isPending ? <Spinner size="tiny" /> : undefined}
-        >
-          {mutation.isPending ? savingLabel : submitLabel}
-        </Button>
-        <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-      </div>
-    </>
+      }
+    >
+        <div className="space-y-4">
+          <Controller
+            name="name"
+            control={form.control}
+            render={({ field }) => (
+              <Field
+                label="Nome"
+                required
+                validationState={form.formState.errors.name ? 'error' : undefined}
+                validationMessage={form.formState.errors.name?.message}
+              >
+                <Input {...field} placeholder="Ex: Financiamento Imobiliário" />
+              </Field>
+            )}
+          />
+          <Controller
+            name="type"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Tipo" required>
+                <NativeSelect {...field}>
+                  {(Object.entries(debtTypeLabels) as [DebtType, string][]).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+          <Controller
+            name="totalAmount"
+            control={form.control}
+            render={({ field: { onChange, value } }) => (
+              <Field
+                label="Valor Total"
+                required
+                validationState={form.formState.errors.totalAmount ? 'error' : undefined}
+                validationMessage={form.formState.errors.totalAmount?.message}
+              >
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="interestRate"
+            control={form.control}
+            render={({ field: { onChange, value, ...rest } }) => (
+              <Field label="Taxa de Juros (%)">
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Ex: 2.5"
+                  value={String(value ?? '')}
+                  onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
+                  {...rest}
+                />
+              </Field>
+            )}
+          />
+          <Controller
+            name="dueDate"
+            control={form.control}
+            render={({ field }) => (
+              <Field
+                label="Data de Vencimento"
+                required
+                validationState={form.formState.errors.dueDate ? 'error' : undefined}
+                validationMessage={form.formState.errors.dueDate?.message}
+              >
+                <DateInput {...field} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="notes"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Observações">
+                <Input {...field} placeholder="Observações opcionais" />
+              </Field>
+            )}
+          />
+        </div>
+    </ResponsiveDialog>
   )
 }

@@ -8,14 +8,13 @@ import { useCategories } from '../hooks/useCategories'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/Skeleton'
-import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CurrencyBadge } from '../components/CurrencyBadge'
 import { CurrencyInput } from '../components/ui/currency-input'
 import { Button } from '../components/ui/button'
+import { ResponsiveDialog, DialogActions, ConfirmDialog } from '../components/ui/responsive-dialog'
 import { Field } from '../components/ui/field'
 import { NativeSelect } from '../components/ui/native-select'
 import { Badge } from '../components/ui/badge'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from '../components/ui/sheet'
 import { Spinner } from '../components/ui/spinner'
 import type { Budget, Category } from '../types'
 
@@ -166,78 +165,15 @@ export function BudgetsPage() {
       )}
 
       {/* Create / Edit sheet */}
-      <Sheet open={sheetOpen} onOpenChange={(open) => { if (!open) { setCreateOpen(false); setEditTarget(null) } }}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editTarget ? 'Editar Orçamento' : 'Novo Orçamento'}</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            <div className="space-y-4">
-              <Controller
-                name="categoryId"
-                control={form.control}
-                render={({ field }) => (
-                  <Field
-                    label="Categoria"
-                    required
-                    validationState={form.formState.errors.categoryId ? 'error' : undefined}
-                    validationMessage={form.formState.errors.categoryId?.message}
-                  >
-                    <NativeSelect {...field}>
-                      <option value="">Selecione uma categoria</option>
-                      {expenseCategories.map((cat: Category) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-              <Controller
-                name="amount"
-                control={form.control}
-                render={({ field: { onChange, value } }) => (
-                  <Field
-                    label="Valor Orçado"
-                    required
-                    validationState={form.formState.errors.amount ? 'error' : undefined}
-                    validationMessage={form.formState.errors.amount?.message}
-                  >
-                    <CurrencyInput value={value ?? 0} onChange={onChange} />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="month"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Mês" required>
-                    <NativeSelect {...field}>
-                      {(Object.entries(monthLabels) as [string, string][]).map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-              <Controller
-                name="year"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Ano" required>
-                    <NativeSelect {...field}>
-                      {years.map((y) => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            </div>
-            <div className="flex gap-2 pt-5">
+      <ResponsiveDialog
+        open={sheetOpen}
+        onOpenChange={(open) => { if (!open) { setCreateOpen(false); setEditTarget(null) } }}
+        confirmOnClose={form.formState.isDirty}
+        title={editTarget ? 'Editar Orçamento' : 'Novo Orçamento'}
+        footer={
+          <DialogActions
+            primary={
               <Button
-                className="flex-1"
                 onClick={
                   editTarget
                     ? form.handleSubmit(handleEdit as () => Promise<void>)
@@ -248,13 +184,79 @@ export function BudgetsPage() {
               >
                 {isSaving ? 'Salvando…' : 'Salvar'}
               </Button>
+            }
+            secondary={
               <Button variant="outline" onClick={() => { setCreateOpen(false); setEditTarget(null) }}>
                 Cancelar
               </Button>
-            </div>
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+            }
+          />
+        }
+      >
+        <div className="space-y-4">
+          <Controller
+            name="categoryId"
+            control={form.control}
+            render={({ field }) => (
+              <Field
+                label="Categoria"
+                required
+                validationState={form.formState.errors.categoryId ? 'error' : undefined}
+                validationMessage={form.formState.errors.categoryId?.message}
+              >
+                <NativeSelect {...field}>
+                  <option value="">Selecione uma categoria</option>
+                  {expenseCategories.map((cat: Category) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+          <Controller
+            name="amount"
+            control={form.control}
+            render={({ field: { onChange, value } }) => (
+              <Field
+                label="Valor Orçado"
+                required
+                validationState={form.formState.errors.amount ? 'error' : undefined}
+                validationMessage={form.formState.errors.amount?.message}
+              >
+                <CurrencyInput value={value ?? 0} onChange={onChange} />
+              </Field>
+            )}
+          />
+          <Controller
+            name="month"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Mês" required>
+                <NativeSelect {...field}>
+                  {(Object.entries(monthLabels) as [string, string][]).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+          <Controller
+            name="year"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Ano" required>
+                <NativeSelect {...field}>
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+        </div>
+      </ResponsiveDialog>
 
       <ConfirmDialog
         open={!!deleteTarget}

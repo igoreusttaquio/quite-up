@@ -16,7 +16,7 @@ import { DateInput } from './ui/date-input'
 import { Field } from './ui/field'
 import { NativeSelect } from './ui/native-select'
 import { CurrencyInput } from './ui/currency-input'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from './ui/sheet'
+import { ResponsiveDialog, DialogActions } from './ui/responsive-dialog'
 import { getApiErrorMessage } from '../lib/utils'
 import { describeAmount, transactionTypeLabels, todayParam, transferRefinement } from '../lib/transactions'
 import type { TransactionType, Account, Category, Debt } from '../types'
@@ -133,6 +133,7 @@ export function NewTransactionSheet({ open, onOpenChange }: { open: boolean; onO
       isPending={createTransaction.isPending || uploadAttachment.isPending}
       onSubmit={form.handleSubmit(handleCreate as () => Promise<void>)}
       onClose={() => onOpenChange(false)}
+      dirty={form.formState.isDirty}
       fileInputRef={fileRef}
     />
   )
@@ -151,6 +152,7 @@ function TransactionFormSheet({
   isPending,
   onSubmit,
   onClose,
+  dirty,
   fileInputRef,
 }: {
   open: boolean
@@ -164,184 +166,187 @@ function TransactionFormSheet({
   isPending: boolean
   onSubmit: () => void
   onClose: () => void
+  dirty?: boolean
   fileInputRef?: React.RefObject<HTMLInputElement | null>
 }) {
   const isTransfer = watchType === 'Transfer'
   const originId = form.watch('accountId')
 
   return (
-    <Sheet open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
-        </SheetHeader>
-        <SheetBody>
-          <div className="space-y-4">
-            <Controller
-              name="type"
-              control={form.control}
-              render={({ field }) => (
-                <Field label="Tipo" required>
-                  <NativeSelect {...field}>
-                    {(Object.entries(transactionTypeLabels) as [TransactionType, string][]).map(([v, l]) => (
-                      <option key={v} value={v}>{l}</option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="accountId"
-              control={form.control}
-              render={({ field }) => (
-                <Field
-                  label={isTransfer ? 'Conta de Origem (sai)' : 'Conta'}
-                  required
-                  validationState={form.formState.errors.accountId ? 'error' : undefined}
-                  validationMessage={getFieldError(form.formState.errors, 'accountId')}
-                >
-                  <NativeSelect
-                    {...field}
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      field.onChange(e)
-                      if (e.target.value && e.target.value === form.getValues('destinationAccountId')) {
-                        form.setValue('destinationAccountId', '')
-                      }
-                    }}
-                  >
-                    <option value="">Selecione uma conta</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              )}
-            />
-
-            {isTransfer && (
-              <Controller
-                name="destinationAccountId"
-                control={form.control}
-                render={({ field }) => (
-                  <Field
-                    label="Conta de Destino (entra)"
-                    required
-                    validationState={form.formState.errors.destinationAccountId ? 'error' : undefined}
-                    validationMessage={getFieldError(form.formState.errors, 'destinationAccountId')}
-                  >
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Selecione uma conta</option>
-                      {accounts
-                        .filter((a) => a.id !== originId)
-                        .map((a) => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            )}
-
-            {!isTransfer && (
-              <Controller
-                name="categoryId"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Categoria">
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Sem categoria</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            )}
-
-            {watchType === 'Expense' && debts.length > 0 && (
-              <Controller
-                name="debtId"
-                control={form.control}
-                render={({ field }) => (
-                  <Field label="Lançar na dívida">
-                    <NativeSelect {...field} value={field.value || ''}>
-                      <option value="">Nenhuma</option>
-                      {debts.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                )}
-              />
-            )}
-
-            <Controller
-              name="amount"
-              control={form.control}
-              render={({ field: { onChange, value } }) => (
-                <Field
-                  label="Valor"
-                  required
-                  validationState={form.formState.errors.amount ? 'error' : undefined}
-                  validationMessage={getFieldError(form.formState.errors, 'amount')}
-                >
-                  <CurrencyInput value={value ?? 0} onChange={onChange} />
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="date"
-              control={form.control}
-              render={({ field }) => (
-                <Field
-                  label="Data"
-                  required
-                  validationState={form.formState.errors.date ? 'error' : undefined}
-                  validationMessage={getFieldError(form.formState.errors, 'date')}
-                >
-                  <DateInput {...field} />
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="description"
-              control={form.control}
-              render={({ field }) => (
-                <Field label="Descrição">
-                  <Input {...field} placeholder="Descrição opcional" />
-                </Field>
-              )}
-            />
-
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf"
-                className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-5">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={(o) => { if (!o) onClose() }}
+      title={title}
+      confirmOnClose={dirty}
+      footer={
+        <DialogActions
+          primary={
             <Button
-              className="flex-1"
               onClick={onSubmit}
               disabled={isPending}
               icon={isPending ? <Loader2 size={14} className="animate-spin" /> : undefined}
             >
               {isPending ? 'Salvando…' : 'Salvar'}
             </Button>
+          }
+          secondary={
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          </div>
-        </SheetBody>
-      </SheetContent>
-    </Sheet>
+          }
+        />
+      }
+    >
+      <div className="space-y-4">
+        <Controller
+          name="type"
+          control={form.control}
+          render={({ field }) => (
+            <Field label="Tipo" required>
+              <NativeSelect {...field}>
+                {(Object.entries(transactionTypeLabels) as [TransactionType, string][]).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </NativeSelect>
+            </Field>
+          )}
+        />
+
+        <Controller
+          name="accountId"
+          control={form.control}
+          render={({ field }) => (
+            <Field
+              label={isTransfer ? 'Conta de Origem (sai)' : 'Conta'}
+              required
+              validationState={form.formState.errors.accountId ? 'error' : undefined}
+              validationMessage={getFieldError(form.formState.errors, 'accountId')}
+            >
+              <NativeSelect
+                {...field}
+                value={field.value || ''}
+                onChange={(e) => {
+                  field.onChange(e)
+                  if (e.target.value && e.target.value === form.getValues('destinationAccountId')) {
+                    form.setValue('destinationAccountId', '')
+                  }
+                }}
+              >
+                <option value="">Selecione uma conta</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </NativeSelect>
+            </Field>
+          )}
+        />
+
+        {isTransfer && (
+          <Controller
+            name="destinationAccountId"
+            control={form.control}
+            render={({ field }) => (
+              <Field
+                label="Conta de Destino (entra)"
+                required
+                validationState={form.formState.errors.destinationAccountId ? 'error' : undefined}
+                validationMessage={getFieldError(form.formState.errors, 'destinationAccountId')}
+              >
+                <NativeSelect {...field} value={field.value || ''}>
+                  <option value="">Selecione uma conta</option>
+                  {accounts
+                    .filter((a) => a.id !== originId)
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+        )}
+
+        {!isTransfer && (
+          <Controller
+            name="categoryId"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Categoria">
+                <NativeSelect {...field} value={field.value || ''}>
+                  <option value="">Sem categoria</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+        )}
+
+        {watchType === 'Expense' && debts.length > 0 && (
+          <Controller
+            name="debtId"
+            control={form.control}
+            render={({ field }) => (
+              <Field label="Lançar na dívida">
+                <NativeSelect {...field} value={field.value || ''}>
+                  <option value="">Nenhuma</option>
+                  {debts.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            )}
+          />
+        )}
+
+        <Controller
+          name="amount"
+          control={form.control}
+          render={({ field: { onChange, value } }) => (
+            <Field
+              label="Valor"
+              required
+              validationState={form.formState.errors.amount ? 'error' : undefined}
+              validationMessage={getFieldError(form.formState.errors, 'amount')}
+            >
+              <CurrencyInput value={value ?? 0} onChange={onChange} />
+            </Field>
+          )}
+        />
+
+        <Controller
+          name="date"
+          control={form.control}
+          render={({ field }) => (
+            <Field
+              label="Data"
+              required
+              validationState={form.formState.errors.date ? 'error' : undefined}
+              validationMessage={getFieldError(form.formState.errors, 'date')}
+            >
+              <DateInput {...field} />
+            </Field>
+          )}
+        />
+
+        <Controller
+          name="description"
+          control={form.control}
+          render={({ field }) => (
+            <Field label="Descrição">
+              <Input {...field} placeholder="Descrição opcional" />
+            </Field>
+          )}
+        />
+
+        <div>
+          <label className="text-sm font-medium text-foreground mb-1.5 block">Comprovante (opcional)</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf"
+            className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+          />
+        </div>
+      </div>
+    </ResponsiveDialog>
   )
 }

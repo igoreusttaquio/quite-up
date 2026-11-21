@@ -19,8 +19,9 @@ const buttonVariants = cva(
         default: 'h-9 px-4 py-2',
         sm: 'h-8 rounded-md px-3 text-xs',
         lg: 'h-11 rounded-md px-8 text-base',
-        icon: 'h-9 w-9',
-        'icon-sm': 'h-8 w-8',
+        // Em telas touch, a área de toque cresce para 44px sem mudar o layout.
+        icon: 'h-9 w-9 relative pointer-coarse:after:absolute pointer-coarse:after:-inset-1',
+        'icon-sm': 'h-8 w-8 relative pointer-coarse:after:absolute pointer-coarse:after:-inset-1.5',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },
