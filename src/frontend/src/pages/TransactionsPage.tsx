@@ -9,6 +9,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Paperclip,
   Upload,
   Copy,
@@ -31,7 +32,7 @@ import { Button } from '../components/ui/button'
 import { DateInput } from '../components/ui/date-input'
 import { NativeSelect } from '../components/ui/native-select'
 import { Spinner } from '../components/ui/spinner'
-import { toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
+import { cn, toDateParam, UNCATEGORIZED_ID } from '../lib/utils'
 import { isTempTransactionId, usePendingSyncIds } from '../lib/offline'
 import { PendingSyncBadge } from '../components/PendingSyncBadge'
 import { signedAmount, todayParam, transactionTypeLabels } from '../lib/transactions'
@@ -78,6 +79,9 @@ export function TransactionsPage() {
 
   const clearFilters = () => setSearchParams({}, { replace: true })
   const hasActiveFilters = !!(filterAccountId || filterType || filterCategoryId || filterStartDate || filterEndDate)
+  // Conta, tipo, categoria e período (de/até contam como um).
+  const activeFilterCount = [filterAccountId, filterType, filterCategoryId, filterStartDate || filterEndDate].filter(Boolean).length
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const { data: result, isLoading, isFetching } = useTransactions({
     page,
@@ -121,9 +125,42 @@ export function TransactionsPage() {
         primaryAction={{ label: 'Nova Transação', onClick: () => openNewTransaction() }}
       />
 
-      {/* Filter bar */}
+      {/* Filtros: no celular ficam recolhidos (só uma linha) com opção de expandir; no desktop, sempre visíveis. */}
       <div className="mb-5 card px-4 py-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2">
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-expanded={filtersOpen}
+            aria-controls="transaction-filters"
+            className="flex min-h-9 flex-1 items-center gap-2 rounded-md text-sm font-medium cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Filter size={15} className="text-muted-foreground" />
+            Filtros
+            {activeFilterCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDown
+              size={16}
+              className={cn('ml-auto text-muted-foreground transition-transform', filtersOpen && 'rotate-180')}
+            />
+          </button>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2" icon={<X size={12} />}>
+              Limpar
+            </Button>
+          )}
+        </div>
+        <div
+          id="transaction-filters"
+          className={cn(
+            'flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2',
+            filtersOpen ? 'mt-3 flex' : 'hidden',
+            'md:mt-0 md:flex'
+          )}
+        >
           <div className="flex flex-col gap-2 sm:contents">
             <Filter size={14} className="hidden text-muted-foreground flex-shrink-0 sm:block" />
             <NativeSelect
@@ -191,7 +228,7 @@ export function TransactionsPage() {
             />
           </div>
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 self-start px-2 sm:ml-auto sm:self-auto" icon={<X size={12} />}>
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="hidden h-7 px-2 md:ml-auto md:inline-flex" icon={<X size={12} />}>
               Limpar
             </Button>
           )}
