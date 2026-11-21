@@ -738,7 +738,7 @@ function DebtCard({
 
       {debt.isPaid ? (
         <div className="py-1 text-center">
-          <p className="text-lg font-semibold text-income">Dívida quitada! 🎉</p>
+          <p className="text-lg font-semibold text-income">Dívida quitada!</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Você pagou <span className="font-medium text-foreground tabular-nums">{brl.format(debt.paidAmount)}</span>
           </p>

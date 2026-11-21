@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Pencil, Trash2, Tag } from 'lucide-react'
-import { CategoryIcon } from '../lib/category-icon'
+import { CATEGORY_ICONS, CategoryIcon, resolveCategoryIconKey } from '../lib/category-icon'
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../hooks/useCategories'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
@@ -23,12 +23,7 @@ const categoryTypeLabels: Record<CategoryType, string> = {
   Expense: 'Despesa',
 }
 
-const ICON_OPTIONS = [
-  '💰', '💳', '🏠', '🚗', '🍔', '✈️', '📚', '🏥', '🎮', '🛒',
-  '💼', '📱', '🎵', '🏋️', '🐾', '🎁', '🔧', '⚡', '🌱', '🏦',
-  '🎯', '🍕', '👕', '🚿', '💡', '🌍', '📊', '🎓', '🎬', '🍺',
-  '☕', '💊', '🚌', '🔑', '🎸', '🎨', '🧴', '🎪', '💅', '🐕',
-]
+const ICON_OPTIONS = Object.keys(CATEGORY_ICONS)
 
 const COLOR_PRESETS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
@@ -57,7 +52,7 @@ export function CategoriesPage() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', type: 'Expense', icon: '💳', color: '#6366f1' },
+    defaultValues: { name: '', type: 'Expense', icon: 'credit-card', color: '#6366f1' },
   })
 
   const handleCreate = async (data: FormData) => {
@@ -86,11 +81,11 @@ export function CategoriesPage() {
 
   const openEdit = (category: Category) => {
     setEditTarget(category)
-    form.reset({ name: category.name, type: category.type, icon: category.icon, color: category.color })
+    form.reset({ name: category.name, type: category.type, icon: resolveCategoryIconKey(category.icon), color: category.color })
   }
 
   const openCreate = () => {
-    form.reset({ name: '', type: 'Expense', icon: '💳', color: '#6366f1' })
+    form.reset({ name: '', type: 'Expense', icon: 'credit-card', color: '#6366f1' })
     setCreateOpen(true)
   }
 
@@ -262,9 +257,7 @@ function CategoryCard({ category, onEdit, onDelete }: { category: Category; onEd
         className="w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0"
         style={{ backgroundColor: category.color + '20' }}
       >
-        {category.icon
-          ? <CategoryIcon icon={category.icon} size={20} color={category.color} />
-          : <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: category.color }} />}
+        <CategoryIcon icon={category.icon} size={20} color={category.color} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate">{category.name}</p>
@@ -289,28 +282,28 @@ function CategoryCard({ category, onEdit, onDelete }: { category: Category; onEd
 function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="rounded-lg border border-border bg-muted/50 p-2">
-      <div className="flex flex-wrap gap-1">
-        {ICON_OPTIONS.map((icon) => (
-          <button
-            key={icon}
-            type="button"
-            onClick={() => onChange(icon)}
-            className={`w-9 h-9 text-lg rounded-lg flex items-center justify-center transition-all cursor-pointer border ${
-              value === icon
-                ? 'bg-brand-light border-primary ring-1 ring-primary'
-                : 'border-transparent hover:bg-accent'
-            }`}
-          >
-            {icon}
-          </button>
-        ))}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(2.25rem,1fr))] gap-1">
+        {ICON_OPTIONS.map((key) => {
+          const Icon = CATEGORY_ICONS[key]
+          const selected = value === key
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange(key)}
+              aria-label={key}
+              aria-pressed={selected}
+              className={`h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer border ${
+                selected
+                  ? 'bg-brand-light border-primary ring-1 ring-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground'
+              }`}
+            >
+              <Icon size={18} />
+            </button>
+          )
+        })}
       </div>
-      {!ICON_OPTIONS.includes(value) && value && (
-        <div className="mt-2 pt-2 border-t border-border flex items-center gap-2">
-          <span className="text-xl">{value}</span>
-          <span className="text-xs text-muted-foreground">Ícone personalizado</span>
-        </div>
-      )}
     </div>
   )
 }
